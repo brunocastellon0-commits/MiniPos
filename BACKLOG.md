@@ -34,7 +34,7 @@
 | E0-02 | Tooling de calidad | E0-01 |  | DONE |
 | E0-03 | Sistema de diseño LILA MARKET | E0-01 |  | DONE |
 | E0-04 | Utilidades de dinero y fecha | E0-02 |  | DONE |
-| E0-05 | Esquema de BD baseline (migraciones) | E0-01 | 🚨 | BLOCKED-DB |
+| E0-05 | Esquema de BD baseline (migraciones) | E0-01 | 🚨 | DONE |
 | E0-06 | Clientes Supabase y proxy | E0-01 |  | TODO |
 | E0-07 | Capa de repositorios | E0-05 (tipos) |  | TODO |
 | E0-08 | Factories y datos demo en memoria | E0-07 |  | TODO |
