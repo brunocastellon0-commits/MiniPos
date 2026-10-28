@@ -36,7 +36,7 @@
 | E0-04 | Utilidades de dinero y fecha | E0-02 |  | DONE |
 | E0-05 | Esquema de BD baseline (migraciones) | E0-01 | 🚨 | DONE |
 | E0-06 | Clientes Supabase y proxy | E0-01 |  | DONE |
-| E0-07 | Capa de repositorios | E0-05 (tipos) |  | TODO |
+| E0-07 | Capa de repositorios | E0-05 (tipos) |  | DONE |
 | E0-08 | Factories y datos demo en memoria | E0-07 |  | TODO |
 | E0-09 | CI local y documentación de desarrollo | E0-02 |  | TODO |
 | E0-10 | Cabeceras de seguridad y CSP | E0-01 |  | TODO |

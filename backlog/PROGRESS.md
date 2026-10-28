@@ -8,3 +8,4 @@
 | 2026-10-27 | E0-04 | DONE | `pnpm check` OK · 68 tests totales (45 nuevos de dinero/fecha) · sin dependencias nuevas |
 | 2026-10-28 | E0-05 | DONE | Migraciones 0001..0008 aplicadas y verificadas por el humano en Supabase (DB-001) · `src/types/database.ts` OK · RLS verificada |
 | 2026-10-28 | E0-06 | DONE | Clientes browser/server SSR · proxy.ts Next 16 con getClaims() · 75 tests Vitest OK (7 nuevos de proxy) · build verde |
+| 2026-10-28 | E0-07 | DONE | Interfaces de repositorios · MemoryStore completo · Esqueleto Supabase tipado · 87 tests Vitest OK (12 nuevos de contrato) · build verde |
