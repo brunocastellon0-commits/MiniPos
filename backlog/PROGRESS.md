@@ -13,3 +13,4 @@
 | 2026-10-28 | E0-09 | DONE | README.md · CHANGELOG.md · script precommit configurado · format:check y typecheck verde |
 | 2026-10-28 | E0-10 | DONE | Cabeceras de seguridad (CSP con nonce, HSTS, nosniff, frame-ancestors none) · 93 tests Vitest OK (3 de security/headers) · build verde |
 | 2026-10-28 | E0-11 | DONE | server-only instalado · Escaneo de secretos (no-secrets.test.ts) y no-dangerous-html.test.ts · pnpm audit limpio · build verde |
+| 2026-10-28 | E0-12 | DONE | Helper `secureAction` (autenticar, autorizar, rate limit, Zod .strict, handler, audit) · RateLimiter · 114 tests Vitest OK (16 nuevos: authz-matrix y validation) · build verde |
