@@ -1,6 +1,13 @@
+import { Inter } from "next/font/google";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "LILA MARKET",
@@ -10,7 +17,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="es-BO">
-      <body className="min-h-dvh bg-slate-50 text-slate-900 antialiased">{children}</body>
+      <body className={`${inter.variable} min-h-dvh antialiased`}>{children}</body>
     </html>
   );
 }

@@ -4,3 +4,4 @@
 |---|---|---|---|
 | 2026-10-27 | E0-01 | DONE | `pnpm typecheck` OK · `pnpm build` OK · `pnpm dev` → HTTP 200 en localhost:3000 |
 | 2026-10-27 | E0-02 | DONE | `pnpm check` OK (typecheck + lint + 1 test Vitest/jsdom + audit + build) · `pnpm format:check` OK |
+| 2026-10-27 | E0-03 | DONE | `pnpm check` OK (23 tests: primitivas, foco visible, aria-label, dialog) · `/_design` HTTP 200 |

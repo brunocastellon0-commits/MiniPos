@@ -32,7 +32,7 @@
 |---|---|---|---|---|
 | E0-01 | Crear proyecto Next.js 16 + TS estricto + Tailwind + pnpm | — |  | DONE |
 | E0-02 | Tooling de calidad | E0-01 |  | DONE |
-| E0-03 | Sistema de diseño LILA MARKET | E0-01 |  | TODO |
+| E0-03 | Sistema de diseño LILA MARKET | E0-01 |  | DONE |
 | E0-04 | Utilidades de dinero y fecha | E0-02 |  | TODO |
 | E0-05 | Esquema de BD baseline (migraciones) | E0-01 | 🚨 | TODO |
 | E0-06 | Clientes Supabase y proxy | E0-01 |  | TODO |
