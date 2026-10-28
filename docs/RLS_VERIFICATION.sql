@@ -35,3 +35,15 @@ select table_name, string_agg(privilege_type, ', ' order by privilege_type) as p
 from information_schema.role_table_grants
 where table_schema = 'public' and grantee = 'authenticated'
 group by table_name order by table_name;
+
+-- 7) Vistas en public sin security_invoker = true
+select c.relname as vista
+from pg_class c join pg_namespace n on n.oid = c.relnamespace
+where n.nspname = 'public' and c.relkind = 'v'
+  and not (coalesce(c.reloptions, '{}') @> array['security_invoker=true']);
+
+-- 8) Verificar que cost_cents no esté concedido a authenticated en public.products (esperado: 0 filas)
+select column_name, privilege_type
+from information_schema.column_privileges
+where table_schema = 'public' and table_name = 'products' and column_name = 'cost_cents' and grantee = 'authenticated';
+

@@ -35,7 +35,15 @@ Este archivo debe mantenerse **corto**: el agente lo lee en cada sesión.
 
 ## Pendientes
 
-_(vacío)_
+### DB-001 · Esquema baseline, RLS y tipos (0001..0008)
+- Estado: PENDIENTE
+- Archivo: db/migrations/0001_private_helpers.sql .. db/migrations/0008_immutability_triggers.sql
+- Tarea(s) del backlog: E0-05
+- Qué hace: Tablas base (profiles, business_settings, categories, products, cash_sessions, cash_movements, sales, sale_items, held_sales, stock_movements, suppliers, purchases, purchase_items, audit_log), esquema private y funciones de autorización, RLS en todas las tablas, GRANTs mínimos por objeto a authenticated, ocultamiento de cost_cents, vista products_pos, funciones seguras products_with_cost(), get_business_public(), write_audit_log(), trigger on_auth_user_created y triggers de inmutabilidad (anti-delete/anti-update contable).
+- Por qué: Establecer el modelo de datos relacional y las defensas de seguridad y RLS de LILA MARKET.
+- Riesgo / destructivo: No destructivo (crea tablas, índices, vistas, funciones y políticas nuevas).
+- Cómo verificar: Ejecutar en el SQL Editor de Supabase las consultas de `docs/RLS_VERIFICATION.sql`. Verificar que las consultas 1 a 4 y 8 devuelvan 0 filas, y que las tablas y permisos coincidan con lo esperado.
+- Aplicada el: _
 
 ## Aplicadas (resumen)
 
