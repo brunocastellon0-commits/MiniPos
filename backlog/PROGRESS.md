@@ -14,3 +14,4 @@
 | 2026-10-28 | E0-10 | DONE | Cabeceras de seguridad (CSP con nonce, HSTS, nosniff, frame-ancestors none) · 93 tests Vitest OK (3 de security/headers) · build verde |
 | 2026-10-28 | E0-11 | DONE | server-only instalado · Escaneo de secretos (no-secrets.test.ts) y no-dangerous-html.test.ts · pnpm audit limpio · build verde |
 | 2026-10-28 | E0-12 | DONE | Helper `secureAction` (autenticar, autorizar, rate limit, Zod .strict, handler, audit) · RateLimiter · 114 tests Vitest OK (16 nuevos: authz-matrix y validation) · build verde |
+| 2026-10-28 | E1-01 | DONE | Pantalla de login accesible (`/login`) · LoginForm · Server Action `loginAction` con rate limit y sin enumerar usuarios · 125 tests Vitest OK (11 nuevos) · build verde |
