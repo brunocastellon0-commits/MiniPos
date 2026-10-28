@@ -7,14 +7,10 @@ export const metadata: Metadata = {
   description: "Sistema de gestión comercial para minimarkets.",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{ children: ReactNode }>) {
+export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="es-BO">
-      <body className="min-h-dvh bg-slate-50 text-slate-900 antialiased">
-        {children}
-      </body>
+      <body className="min-h-dvh bg-slate-50 text-slate-900 antialiased">{children}</body>
     </html>
   );
 }

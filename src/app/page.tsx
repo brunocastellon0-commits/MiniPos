@@ -7,8 +7,8 @@ export default function Home() {
         </p>
         <h1 className="mt-2 text-2xl font-semibold">Base del proyecto lista</h1>
         <p className="mt-3 text-sm leading-relaxed text-slate-600">
-          Next.js 16, TypeScript estricto y Tailwind CSS. Las pantallas de caja,
-          inventario y reportes se construyen en las siguientes tareas.
+          Next.js 16, TypeScript estricto y Tailwind CSS. Las pantallas de caja, inventario y
+          reportes se construyen en las siguientes tareas.
         </p>
       </section>
     </main>
