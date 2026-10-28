@@ -24,6 +24,42 @@ export function isAuthRoute(pathname: string): boolean {
   return pathname === "/login" || pathname.startsWith("/login/");
 }
 
+export function generateCsp(nonce: string): string {
+  const isDev = process.env.NODE_ENV === "development";
+  const scriptSrc = isDev
+    ? `'self' 'unsafe-eval' 'nonce-${nonce}'`
+    : `'self' 'nonce-${nonce}' 'strict-dynamic'`;
+
+  return [
+    "default-src 'self'",
+    `script-src ${scriptSrc}`,
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' blob: data: https:",
+    "font-src 'self' data:",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+    "upgrade-insecure-requests",
+  ].join("; ");
+}
+
+export function applySecurityHeaders(response: NextResponse, nonce?: string): void {
+  if (nonce) {
+    const csp = generateCsp(nonce);
+    response.headers.set("Content-Security-Policy", csp);
+  }
+  response.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  response.headers.set(
+    "Permissions-Policy",
+    "camera=(), microphone=(), geolocation=(), browsing-topics=()",
+  );
+}
+
 export type ClientFactory = (
   url: string,
   key: string,
@@ -41,9 +77,15 @@ export async function updateSession(
   request: NextRequest,
   clientFactory?: ClientFactory,
 ): Promise<NextResponse> {
+  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+  const csp = generateCsp(nonce);
+  requestHeaders.set("Content-Security-Policy", csp);
+
   let response = NextResponse.next({
     request: {
-      headers: request.headers,
+      headers: requestHeaders,
     },
   });
 
@@ -60,14 +102,16 @@ export async function updateSession(
           request.cookies.set(name, value);
         });
         response = NextResponse.next({
-          request,
+          request: {
+            headers: requestHeaders,
+          },
         });
         cookiesToSet.forEach(({ name, value, options }) => {
           response.cookies.set(name, value, options);
         });
         if (headers) {
-          Object.entries(headers).forEach(([key, value]) => {
-            response.headers.set(key, value);
+          Object.entries(headers).forEach(([headerKey, value]) => {
+            response.headers.set(headerKey, value);
           });
         }
       },
@@ -87,7 +131,9 @@ export async function updateSession(
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     loginUrl.searchParams.set("redirectTo", pathname);
-    return NextResponse.redirect(loginUrl);
+    const redirectResponse = NextResponse.redirect(loginUrl);
+    applySecurityHeaders(redirectResponse, nonce);
+    return redirectResponse;
   }
 
   // 2. Redirección si usuario con sesión activa intenta ir al login
@@ -95,8 +141,11 @@ export async function updateSession(
     const defaultAppUrl = request.nextUrl.clone();
     defaultAppUrl.pathname = "/caja";
     defaultAppUrl.search = "";
-    return NextResponse.redirect(defaultAppUrl);
+    const redirectResponse = NextResponse.redirect(defaultAppUrl);
+    applySecurityHeaders(redirectResponse, nonce);
+    return redirectResponse;
   }
 
+  applySecurityHeaders(response, nonce);
   return response;
 }
