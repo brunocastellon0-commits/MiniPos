@@ -7,3 +7,4 @@
 | 2026-10-27 | E0-03 | DONE | `pnpm check` OK (23 tests: primitivas, foco visible, aria-label, dialog) · `/_design` HTTP 200 |
 | 2026-10-27 | E0-04 | DONE | `pnpm check` OK · 68 tests totales (45 nuevos de dinero/fecha) · sin dependencias nuevas |
 | 2026-10-28 | E0-05 | DONE | Migraciones 0001..0008 aplicadas y verificadas por el humano en Supabase (DB-001) · `src/types/database.ts` OK · RLS verificada |
+| 2026-10-28 | E0-06 | DONE | Clientes browser/server SSR · proxy.ts Next 16 con getClaims() · 75 tests Vitest OK (7 nuevos de proxy) · build verde |
