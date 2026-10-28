@@ -15,6 +15,7 @@
     "test": "vitest run",
     "check:security": "pnpm audit --audit-level=high && vitest run security --passWithNoTests",
     "check": "pnpm typecheck && pnpm lint && pnpm test && pnpm check:security && pnpm build",
+    "precommit": "pnpm typecheck && pnpm lint",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

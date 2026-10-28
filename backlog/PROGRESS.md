@@ -10,3 +10,4 @@
 | 2026-10-28 | E0-06 | DONE | Clientes browser/server SSR · proxy.ts Next 16 con getClaims() · 75 tests Vitest OK (7 nuevos de proxy) · build verde |
 | 2026-10-28 | E0-07 | DONE | Interfaces de repositorios · MemoryStore completo · Esqueleto Supabase tipado · 87 tests Vitest OK (12 nuevos de contrato) · build verde |
 | 2026-10-28 | E0-08 | DONE | Factories para todas las entidades · Dataset demo boliviano · 90 tests Vitest OK (3 nuevos) · build verde |
+| 2026-10-28 | E0-09 | DONE | README.md · CHANGELOG.md · script precommit configurado · format:check y typecheck verde |
