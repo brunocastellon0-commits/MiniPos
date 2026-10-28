@@ -1,0 +1,39 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "permission": {
+    "read": {
+      "*": "allow",
+      "*.env": "deny",
+      "*.env.*": "deny",
+      "*.env.example": "allow"
+    },
+    "edit": {
+      "*": "allow",
+      "*.env": "deny",
+      "*.env.*": "deny",
+      "*.env.example": "allow"
+    },
+    "bash": {
+      "*": "ask",
+      "pnpm *": "allow",
+      "git status*": "allow",
+      "git diff*": "allow",
+      "git log*": "allow",
+      "git add*": "allow",
+      "git commit*": "allow",
+      "ls*": "allow",
+      "cat *": "allow",
+      "git push*": "ask",
+      "rm -rf*": "deny",
+      "supabase*": "deny",
+      "npx supabase*": "deny",
+      "npx *supabase*": "deny",
+      "pnpm dlx supabase*": "deny",
+      "pnpm exec supabase*": "deny",
+      "psql*": "deny",
+      "curl *supabase*": "deny",
+      "wget *supabase*": "deny"
+    }
+  },
+  "instructions": ["AGENTS.md", "BACKLOG.md", "DB_REQUESTS.md", "docs/ARCHITECTURE.md"]
+}
