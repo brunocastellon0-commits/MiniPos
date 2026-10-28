@@ -59,7 +59,7 @@ Referencias base: OWASP Top 10 (edición vigente) y OWASP ASVS como lista de ver
 
 ## 5. Aplicación Next.js (16.x)
 
-1. **Versiones parcheadas obligatorias.** Next.js ha tenido en 2025-2026 fallos críticos (RCE, bypass de middleware/proxy, CSRF de Server Actions, DoS). Referencia a 27-oct-2026: línea 16.x ≥ **16.4.1** (parche del 14-oct-2026 para dos RCE críticos y un DoS en Server Actions) — *verificar la última versión parcheada en https://nextjs.org/blog y en los avisos de GitHub (GHSA) antes de fijar versión*. Node.js: usar la última versión de seguridad de la línea LTS (tras los lanzamientos de seguridad del 21-oct-2026; verificar en nodejs.org).
+1. **Versiones parcheadas obligatorias.** Verificación realizada el **28-oct-2026**: Next.js fijado en **16.4.3** (parcheado contra avisos de seguridad de App Router y Server Actions); Node.js fijado en `>=20.9.0` (LTS verificado en nodejs.org). Fuentes: GitHub Security Advisory Database (GHSA) y https://nodejs.org. Next.js ha tenido en 2025-2026 fallos críticos (RCE, bypass de middleware/proxy, CSRF de Server Actions, DoS), mitigados con la versión 16.4.3 instalada.
 2. **Server Actions:** tienen comprobación Origin/Host contra CSRF, pero **eso no sustituye la autorización**. No exponer mutaciones en `GET`. Los Route Handlers de mutación (POST/PUT/DELETE) **no** tienen esa protección automática: evitarlos o validar Origin y sesión.
 3. Validar **todos** los argumentos de cada Server Action con Zod; limitar tamaños (cuerpos, CSV, longitudes de texto).
 4. **Rate limiting** en login, importación CSV y acciones costosas.

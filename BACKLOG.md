@@ -40,7 +40,7 @@
 | E0-08 | Factories y datos demo en memoria | E0-07 |  | DONE |
 | E0-09 | CI local y documentación de desarrollo | E0-02 |  | DONE |
 | E0-10 | Cabeceras de seguridad y CSP | E0-01 |  | DONE |
-| E0-11 | Higiene de dependencias y secretos | E0-02 |  | TODO |
+| E0-11 | Higiene de dependencias y secretos | E0-02 |  | DONE |
 | E0-12 | Capa común de acciones seguras | E0-06 |  | TODO |
 
 ## E1 — Autenticación y roles  ·  [backlog/E1-autenticacion-y-roles.md](backlog/E1-autenticacion-y-roles.md)

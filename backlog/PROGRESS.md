@@ -12,3 +12,4 @@
 | 2026-10-28 | E0-08 | DONE | Factories para todas las entidades · Dataset demo boliviano · 90 tests Vitest OK (3 nuevos) · build verde |
 | 2026-10-28 | E0-09 | DONE | README.md · CHANGELOG.md · script precommit configurado · format:check y typecheck verde |
 | 2026-10-28 | E0-10 | DONE | Cabeceras de seguridad (CSP con nonce, HSTS, nosniff, frame-ancestors none) · 93 tests Vitest OK (3 de security/headers) · build verde |
+| 2026-10-28 | E0-11 | DONE | server-only instalado · Escaneo de secretos (no-secrets.test.ts) y no-dangerous-html.test.ts · pnpm audit limpio · build verde |
