@@ -16,3 +16,4 @@
 | 2026-10-28 | E0-12 | DONE | Helper `secureAction` (autenticar, autorizar, rate limit, Zod .strict, handler, audit) · RateLimiter · 114 tests Vitest OK (16 nuevos: authz-matrix y validation) · build verde |
 | 2026-10-28 | E1-01 | DONE | Pantalla de login accesible (`/login`) · LoginForm · Server Action `loginAction` con rate limit y sin enumerar usuarios · 125 tests Vitest OK (11 nuevos) · build verde |
 | 2026-10-28 | E1-02 | DONE | Módulo de sesión (`getCurrentUser`, `requireUser`, `requireRole`) · Redirección en servidor · 134 tests Vitest OK (9 nuevos en roles.int.test.ts) · build verde |
+| 2026-10-28 | E1-03 | DONE | Layout autenticado con navegación por rol · AppHeader · AppSidebar · AppLayoutClient · 139 tests Vitest OK (5 nuevos en navigation.test.tsx) · build verde |
