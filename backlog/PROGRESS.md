@@ -22,3 +22,4 @@
 | 2026-10-29 | E1-04 | DONE | GestiÃ³n de usuarios (dueÃ±o) Â· listUsers, updateName, updateRole, toggleActive Â· ProtecciÃ³n Ãºltimo dueÃ±o activo (dominio + trigger SQL) Â· Pantalla /usuarios con tabla, diÃ¡logo editar e instrucciones alta Â· 189 tests OK (29 nuevos) Â· build verde |
 | 2026-10-29 | E2-01 | DONE | CRUD de categorías (crear, renombrar, ordenar, activar/desactivar, eliminar solo sin productos) · 19 tests dirigidos OK (dominio, acciones, UI) · typecheck OK |
 | 2026-10-29 | E2-02 | DONE | CRUD de productos con formulario por secciones, Zod estricto, barcode único, filtros/paginación y stock solo lectura al editar · 13 tests nuevos OK (acciones/UI) · typecheck OK |
+| 2026-10-29 | E2-03 | DONE | Importación CSV con plantilla descargable, vista previa de errores por fila e importación atómica vía createMany · 16 tests nuevos OK (dominio/acciones/UI) · typecheck OK |

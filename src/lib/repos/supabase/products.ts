@@ -8,6 +8,10 @@ export class SupabaseProductsRepo implements ProductsRepo {
     private user: UserContext,
   ) {}
 
+  private sanitizeForRole(product: Product): Product {
+    return this.user.role === "cashier" ? { ...product, cost_cents: null } : product;
+  }
+
   async list(filter?: {
     activeOnly?: boolean;
     categoryId?: string;
@@ -129,6 +133,21 @@ export class SupabaseProductsRepo implements ProductsRepo {
     }
 
     return created;
+  }
+
+  async createMany(items: ProductInsert[]): Promise<Product[]> {
+    if (items.length === 0) return [];
+
+    const { data, error } = await this.supabase.from("products").insert(items).select();
+
+    if (error) {
+      if (error.code === "23505") {
+        throw new Error("El código de barras ya está registrado en otro producto.");
+      }
+      throw new Error(`Error al importar productos: ${error.message}`);
+    }
+
+    return (data || []).map((product) => this.sanitizeForRole(product));
   }
 
   async update(id: string, data: ProductUpdate): Promise<Product> {

@@ -60,7 +60,7 @@
 |---|---|---|---|---|
 | E2-01 | Categorías (CRUD) | E1-03 |  | DONE |
 | E2-02 | Productos (CRUD) | E2-01 |  | DONE |
-| E2-03 | Importar productos desde CSV | E2-02 |  | TODO |
+| E2-03 | Importar productos desde CSV | E2-02 |  | DONE |
 | E2-04 | Búsqueda de producto para POS | E2-02 |  | TODO |
 
 ## E3 — Turno de caja (precondición de vender)  ·  [backlog/E3-turno-de-caja-precondicion-de-vender.md](backlog/E3-turno-de-caja-precondicion-de-vender.md)

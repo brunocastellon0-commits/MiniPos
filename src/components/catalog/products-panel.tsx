@@ -5,6 +5,7 @@ import {
   AlertCircle,
   ChevronLeft,
   ChevronRight,
+  FileUp,
   Package,
   Pencil,
   Plus,
@@ -19,6 +20,7 @@ import { Toast } from "@/components/ui/toast";
 import { listProductsAction, setProductActiveAction } from "@/lib/actions/products";
 import { formatBs } from "@/lib/money";
 import type { Category, Product } from "@/lib/repos/types";
+import { ImportProductsDialog } from "./import-products-dialog";
 import { ProductFormDialog } from "./product-form-dialog";
 
 type ProductStatus = "all" | "active" | "inactive" | "low";
@@ -51,6 +53,7 @@ export function ProductsPanel({
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   const categoryNames = new Map(categories.map((category) => [category.id, category.name]));
@@ -163,10 +166,16 @@ export function ProductsPanel({
             {total} {total === 1 ? "producto registrado" : "productos registrados"}
           </p>
         </div>
-        <Button onClick={openCreate} className="gap-2 shrink-0">
-          <Plus className="h-4 w-4" aria-hidden="true" />
-          Nuevo producto
-        </Button>
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <Button variant="secondary" onClick={() => setIsImportOpen(true)} className="gap-2">
+            <FileUp className="h-4 w-4" aria-hidden="true" />
+            Importar CSV
+          </Button>
+          <Button onClick={openCreate} className="gap-2">
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            Nuevo producto
+          </Button>
+        </div>
       </div>
 
       <form onSubmit={handleSearch} className="flex flex-col gap-3 lg:flex-row lg:items-center">
@@ -390,6 +399,17 @@ export function ProductsPanel({
         open={isFormOpen}
         onClose={() => setIsFormOpen(false)}
         onSaved={handleSaved}
+      />
+
+      <ImportProductsDialog
+        open={isImportOpen}
+        onClose={() => setIsImportOpen(false)}
+        onImported={async (imported) => {
+          setSuccessMessage(
+            imported === 1 ? "Se importó 1 producto." : `Se importaron ${imported} productos.`,
+          );
+          await load({ page: 1 });
+        }}
       />
     </section>
   );

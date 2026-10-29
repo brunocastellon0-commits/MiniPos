@@ -1,0 +1,3 @@
+﻿nombre,codigo_barras,codigo_interno,categoria,unidad,precio,costo,stock,stock_minimo
+Coca-Cola 2L,7771234567890,,Bebidas,unidad,12.50,8.00,24,6
+Arroz 1kg,,A-001,Abarrotes,unidad,8.50,6.20,40,10

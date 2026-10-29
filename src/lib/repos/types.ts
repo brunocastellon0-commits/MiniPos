@@ -68,6 +68,7 @@ export interface ProductsRepo {
   getById(id: string): Promise<Product | null>;
   getByBarcode(barcode: string): Promise<Product | null>;
   create(data: ProductInsert): Promise<Product>;
+  createMany(items: ProductInsert[]): Promise<Product[]>;
   update(id: string, data: ProductUpdate): Promise<Product>;
   delete(id: string): Promise<void>;
 }

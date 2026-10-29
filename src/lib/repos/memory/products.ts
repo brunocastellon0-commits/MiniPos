@@ -97,6 +97,55 @@ export class MemoryProductsRepo implements ProductsRepo {
     return this.sanitizeForRole(product);
   }
 
+  async createMany(items: ProductInsert[]): Promise<Product[]> {
+    if (this.user.role !== "owner") {
+      throw new Error("Acceso denegado: solo el propietario puede crear productos.");
+    }
+    if (items.length === 0) return [];
+
+    const seenBarcodes = new Set<string>();
+    for (const item of items) {
+      if (!item.barcode) continue;
+
+      const duplicateInStore = Array.from(this.store.products.values()).some(
+        (product) => product.barcode === item.barcode,
+      );
+      if (duplicateInStore) {
+        throw new Error(
+          `El código de barras ${item.barcode} ya está registrado en otro producto.`,
+        );
+      }
+      if (seenBarcodes.has(item.barcode)) {
+        throw new Error(`El código de barras ${item.barcode} está repetido en el archivo.`);
+      }
+      seenBarcodes.add(item.barcode);
+    }
+
+    const now = new Date().toISOString();
+    const created: Product[] = items.map((item) => ({
+      id: item.id || crypto.randomUUID(),
+      name: item.name,
+      barcode: item.barcode ?? null,
+      internal_code: item.internal_code ?? null,
+      category_id: item.category_id ?? null,
+      unit_label: item.unit_label ?? "unidad",
+      price_cents: item.price_cents,
+      cost_cents: item.cost_cents ?? null,
+      stock_qty: item.stock_qty ?? 0,
+      min_stock: item.min_stock ?? 5,
+      active: item.active ?? true,
+      created_at: item.created_at ?? now,
+      updated_at: item.updated_at ?? now,
+    }));
+
+    // Commit solo después de validar todo el lote (atomicidad simulada).
+    for (const product of created) {
+      this.store.products.set(product.id, product);
+    }
+
+    return created.map((product) => this.sanitizeForRole(product));
+  }
+
   async update(id: string, data: ProductUpdate): Promise<Product> {
     if (this.user.role !== "owner") {
       throw new Error("Acceso denegado: solo el propietario puede editar productos.");
