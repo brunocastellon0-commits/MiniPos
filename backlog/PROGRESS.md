@@ -21,3 +21,4 @@
 | 2026-10-29 | E1-06 | DONE | MFA (TOTP) para el dueño · Inscripción, verificación, recomendación y login 2FA · 160 tests Vitest OK (15 nuevos) · build verde |
 | 2026-10-29 | E1-04 | DONE | Gestión de usuarios (dueño) · listUsers, updateName, updateRole, toggleActive · Protección último dueño activo (dominio + trigger SQL) · Pantalla /usuarios con tabla, diálogo editar e instrucciones alta · 189 tests OK (29 nuevos) · build verde |
 | 2026-10-29 | E2-01 | DONE | CRUD de categor�as (crear, renombrar, ordenar, activar/desactivar, eliminar solo sin productos) � 19 tests dirigidos OK (dominio, acciones, UI) � typecheck OK |
+| 2026-10-29 | E2-02 | DONE | CRUD de productos con formulario por secciones, Zod estricto, barcode �nico, filtros/paginaci�n y stock solo lectura al editar � 13 tests nuevos OK (acciones/UI) � typecheck OK |

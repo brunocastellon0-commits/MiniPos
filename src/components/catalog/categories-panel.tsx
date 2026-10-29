@@ -26,10 +26,17 @@ import { CategoryFormDialog } from "./category-form-dialog";
 
 export interface CategoriesPanelProps {
   initialCategories: Category[];
+  onCategoriesChange?: (categories: Category[]) => void;
 }
 
-export function CategoriesPanel({ initialCategories }: CategoriesPanelProps) {
+export function CategoriesPanel({ initialCategories, onCategoriesChange }: CategoriesPanelProps) {
   const [categories, setCategories] = useState<Category[]>(sortCategories(initialCategories));
+
+  const updateCategories = (next: Category[]) => {
+    const sorted = sortCategories(next);
+    setCategories(sorted);
+    onCategoriesChange?.(sorted);
+  };
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [deletingCategory, setDeletingCategory] = useState<Category | null>(null);
@@ -38,13 +45,11 @@ export function CategoriesPanel({ initialCategories }: CategoriesPanelProps) {
   const [pendingId, setPendingId] = useState<string | null>(null);
 
   const handleSaved = (category: Category) => {
-    setCategories((previous) => {
-      const exists = previous.some((item) => item.id === category.id);
-      const next = exists
-        ? previous.map((item) => (item.id === category.id ? category : item))
-        : [...previous, category];
-      return sortCategories(next);
-    });
+    const exists = categories.some((item) => item.id === category.id);
+    const next = exists
+      ? categories.map((item) => (item.id === category.id ? category : item))
+      : [...categories, category];
+    updateCategories(next);
     setErrorMessage(null);
   };
 
@@ -82,7 +87,7 @@ export function CategoriesPanel({ initialCategories }: CategoriesPanelProps) {
       setErrorMessage(result.message);
       return;
     }
-    setCategories(sortCategories(result.data));
+    updateCategories(result.data);
   };
 
   const handleDelete = async () => {
@@ -98,7 +103,7 @@ export function CategoriesPanel({ initialCategories }: CategoriesPanelProps) {
       return;
     }
 
-    setCategories((previous) => previous.filter((item) => item.id !== result.data.id));
+    updateCategories(categories.filter((item) => item.id !== result.data.id));
     setDeletingCategory(null);
   };
 

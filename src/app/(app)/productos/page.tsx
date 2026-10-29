@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { Package } from "lucide-react";
-import { CategoriesPanel } from "@/components/catalog/categories-panel";
+import { CatalogClient } from "@/components/catalog/catalog-client";
 import { listCategoriesAction } from "@/lib/actions/categories";
+import { listProductsAction } from "@/lib/actions/products";
 import { requireRole } from "@/lib/auth";
-import type { Category } from "@/lib/repos/types";
+import type { Category, Product } from "@/lib/repos/types";
 
 export const metadata: Metadata = {
   title: "Productos",
@@ -14,13 +15,29 @@ export default async function ProductosPage() {
   await requireRole("owner", "/caja");
 
   let categories: Category[] = [];
+  let products: Product[] = [];
+  let total = 0;
+  let page = 1;
+  let totalPages = 1;
+
   try {
-    const result = await listCategoriesAction();
-    if (result.ok) {
-      categories = result.data;
+    const [categoriesResult, productsResult] = await Promise.all([
+      listCategoriesAction(),
+      listProductsAction({ page: 1, pageSize: 20 }),
+    ]);
+
+    if (categoriesResult.ok) {
+      categories = categoriesResult.data;
+    }
+    if (productsResult.ok) {
+      products = productsResult.data.items;
+      total = productsResult.data.total;
+      page = productsResult.data.page;
+      totalPages = productsResult.data.totalPages;
     }
   } catch {
     categories = [];
+    products = [];
   }
 
   return (
@@ -35,7 +52,13 @@ export default async function ProductosPage() {
         </p>
       </div>
 
-      <CategoriesPanel initialCategories={categories} />
+      <CatalogClient
+        initialCategories={categories}
+        initialProducts={products}
+        initialTotal={total}
+        initialPage={page}
+        initialTotalPages={totalPages}
+      />
     </div>
   );
 }

@@ -59,7 +59,7 @@
 | ID | Tarea | Deps | BD | Estado |
 |---|---|---|---|---|
 | E2-01 | Categorías (CRUD) | E1-03 |  | DONE |
-| E2-02 | Productos (CRUD) | E2-01 |  | TODO |
+| E2-02 | Productos (CRUD) | E2-01 |  | DONE |
 | E2-03 | Importar productos desde CSV | E2-02 |  | TODO |
 | E2-04 | Búsqueda de producto para POS | E2-02 |  | TODO |
 
