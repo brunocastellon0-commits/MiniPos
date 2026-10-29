@@ -1,3 +1,4 @@
+import { canDemoteOrDeactivateOwner } from "../../domain/users";
 import type { UsersRepo, Profile, ProfileUpdate, UserContext } from "../types";
 import type { MemoryStore } from "./memory-store";
 
@@ -39,6 +40,20 @@ export class MemoryUsersRepo implements UsersRepo {
       if (data.active !== undefined && data.active !== existing.active) {
         throw new Error("No puedes cambiar tu propio estado de activación.");
       }
+    }
+
+    // Comprobar invariante: nunca dejar el sistema sin propietarios activos
+    const check = canDemoteOrDeactivateOwner(
+      Array.from(this.store.profiles.values()),
+      id,
+      {
+        newRole: data.role as "owner" | "cashier" | undefined,
+        newActive: data.active,
+      },
+    );
+
+    if (!check.allowed) {
+      throw new Error(check.reason ?? "Operación no permitida en este propietario.");
     }
 
     const updated: Profile = {

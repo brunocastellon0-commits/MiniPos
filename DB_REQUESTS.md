@@ -42,3 +42,4 @@ _(vacío)_
 | ID | Archivo | Qué hizo (1 línea) | Aplicada el |
 |---|---|---|---|
 | DB-001 | 0001..0008 | Esquema baseline (tablas, RLS, grants mínimos, triggers inmutables, vista POS, private helpers) | 2026-10-28 |
+| DB-002 | 0009_prevent_last_owner_removal.sql | Trigger para evitar desactivar, degradar o borrar al último dueño activo | 2026-10-29 |

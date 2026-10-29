@@ -102,6 +102,15 @@ export async function defaultGetCurrentUser(): Promise<AuthenticatedUser | null>
   }
 }
 
+export class ActionException extends Error {
+  code: string;
+  constructor(message: string, code = "BAD_REQUEST") {
+    super(message);
+    this.name = "ActionException";
+    this.code = code;
+  }
+}
+
 interface KnownActionError extends Error {
   code: string;
 }
