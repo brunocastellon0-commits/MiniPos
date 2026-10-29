@@ -18,3 +18,4 @@
 | 2026-10-28 | E1-02 | DONE | Módulo de sesión (`getCurrentUser`, `requireUser`, `requireRole`) · Redirección en servidor · 134 tests Vitest OK (9 nuevos en roles.int.test.ts) · build verde |
 | 2026-10-28 | E1-03 | DONE | Layout autenticado con navegación por rol · AppHeader · AppSidebar · AppLayoutClient · 139 tests Vitest OK (5 nuevos en navigation.test.tsx) · build verde |
 | 2026-10-28 | E1-05 | DONE | Endurecimiento de sesión y login · InactivityTracker e InactivityWatcher (15 min) · Rate limit IP+email · Revocación inmediata · Audit logging · 145 tests Vitest OK (6 nuevos) · build verde |
+| 2026-10-29 | E1-06 | DONE | MFA (TOTP) para el dueño · Inscripción, verificación, recomendación y login 2FA · 160 tests Vitest OK (15 nuevos) · build verde |
