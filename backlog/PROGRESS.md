@@ -20,3 +20,4 @@
 | 2026-10-28 | E1-05 | DONE | Endurecimiento de sesión y login · InactivityTracker e InactivityWatcher (15 min) · Rate limit IP+email · Revocación inmediata · Audit logging · 145 tests Vitest OK (6 nuevos) · build verde |
 | 2026-10-29 | E1-06 | DONE | MFA (TOTP) para el dueño · Inscripción, verificación, recomendación y login 2FA · 160 tests Vitest OK (15 nuevos) · build verde |
 | 2026-10-29 | E1-04 | DONE | Gestión de usuarios (dueño) · listUsers, updateName, updateRole, toggleActive · Protección último dueño activo (dominio + trigger SQL) · Pantalla /usuarios con tabla, diálogo editar e instrucciones alta · 189 tests OK (29 nuevos) · build verde |
+| 2026-10-29 | E2-01 | DONE | CRUD de categor�as (crear, renombrar, ordenar, activar/desactivar, eliminar solo sin productos) � 19 tests dirigidos OK (dominio, acciones, UI) � typecheck OK |

@@ -69,10 +69,51 @@ export class MemoryCategoriesRepo implements CategoriesRepo {
     return updated;
   }
 
+  async reorder(ids: string[]): Promise<Category[]> {
+    if (this.user.role !== "owner") {
+      throw new Error("Acceso denegado: solo el propietario puede ordenar categorías.");
+    }
+
+    const current = Array.from(this.store.categories.values());
+    if (ids.length !== current.length) {
+      throw new Error("La lista de categorías cambió. Recarga la página e intenta de nuevo.");
+    }
+
+    const uniqueIds = new Set(ids);
+    if (uniqueIds.size !== ids.length) {
+      throw new Error("La lista de categorías contiene identificadores repetidos.");
+    }
+
+    for (const id of ids) {
+      if (!this.store.categories.has(id)) {
+        throw new Error("Categoría no encontrada.");
+      }
+    }
+
+    const now = new Date().toISOString();
+    ids.forEach((id, index) => {
+      const category = this.store.categories.get(id);
+      if (!category) return;
+      this.store.categories.set(id, { ...category, sort_order: index, updated_at: now });
+    });
+
+    return Array.from(this.store.categories.values()).sort((a, b) => a.sort_order - b.sort_order);
+  }
+
   async delete(id: string): Promise<void> {
     if (this.user.role !== "owner") {
       throw new Error("Acceso denegado: solo el propietario puede eliminar categorías.");
     }
+
+    const hasProducts = Array.from(this.store.products.values()).some(
+      (product) => product.category_id === id,
+    );
+    if (hasProducts) {
+      throw new Error(
+        "La categoría tiene productos asociados. Desactívala o reasigna sus productos antes de eliminarla.",
+      );
+    }
+
     this.store.categories.delete(id);
   }
 }

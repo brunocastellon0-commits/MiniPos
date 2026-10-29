@@ -63,7 +63,40 @@ export class SupabaseCategoriesRepo implements CategoriesRepo {
     return updated;
   }
 
+  async reorder(ids: string[]): Promise<Category[]> {
+    if (this._user.role !== "owner") {
+      throw new Error("Acceso denegado: solo el propietario puede ordenar categorías.");
+    }
+
+    for (const [index, id] of ids.entries()) {
+      const { error } = await this.supabase
+        .from("categories")
+        .update({ sort_order: index })
+        .eq("id", id);
+
+      if (error) throw new Error(`Error al ordenar categorías: ${error.message}`);
+    }
+
+    return this.list();
+  }
+
   async delete(id: string): Promise<void> {
+    const { data: assignedProducts, error: productsError } = await this.supabase
+      .from("products")
+      .select("id")
+      .eq("category_id", id)
+      .limit(1);
+
+    if (productsError) {
+      throw new Error(`Error al verificar productos de la categoría: ${productsError.message}`);
+    }
+
+    if (assignedProducts && assignedProducts.length > 0) {
+      throw new Error(
+        "La categoría tiene productos asociados. Desactívala o reasigna sus productos antes de eliminarla.",
+      );
+    }
+
     const { error } = await this.supabase.from("categories").delete().eq("id", id);
 
     if (error) throw new Error(error.message);

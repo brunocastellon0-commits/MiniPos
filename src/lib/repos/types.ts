@@ -77,6 +77,7 @@ export interface CategoriesRepo {
   getById(id: string): Promise<Category | null>;
   create(data: CategoryInsert): Promise<Category>;
   update(id: string, data: CategoryUpdate): Promise<Category>;
+  reorder(ids: string[]): Promise<Category[]>;
   delete(id: string): Promise<void>;
 }
 
