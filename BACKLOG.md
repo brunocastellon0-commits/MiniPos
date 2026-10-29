@@ -50,7 +50,7 @@
 | E1-01 | Pantalla de login | E0-03, E0-06 |  | DONE |
 | E1-02 | Sesión, `getCurrentUser`, `requireRole` | E0-07 |  | DONE |
 | E1-03 | Layout autenticado con navegación por rol | E1-02, E0-03 |  | DONE |
-| E1-05 | Endurecimiento de sesión y login | E1-01, E0-12 |  | TODO |
+| E1-05 | Endurecimiento de sesión y login | E1-01, E0-12 |  | DONE |
 | E1-06 | MFA (TOTP) para el dueño | E1-05 |  | TODO |
 | E1-04 | Gestión de usuarios (dueño) | E1-03 | 🚨 | TODO |
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { InactivityWatcher } from "@/components/auth/inactivity-watcher";
 import type { AuthenticatedUser } from "@/lib/auth";
 import { AppHeader } from "./app-header";
 import { AppSidebar } from "./app-sidebar";
@@ -60,6 +61,8 @@ export function AppLayoutClient({
         {/* Contenido principal de la página */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
+
+      <InactivityWatcher />
     </div>
   );
 }

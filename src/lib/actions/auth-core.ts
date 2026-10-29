@@ -57,6 +57,12 @@ export const defaultAuthService: AuthService = {
 export function createLoginAction(options?: {
   authService?: AuthService;
   rateLimiter?: RateLimiter;
+  auditLogger?: (entry: {
+    action: string;
+    entity: string;
+    entityId?: string | null;
+    summary?: Record<string, unknown>;
+  }) => Promise<void>;
 }) {
   const service = options?.authService ?? defaultAuthService;
 
@@ -86,7 +92,7 @@ export function createLoginAction(options?: {
         })();
       }
 
-      // Validar si el usuario está activo
+      // Validar si el usuario está activo (revocación inmediata)
       const profile = await service.getUserProfile(user.id);
       if (profile && !profile.active) {
         await service.signOut();
@@ -96,6 +102,20 @@ export function createLoginAction(options?: {
             super("Tu usuario se encuentra inactivo. Contacta al administrador.");
           }
         })();
+      }
+
+      // Auditoría: inicio de sesión exitoso
+      if (options?.auditLogger) {
+        try {
+          await options.auditLogger({
+            action: "auth.login_success",
+            entity: "auth",
+            entityId: user.id,
+            summary: { email: user.email, role: profile?.role },
+          });
+        } catch {
+          // Fallo de auditoría no bloquea login
+        }
       }
 
       return {

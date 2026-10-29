@@ -17,3 +17,4 @@
 | 2026-10-28 | E1-01 | DONE | Pantalla de login accesible (`/login`) · LoginForm · Server Action `loginAction` con rate limit y sin enumerar usuarios · 125 tests Vitest OK (11 nuevos) · build verde |
 | 2026-10-28 | E1-02 | DONE | Módulo de sesión (`getCurrentUser`, `requireUser`, `requireRole`) · Redirección en servidor · 134 tests Vitest OK (9 nuevos en roles.int.test.ts) · build verde |
 | 2026-10-28 | E1-03 | DONE | Layout autenticado con navegación por rol · AppHeader · AppSidebar · AppLayoutClient · 139 tests Vitest OK (5 nuevos en navigation.test.tsx) · build verde |
+| 2026-10-28 | E1-05 | DONE | Endurecimiento de sesión y login · InactivityTracker e InactivityWatcher (15 min) · Rate limit IP+email · Revocación inmediata · Audit logging · 145 tests Vitest OK (6 nuevos) · build verde |
