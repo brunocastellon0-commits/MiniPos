@@ -1,6 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Category } from "@/lib/repos/types";
 import { buildCategory } from "@/test/factories";
 import { CategoriesPanel } from "./categories-panel";
 

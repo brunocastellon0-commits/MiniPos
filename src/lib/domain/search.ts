@@ -26,6 +26,8 @@ export function scoreProductMatch(
   if (name.startsWith(normalizedQuery)) return 80;
   if (name.split(" ").some((word) => word.startsWith(normalizedQuery))) return 60;
   if (name.includes(normalizedQuery)) return 40;
+  const tokens = normalizedQuery.split(" ").filter(Boolean);
+  if (tokens.length > 1 && tokens.every((token) => name.includes(token))) return 30;
   if (barcode.includes(normalizedQuery) || internalCode.includes(normalizedQuery)) return 20;
   return 0;
 }
