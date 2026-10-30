@@ -24,3 +24,4 @@
 | 2026-10-29 | E2-02 | DONE | CRUD de productos con formulario por secciones, Zod estricto, barcode único, filtros/paginación y stock solo lectura al editar · 13 tests nuevos OK (acciones/UI) · typecheck OK |
 | 2026-10-29 | E2-03 | DONE | Importación CSV con plantilla descargable, vista previa de errores por fila e importación atómica vía createMany · 16 tests nuevos OK (dominio/acciones/UI) · typecheck OK |
 | 2026-10-29 | E2-04 | DONE-PENDING-HUMAN-VERIFY | BÃºsqueda POS por nombre sin acentos/cÃ³digo exacto con orden por relevancia; acciÃ³n owner+cajero sin costo Â· 8 tests nuevos OK Â· pnpm check verde (245+24) Â· falta medir <300 ms con 5.000 productos reales |
+| 2026-10-30 | E3-03 | DONE | Dominio de efectivo esperado y diferencia (invariante 5) + resumen por mÃ©todo de pago Â· 5 tests unitarios OK Â· pnpm check verde |

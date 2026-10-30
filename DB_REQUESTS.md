@@ -35,7 +35,15 @@ Este archivo debe mantenerse **corto**: el agente lo lee en cada sesión.
 
 ## Pendientes
 
-_(vacío)_
+### DB-003 — RPC atómicas del turno de caja
+- Estado: PENDIENTE
+- Archivo: db/migrations/0010_cash_rpcs.sql
+- Tarea(s) del backlog: E3-01, E3-02, E3-04
+- Qué hace: crea `open_cash_session`, `add_cash_movement`, `close_cash_session` y `get_open_cash_session_public` como funciones `security definer` con `search_path = ''`; valida personal activo, una sola caja abierta, motivo/monto de movimientos, egresos contra efectivo disponible y cálculo atómico de esperado/diferencia al cerrar; registra auditoría y otorga EXECUTE solo a `authenticated`.
+- Por qué: `0004_cash.sql` solo concede `SELECT`; las mutaciones directas están prohibidas y el cierre debe ser atómico.
+- Riesgo / destructivo: no (solo crea/reemplaza funciones y permisos; no borra datos).
+- Cómo verificar: en SQL Editor ejecutar `select proname, prosecdef from pg_proc where proname in ('open_cash_session','add_cash_movement','close_cash_session','get_open_cash_session_public');` y confirmar 4 filas con `prosecdef = true`; luego abrir/cerrar un turno de prueba desde la app.
+- Aplicada el: _(pendiente)_
 
 ## Aplicadas (resumen)
 
