@@ -25,3 +25,7 @@
 | 2026-10-29 | E2-03 | DONE | Importaci�n CSV con plantilla descargable, vista previa de errores por fila e importaci�n at�mica v�a createMany � 16 tests nuevos OK (dominio/acciones/UI) � typecheck OK |
 | 2026-10-29 | E2-04 | DONE-PENDING-HUMAN-VERIFY | Búsqueda POS por nombre sin acentos/código exacto con orden por relevancia; acción owner+cajero sin costo · 8 tests nuevos OK · pnpm check verde (245+24) · falta medir <300 ms con 5.000 productos reales |
 | 2026-10-30 | E3-03 | DONE | Dominio de efectivo esperado y diferencia (invariante 5) + resumen por método de pago · 5 tests unitarios OK · pnpm check verde |
+| 2026-10-30 | E3-01 | BLOCKED-DB | Apertura de turno implementada (acción + RPC + página /turno + cabecera "Caja abierta · desde · responsable") · tests open-session.int OK · 18 tests cash OK · pnpm check verde · pendiente APLICADA DB-003 |
+| 2026-10-30 | E3-02 | BLOCKED-DB | Movimientos in/out con motivo/monto/usuario y rechazo de egreso > disponible · tests movements.int OK · pendiente APLICADA DB-003 |
+| 2026-10-30 | E3-04 | BLOCKED-DB | Cierre con resumen por método, esperado/contado/diferencia sin autoajuste, confirmación y estado visual · tests close-session.int OK · pendiente APLICADA DB-003 |
+| 2026-10-30 | E3-05 | DONE-PENDING-HUMAN-VERIFY | Historial en pestaña /turno (dueño todos, cajero los suyos) + tablero turno actual · tests OK · falta verificar RLS en BD real |

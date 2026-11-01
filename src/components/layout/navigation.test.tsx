@@ -73,24 +73,31 @@ describe("Navegación y Layout por Rol (E1-03)", () => {
   });
 
   describe("Cabecera: Información de negocio, estado de turno y usuario", () => {
-    it("muestra el nombre del negocio, usuario, badge de rol y botón de cerrar sesión", () => {
+    it("muestra el nombre del negocio, usuario, badge de rol y turno abierto con hora y responsable", () => {
       render(
         <AppHeader
           user={cashierUser}
           businessName="Minimarket San Martín"
-          cashSessionOpen={true}
+          cashSession={{
+            id: "s-1",
+            opened_at: "2026-10-30T12:02:00.000Z",
+            opened_by: "cashier-1",
+            opened_by_name: "María Choque",
+          }}
         />,
       );
 
       expect(screen.getByText("Minimarket San Martín")).toBeInTheDocument();
       expect(screen.getByText("Carlos Cajero")).toBeInTheDocument();
       expect(screen.getByText("Cajero")).toBeInTheDocument();
-      expect(screen.getByText("Caja abierta")).toBeInTheDocument();
+      expect(
+        screen.getByText("Caja abierta · desde 08:02 · María Choque"),
+      ).toBeInTheDocument();
       expect(screen.getByRole("button", { name: /cerrar sesión/i })).toBeInTheDocument();
     });
 
     it("indica 'Caja cerrada' cuando no hay turno activo", () => {
-      render(<AppHeader user={ownerUser} businessName="LILA MARKET" cashSessionOpen={false} />);
+      render(<AppHeader user={ownerUser} businessName="LILA MARKET" cashSession={null} />);
 
       expect(screen.getByText("Caja cerrada")).toBeInTheDocument();
       expect(screen.getByText("Dueño")).toBeInTheDocument();

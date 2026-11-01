@@ -695,6 +695,39 @@ export interface Database {
         };
         Returns: string;
       };
+      open_cash_session: {
+        Args: {
+          p_opening_cents: number;
+          p_notes?: string | null;
+        };
+        Returns: string;
+      };
+      add_cash_movement: {
+        Args: {
+          p_session_id: string;
+          p_kind: string;
+          p_amount_cents: number;
+          p_reason: string;
+        };
+        Returns: string;
+      };
+      close_cash_session: {
+        Args: {
+          p_session_id: string;
+          p_counted_cents: number;
+          p_notes?: string | null;
+        };
+        Returns: string;
+      };
+      get_open_cash_session_public: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          id: string;
+          opened_at: string;
+          opened_by: string;
+          opened_by_name: string;
+        }[];
+      };
     };
     Enums: {
       user_role: "owner" | "cashier";

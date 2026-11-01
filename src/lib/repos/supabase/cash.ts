@@ -1,6 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
-import type { CashRepo, CashSession, CashMovement, UserContext } from "../types";
+import type {
+  CashRepo,
+  CashSession,
+  CashMovement,
+  OpenCashSessionPublic,
+  UserContext,
+} from "../types";
 
 export class SupabaseCashRepo implements CashRepo {
   constructor(
@@ -19,26 +25,29 @@ export class SupabaseCashRepo implements CashRepo {
     return data;
   }
 
+  async getOpenSessionPublic(): Promise<OpenCashSessionPublic | null> {
+    const { data, error } = await this.supabase.rpc("get_open_cash_session_public");
+
+    if (error) throw new Error(error.message);
+    return data?.[0] ?? null;
+  }
+
   async openSession(openingCents: number, notes?: string): Promise<CashSession> {
-    const { data, error } = await this.supabase
-      .from("cash_sessions")
-      .insert({
-        opened_by: this.user.id,
-        opening_cents: openingCents,
-        status: "open",
-        notes: notes ?? null,
-      })
-      .select()
-      .single();
+    const { data: sessionId, error } = await this.supabase.rpc("open_cash_session", {
+      p_opening_cents: openingCents,
+      p_notes: notes ?? null,
+    });
 
     if (error) {
       if (error.code === "23505") {
         throw new Error("Ya existe una sesión de caja abierta.");
       }
-      throw new Error(`Error al abrir sesión de caja: ${error.message}`);
+      throw new Error(error.message);
     }
 
-    return data;
+    const session = await this.getSessionById(sessionId);
+    if (!session) throw new Error("No se pudo recuperar la sesión de caja abierta.");
+    return session;
   }
 
   async closeSession(
@@ -46,31 +55,17 @@ export class SupabaseCashRepo implements CashRepo {
     countedCents: number,
     notes?: string,
   ): Promise<CashSession> {
-    // En tareas posteriores (E3), esto se delegará a la RPC close_cash_session
-    const session = await this.getSessionById(sessionId);
-    if (!session) throw new Error("Sesión no encontrada.");
-
-    const now = new Date().toISOString();
-    const expected = session.expected_cash_cents ?? session.opening_cents;
-    const diff = countedCents - expected;
-
-    const { data, error } = await this.supabase
-      .from("cash_sessions")
-      .update({
-        status: "closed",
-        closed_by: this.user.id,
-        closed_at: now,
-        counted_cash_cents: countedCents,
-        expected_cash_cents: expected,
-        difference_cents: diff,
-        notes: notes ?? session.notes,
-      })
-      .eq("id", sessionId)
-      .select()
-      .single();
+    const { data: closedId, error } = await this.supabase.rpc("close_cash_session", {
+      p_session_id: sessionId,
+      p_counted_cents: countedCents,
+      p_notes: notes ?? null,
+    });
 
     if (error) throw new Error(error.message);
-    return data;
+
+    const session = await this.getSessionById(closedId);
+    if (!session) throw new Error("No se pudo recuperar la sesión de caja cerrada.");
+    return session;
   }
 
   async listSessions(limit = 30): Promise<CashSession[]> {
@@ -101,19 +96,22 @@ export class SupabaseCashRepo implements CashRepo {
     amountCents: number;
     reason: string;
   }): Promise<CashMovement> {
-    const { data: created, error } = await this.supabase
-      .from("cash_movements")
-      .insert({
-        session_id: data.sessionId,
-        kind: data.kind,
-        amount_cents: data.amountCents,
-        reason: data.reason,
-        user_id: this.user.id,
-      })
-      .select()
-      .single();
+    const { data: movementId, error } = await this.supabase.rpc("add_cash_movement", {
+      p_session_id: data.sessionId,
+      p_kind: data.kind,
+      p_amount_cents: data.amountCents,
+      p_reason: data.reason,
+    });
 
     if (error) throw new Error(error.message);
+
+    const { data: created, error: fetchError } = await this.supabase
+      .from("cash_movements")
+      .select("*")
+      .eq("id", movementId)
+      .single();
+
+    if (fetchError) throw new Error(fetchError.message);
     return created;
   }
 

@@ -1,4 +1,11 @@
-import type { CashRepo, CashSession, CashMovement, UserContext } from "../types";
+import { expectedCashCents } from "@/lib/domain/cash";
+import type {
+  CashRepo,
+  CashSession,
+  CashMovement,
+  OpenCashSessionPublic,
+  UserContext,
+} from "../types";
 import type { MemoryStore } from "./memory-store";
 
 export class MemoryCashRepo implements CashRepo {
@@ -12,6 +19,19 @@ export class MemoryCashRepo implements CashRepo {
       (s) => s.status === "open",
     );
     return openSession ?? null;
+  }
+
+  async getOpenSessionPublic(): Promise<OpenCashSessionPublic | null> {
+    const session = await this.getCurrentSession();
+    if (!session) return null;
+
+    const opener = this.store.profiles.get(session.opened_by);
+    return {
+      id: session.id,
+      opened_at: session.opened_at,
+      opened_by: session.opened_by,
+      opened_by_name: opener?.full_name ?? "Usuario",
+    };
   }
 
   async openSession(openingCents: number, notes?: string): Promise<CashSession> {
@@ -64,28 +84,18 @@ export class MemoryCashRepo implements CashRepo {
       throw new Error("El monto contado no puede ser negativo.");
     }
 
-    // Calcular efectivo esperado:
-    // apertura + ventas en efectivo (no anuladas) + movimientos IN - movimientos OUT
-    let expectedCash = session.opening_cents;
+    const expectedCash = expectedCashCents({
+      openingCents: session.opening_cents,
+      sales: Array.from(this.store.sales.values()).filter((s) => s.session_id === sessionId),
+      movements: Array.from(this.store.cashMovements.values()).filter(
+        (m) => m.session_id === sessionId,
+      ),
+    });
 
-    // Sumar ventas en efectivo
-    const salesInSession = Array.from(this.store.sales.values()).filter(
-      (s) => s.session_id === sessionId && s.payment_method === "cash" && s.status === "paid",
-    );
-    for (const sale of salesInSession) {
-      expectedCash += sale.total_cents;
-    }
-
-    // Movimientos de efectivo
-    const movementsInSession = Array.from(this.store.cashMovements.values()).filter(
-      (m) => m.session_id === sessionId,
-    );
-    for (const mov of movementsInSession) {
-      if (mov.kind === "in") {
-        expectedCash += mov.amount_cents;
-      } else {
-        expectedCash -= mov.amount_cents;
-      }
+    if (expectedCash < 0) {
+      throw new Error(
+        "El efectivo esperado no puede ser negativo. Revisa los movimientos del turno.",
+      );
     }
 
     const differenceCents = countedCents - expectedCash;
@@ -147,6 +157,20 @@ export class MemoryCashRepo implements CashRepo {
     }
     if (!data.reason.trim()) {
       throw new Error("El motivo del movimiento es obligatorio.");
+    }
+
+    if (data.kind === "out") {
+      const available = expectedCashCents({
+        openingCents: session.opening_cents,
+        sales: Array.from(this.store.sales.values()).filter((s) => s.session_id === data.sessionId),
+        movements: Array.from(this.store.cashMovements.values()).filter(
+          (m) => m.session_id === data.sessionId,
+        ),
+      });
+
+      if (data.amountCents > available) {
+        throw new Error("El egreso supera el efectivo disponible en caja.");
+      }
     }
 
     const id = crypto.randomUUID();

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { InactivityWatcher } from "@/components/auth/inactivity-watcher";
 import type { AuthenticatedUser } from "@/lib/auth";
+import type { OpenCashSessionPublic } from "@/lib/repos/types";
 import { AppHeader } from "./app-header";
 import { AppSidebar } from "./app-sidebar";
 
@@ -10,7 +11,7 @@ export interface AppLayoutClientProps {
   user: AuthenticatedUser;
   businessName?: string;
   logoUrl?: string | null;
-  cashSessionOpen?: boolean;
+  cashSession?: OpenCashSessionPublic | null;
   children: React.ReactNode;
 }
 
@@ -18,7 +19,7 @@ export function AppLayoutClient({
   user,
   businessName,
   logoUrl,
-  cashSessionOpen,
+  cashSession,
   children,
 }: AppLayoutClientProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -29,7 +30,7 @@ export function AppLayoutClient({
         user={user}
         businessName={businessName}
         logoUrl={logoUrl}
-        cashSessionOpen={cashSessionOpen}
+        cashSession={cashSession}
         onToggleMobileNav={() => setMobileNavOpen((prev) => !prev)}
         mobileNavOpen={mobileNavOpen}
       />

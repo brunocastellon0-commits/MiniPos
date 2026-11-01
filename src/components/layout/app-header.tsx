@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { LogOut, Menu, Store, X } from "lucide-react";
 import { logoutAction } from "@/lib/actions/auth";
 import type { AuthenticatedUser } from "@/lib/auth";
+import { formatTime } from "@/lib/dates";
+import type { OpenCashSessionPublic } from "@/lib/repos/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -13,7 +15,7 @@ export interface AppHeaderProps {
   user: AuthenticatedUser;
   businessName?: string;
   logoUrl?: string | null;
-  cashSessionOpen?: boolean;
+  cashSession?: OpenCashSessionPublic | null;
   onToggleMobileNav?: () => void;
   mobileNavOpen?: boolean;
 }
@@ -22,10 +24,11 @@ export function AppHeader({
   user,
   businessName = "LILA MARKET",
   logoUrl,
-  cashSessionOpen = false,
+  cashSession = null,
   onToggleMobileNav,
   mobileNavOpen = false,
 }: AppHeaderProps) {
+  const cashSessionOpen = Boolean(cashSession);
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
 
@@ -94,7 +97,9 @@ export function AppHeader({
             aria-hidden="true"
           />
           <span className="text-foreground">
-            {cashSessionOpen ? "Caja abierta" : "Caja cerrada"}
+            {cashSession
+              ? `Caja abierta · desde ${formatTime(new Date(cashSession.opened_at))} · ${cashSession.opened_by_name}`
+              : "Caja cerrada"}
           </span>
         </div>
       </div>

@@ -71,7 +71,7 @@
 | E3-02 | Movimientos de efectivo (ingresos/egresos) | E3-01 | 🚨 | BLOCKED-DB |
 | E3-03 | Cálculo de efectivo esperado (dominio) | E0-04 |  | DONE |
 | E3-04 | Cierre de turno | E3-01..03 | 🚨 | BLOCKED-DB |
-| E3-05 | Historial de turnos | E3-04 |  | TODO |
+| E3-05 | Historial de turnos | E3-04 |  | DONE-PENDING-HUMAN-VERIFY |
 
 ## E4 — Caja / POS (prioridad máxima)  ·  [backlog/E4-caja-pos-prioridad-maxima.md](backlog/E4-caja-pos-prioridad-maxima.md)
 

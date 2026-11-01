@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { AppLayoutClient } from "@/components/layout/app-layout-client";
+import { getOpenCashSessionAction } from "@/lib/actions/cash";
 import { requireUser } from "@/lib/auth";
+import type { OpenCashSessionPublic } from "@/lib/repos/types";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -16,12 +18,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   let businessName = "LILA MARKET";
   let logoUrl: string | null = null;
-  let cashSessionOpen = false;
+  let cashSession: OpenCashSessionPublic | null = null;
 
   try {
     const supabase = await createClient();
 
-    // Obtener configuración de negocio
     const { data: settings } = await supabase
       .from("business_settings")
       .select("name, logo_url")
@@ -35,15 +36,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       logoUrl = settings.logo_url;
     }
 
-    // Verificar si hay sesión de caja abierta
-    const { data: openSession } = await supabase
-      .from("cash_sessions")
-      .select("id")
-      .eq("status", "open")
-      .maybeSingle();
-
-    if (openSession) {
-      cashSessionOpen = true;
+    const openSessionResult = await getOpenCashSessionAction();
+    if (openSessionResult.ok) {
+      cashSession = openSessionResult.data;
     }
   } catch {
     // Si falla o estamos en entorno sin BD activa, usamos valores por defecto seguros
@@ -54,7 +49,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       user={user}
       businessName={businessName}
       logoUrl={logoUrl}
-      cashSessionOpen={cashSessionOpen}
+      cashSession={cashSession}
     >
       {children}
     </AppLayoutClient>

@@ -82,8 +82,16 @@ export interface CategoriesRepo {
   delete(id: string): Promise<void>;
 }
 
+export interface OpenCashSessionPublic {
+  id: string;
+  opened_at: string;
+  opened_by: string;
+  opened_by_name: string;
+}
+
 export interface CashRepo {
   getCurrentSession(): Promise<CashSession | null>;
+  getOpenSessionPublic(): Promise<OpenCashSessionPublic | null>;
   openSession(openingCents: number, notes?: string): Promise<CashSession>;
   closeSession(sessionId: string, countedCents: number, notes?: string): Promise<CashSession>;
   listSessions(limit?: number): Promise<CashSession[]>;
