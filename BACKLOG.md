@@ -77,7 +77,7 @@
 
 | ID | Tarea | Deps | BD | Estado |
 |---|---|---|---|---|
-| E4-01 | Dominio del carrito | E0-04 |  | TODO |
+| E4-01 | Dominio del carrito | E0-04 |  | DONE |
 | E4-02 | UI de Caja (catálogo izquierda, carrito derecha) | E4-01, E2-04, E3-01 |  | TODO |
 | E4-03 | Escaneo de código de barras | E4-02 |  | TODO |
 | E4-04 | Cobro y confirmación atómica | E4-02, E0-05 aplicada | 🚨 | TODO |

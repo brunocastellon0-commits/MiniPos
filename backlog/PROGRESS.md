@@ -30,3 +30,4 @@
 | 2026-10-30 | E3-04 | BLOCKED-DB | Cierre con resumen por método, esperado/contado/diferencia sin autoajuste, confirmación y estado visual · tests close-session.int OK · pendiente APLICADA DB-003 |
 | 2026-10-30 | E3-05 | DONE-PENDING-HUMAN-VERIFY | Historial en pestaña /turno (dueño todos, cajero los suyos) + tablero turno actual · tests OK · falta verificar RLS en BD real |
 | 2026-10-30 | DB-003 | APLICADA | 0010_cash_rpcs.sql aplicada por el humano · E3-01/E3-02/E3-04 pasan a DONE |
+| 2026-10-30 | E4-01 | DONE | Dominio del carrito puro (agregar/incrementar/cantidad/eliminar/vaciar, subtotal, descuento monto-%, total, D-002 stock) · 7 tests unitarios OK · lint/typecheck OK |

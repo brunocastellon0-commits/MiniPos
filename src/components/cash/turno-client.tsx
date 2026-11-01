@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { usePathname } from "next/navigation";
 import { Clock, Minus, Plus, Wallet } from "lucide-react";
 import {
   type CashOverview,
@@ -32,7 +31,6 @@ export function TurnoClient({
   initialHistory,
   initialError,
 }: TurnoClientProps) {
-  const pathname = usePathname();
   const [tab, setTab] = useState<"actual" | "historial">("actual");
   const [overview, setOverview] = useState<CashOverview | null>(initialOverview);
   const [history, setHistory] = useState<CashSession[]>(initialHistory);
