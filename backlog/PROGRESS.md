@@ -29,3 +29,4 @@
 | 2026-10-30 | E3-02 | BLOCKED-DB | Movimientos in/out con motivo/monto/usuario y rechazo de egreso > disponible · tests movements.int OK · pendiente APLICADA DB-003 |
 | 2026-10-30 | E3-04 | BLOCKED-DB | Cierre con resumen por método, esperado/contado/diferencia sin autoajuste, confirmación y estado visual · tests close-session.int OK · pendiente APLICADA DB-003 |
 | 2026-10-30 | E3-05 | DONE-PENDING-HUMAN-VERIFY | Historial en pestaña /turno (dueño todos, cajero los suyos) + tablero turno actual · tests OK · falta verificar RLS en BD real |
+| 2026-10-30 | DB-003 | APLICADA | 0010_cash_rpcs.sql aplicada por el humano · E3-01/E3-02/E3-04 pasan a DONE |
