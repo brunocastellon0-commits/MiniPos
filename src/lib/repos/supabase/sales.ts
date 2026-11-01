@@ -20,31 +20,36 @@ export class SupabaseSalesRepo implements SalesRepo {
     saleData: Omit<SaleInsert, "number" | "id" | "created_at" | "cashier_id">,
     itemsData: Omit<SaleItemInsert, "id" | "sale_id">[],
   ): Promise<{ sale: Sale; items: SaleItem[] }> {
-    // En tareas posteriores (E4), esto se delegará a la RPC confirm_sale
+    const { data: saleId, error: rpcError } = await this.supabase.rpc("confirm_sale", {
+      p_session_id: saleData.session_id,
+      p_payment_method: saleData.payment_method,
+      p_client_request_id: saleData.client_request_id,
+      p_items: itemsData.map((item) => ({
+        product_id: item.product_id,
+        quantity: item.quantity,
+      })),
+      p_discount_cents: saleData.discount_cents ?? 0,
+      p_cash_received_cents: saleData.cash_received_cents ?? null,
+    });
+
+    if (rpcError) throw new Error(rpcError.message);
+
     const { data: sale, error: saleError } = await this.supabase
       .from("sales")
-      .insert({
-        ...saleData,
-        cashier_id: this.user.id,
-      })
-      .select()
+      .select("*")
+      .eq("id", saleId)
       .single();
 
     if (saleError) throw new Error(saleError.message);
 
-    const itemsToInsert = itemsData.map((item) => ({
-      ...item,
-      sale_id: sale.id,
-    }));
-
     const { data: items, error: itemsError } = await this.supabase
       .from("sale_items")
-      .insert(itemsToInsert)
-      .select();
+      .select("*")
+      .eq("sale_id", saleId);
 
     if (itemsError) throw new Error(itemsError.message);
 
-    return { sale, items };
+    return { sale, items: items || [] };
   }
 
   async getById(id: string): Promise<{ sale: Sale; items: SaleItem[] } | null> {

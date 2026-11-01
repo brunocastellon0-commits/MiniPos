@@ -45,6 +45,16 @@ Este archivo debe mantenerse **corto**: el agente lo lee en cada sesión.
 - Cómo verificar: en SQL Editor ejecutar `select proname, prosecdef from pg_proc where proname in ('open_cash_session','add_cash_movement','close_cash_session','get_open_cash_session_public');` y confirmar 4 filas con `prosecdef = true`; luego abrir/cerrar un turno de prueba desde la app.
 - Aplicada el: _(pendiente)_
 
+### DB-004 — RPC atómica de cobro de venta
+- Estado: PENDIENTE
+- Archivo: db/migrations/0011_confirm_sale.sql
+- Tarea(s) del backlog: E4-04
+- Qué hace: crea `confirm_sale` (`security definer`, `search_path = ''`) que valida turno abierto, precios/descuento/stock en servidor, inserta venta + ítems con precio congelado, descuenta stock con `stock_movements` y registra auditoría en una sola transacción; idempotente por `client_request_id`; EXECUTE solo a `authenticated`.
+- Por qué: `0005_sales.sql` solo concede `SELECT`; el cobro debe ser todo-o-nada (invariantes 1, 2 y 4).
+- Riesgo / destructivo: no (solo crea una función).
+- Cómo verificar: `select proname, prosecdef from pg_proc where proname = 'confirm_sale';` → 1 fila con `prosecdef = true`; luego cobrar una venta de prueba en la app.
+- Aplicada el: _(pendiente)_
+
 ## Aplicadas (resumen)
 
 | ID | Archivo | Qué hizo (1 línea) | Aplicada el |

@@ -728,6 +728,17 @@ export interface Database {
           opened_by_name: string;
         }[];
       };
+      confirm_sale: {
+        Args: {
+          p_session_id: string;
+          p_payment_method: string;
+          p_client_request_id: string;
+          p_items: Json;
+          p_discount_cents?: number;
+          p_cash_received_cents?: number | null;
+        };
+        Returns: string;
+      };
     };
     Enums: {
       user_role: "owner" | "cashier";

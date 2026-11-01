@@ -31,3 +31,6 @@
 | 2026-10-30 | E3-05 | DONE-PENDING-HUMAN-VERIFY | Historial en pestaña /turno (dueño todos, cajero los suyos) + tablero turno actual · tests OK · falta verificar RLS en BD real |
 | 2026-10-30 | DB-003 | APLICADA | 0010_cash_rpcs.sql aplicada por el humano · E3-01/E3-02/E3-04 pasan a DONE |
 | 2026-10-30 | E4-01 | DONE | Dominio del carrito puro (agregar/incrementar/cantidad/eliminar/vaciar, subtotal, descuento monto-%, total, D-002 stock) · 7 tests unitarios OK · lint/typecheck OK |
+| 2026-10-30 | E4-02 | DONE | UI de Caja: catálogo con buscador F2, chips de categorías, tarjetas con stock, carrito (+/−, papelera, Vaciar, descuento, Total, Cobrar F9), sin turno → /turno · 8 tests de componente OK · pnpm check verde |
+| 2026-10-30 | E4-03 | DONE | Escaneo: Enter con código exacto agrega 1 unidad, aviso "Código no encontrado", foco conservado · cubierto en pos-client.test.tsx |
+| 2026-10-30 | E4-04 | BLOCKED-DB | Cobro implementado (confirmSaleAction con precios en servidor + RPC confirm_sale + diálogo de pago idempotente con client_request_id y carrito conservado ante error) · 6 tests sales.test OK + 8 componentes OK · pendiente APLICADA DB-004 |
