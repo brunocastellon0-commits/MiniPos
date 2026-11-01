@@ -6,14 +6,27 @@ import { buildCashSession, buildProduct, buildSale, buildSaleItem } from "@/test
 vi.mock("@/lib/actions/products-search", () => ({
   searchPosProductsAction: vi.fn(),
   listPosProductsAction: vi.fn(),
+  getProductsByIdsAction: vi.fn(),
 }));
 
 vi.mock("@/lib/actions/sales", () => ({
   confirmSaleAction: vi.fn(),
 }));
 
-import { searchPosProductsAction } from "@/lib/actions/products-search";
+vi.mock("@/lib/actions/held-sales", () => ({
+  saveHeldSaleAction: vi.fn(),
+  listHeldSalesAction: vi.fn(),
+  deleteHeldSaleAction: vi.fn(),
+}));
+
+import { searchPosProductsAction, getProductsByIdsAction } from "@/lib/actions/products-search";
 import { confirmSaleAction } from "@/lib/actions/sales";
+import {
+  deleteHeldSaleAction,
+  listHeldSalesAction,
+  saveHeldSaleAction,
+} from "@/lib/actions/held-sales";
+import { buildHeldSale } from "@/test/factories";
 import { PosClient } from "./pos-client";
 
 const arroz = buildProduct({
@@ -228,5 +241,87 @@ describe("PosClient (E4-02/E4-03/E4-04)", () => {
     fireEvent.change(screen.getByLabelText("Buscar productos"), { target: { value: "zzz" } });
 
     expect(await screen.findByText("Sin resultados")).toBeInTheDocument();
+  });
+
+  it("pausa la venta con etiqueta, limpia el carrito y avisa (E4-05)", async () => {
+    vi.mocked(saveHeldSaleAction).mockResolvedValue({
+      ok: true,
+      data: buildHeldSale({ id: "h-1", label: "Cliente al cajero" }),
+    });
+
+    renderPos();
+    addToCart("Arroz 1kg");
+    fireEvent.click(screen.getByRole("button", { name: /pausar venta/i }));
+
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.change(within(dialog).getByLabelText("Etiqueta"), {
+      target: { value: "Cliente al cajero" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Pausar" }));
+
+    await waitFor(() => {
+      expect(saveHeldSaleAction).toHaveBeenCalledWith({
+        label: "Cliente al cajero",
+        cart: {
+          lines: [{ productId: "p-1", name: "Arroz 1kg", unitPriceCents: 1200, quantity: 1 }],
+        },
+      });
+    });
+    await waitFor(() => {
+      expect(screen.getByText("Carrito vacío")).toBeInTheDocument();
+    });
+    expect(screen.getByText("Venta pausada: Cliente al cajero")).toBeInTheDocument();
+  });
+
+  it("lista las ventas pausadas, recupera una al carrito y la descarta (E4-05)", async () => {
+    const held = buildHeldSale({
+      id: "h-1",
+      label: "Cliente mesa 1",
+      items: [{ productId: "p-1", name: "Arroz 1kg", unitPriceCents: 1200, quantity: 2 }],
+    });
+    vi.mocked(listHeldSalesAction).mockResolvedValue({ ok: true, data: [held] });
+    vi.mocked(deleteHeldSaleAction).mockResolvedValue({ ok: true, data: { id: "h-1" } });
+    vi.mocked(getProductsByIdsAction).mockResolvedValue({ ok: true, data: [arroz] });
+
+    renderPos();
+    fireEvent.click(screen.getByRole("button", { name: "Pausadas" }));
+
+    expect(await screen.findByText("Cliente mesa 1")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Recuperar" }));
+
+    await waitFor(() => {
+      expect(getProductsByIdsAction).toHaveBeenCalledWith({ ids: ["p-1"] });
+    });
+    await waitFor(() => {
+      expect(screen.getByLabelText("Carrito")).toHaveTextContent("Arroz 1kg");
+    });
+    expect(screen.getByText("Venta \"Cliente mesa 1\" recuperada.")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Pausadas" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Descartar" }));
+
+    await waitFor(() => {
+      expect(deleteHeldSaleAction).toHaveBeenCalledWith({ id: "h-1" });
+    });
+    await waitFor(() => {
+      expect(screen.queryByText("Cliente mesa 1")).not.toBeInTheDocument();
+    });
+  });
+
+  it("avisa si ningún producto de la venta pausada está disponible (E4-05)", async () => {
+    const held = buildHeldSale({
+      id: "h-2",
+      label: "Sin stock",
+      items: [{ productId: "p-9", name: "Desaparecido", unitPriceCents: 500, quantity: 1 }],
+    });
+    vi.mocked(listHeldSalesAction).mockResolvedValue({ ok: true, data: [held] });
+    vi.mocked(getProductsByIdsAction).mockResolvedValue({ ok: true, data: [] });
+
+    renderPos();
+    fireEvent.click(screen.getByRole("button", { name: "Pausadas" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Recuperar" }));
+
+    expect(await screen.findByText("Ningún producto de la venta pausada está disponible.")).toBeInTheDocument();
   });
 });

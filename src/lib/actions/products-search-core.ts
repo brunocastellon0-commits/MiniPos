@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { searchProducts } from "@/lib/domain/search";
 import { SupabaseProductsRepo } from "@/lib/repos/supabase/products";
 import type { Product, ProductsRepo, UserContext } from "@/lib/repos/types";
@@ -9,6 +10,17 @@ import {
   type SearchPosProductsInput,
   searchPosProductsSchema,
 } from "./products-search-schema";
+
+const getProductsByIdsSchema = z
+  .object({
+    ids: z
+      .array(z.string().min(1, { message: "ID de producto requerido." }))
+      .min(1, { message: "Debe indicar al menos un producto." })
+      .max(200, { message: "Máximo 200 productos por consulta." }),
+  })
+  .strict();
+
+type GetProductsByIdsInput = z.infer<typeof getProductsByIdsSchema>;
 
 export interface ProductsSearchActionDeps {
   currentUserResolver?: () => Promise<AuthenticatedUser | null>;
@@ -69,6 +81,28 @@ export function createListPosProductsAction(deps: ProductsSearchActionDeps = {})
         const products = await repo.list({ activeOnly: true });
         const limit = validatedInput.limit ?? 200;
         return products.slice(0, limit);
+      },
+    })(input);
+  };
+}
+
+export function createGetProductsByIdsAction(deps: ProductsSearchActionDeps = {}) {
+  const { currentUserResolver, productsRepoFactory = defaultProductsRepoFactory } = deps;
+
+  return async (input: GetProductsByIdsInput): Promise<ActionResult<Product[]>> => {
+    return secureAction<GetProductsByIdsInput, Product[]>({
+      roles: ["owner", "cashier"],
+      schema: getProductsByIdsSchema,
+      currentUserResolver,
+      handler: async (validatedInput, ctx) => {
+        const repo = await productsRepoFactory(toUserContext(ctx.user));
+        const uniqueIds = [...new Set(validatedInput.ids)];
+        const products: Product[] = [];
+        for (const id of uniqueIds) {
+          const product = await repo.getById(id);
+          if (product && product.active) products.push(product);
+        }
+        return products;
       },
     })(input);
   };

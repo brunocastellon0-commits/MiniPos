@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Minus, Plus, Search, ShoppingCart, Trash2 } from "lucide-react";
+import { Minus, Pause, Plus, Search, ShoppingCart, Trash2 } from "lucide-react";
 import type { CashOverview } from "@/lib/actions/cash-core";
-import { searchPosProductsAction } from "@/lib/actions/products-search";
+import { saveHeldSaleAction } from "@/lib/actions/held-sales";
+import { getProductsByIdsAction, searchPosProductsAction } from "@/lib/actions/products-search";
 import {
   addProduct,
   calculateDiscount,
@@ -24,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
+import { HeldSalesDialog, PauseSaleDialog } from "./held-sales";
 import { PaymentDialog, SaleConfirmation } from "./payment-dialog";
 
 export interface PosClientProps {
@@ -64,6 +66,8 @@ export function PosClient({ initialProducts, categories, overview }: PosClientPr
   const [showDiscount, setShowDiscount] = useState(false);
   const [cartNotice, setCartNotice] = useState<string | null>(null);
   const [paymentOpen, setPaymentOpen] = useState(false);
+  const [pauseOpen, setPauseOpen] = useState(false);
+  const [heldOpen, setHeldOpen] = useState(false);
   const [completedSale, setCompletedSale] = useState<{
     sale: Sale;
     changeCents: number;
@@ -185,6 +189,63 @@ export function PosClient({ initialProducts, categories, overview }: PosClientPr
     handleAdd(match);
     setQuery("");
     setSearchResults(null);
+    searchRef.current?.focus();
+  }
+
+  async function handlePauseSave(label: string): Promise<string | null> {
+    const result = await saveHeldSaleAction({
+      label,
+      cart: { lines: cart.lines },
+    });
+    if (!result.ok) return result.message;
+    setCart(createCart());
+    setDiscountCents(0);
+    setCartNotice(`Venta pausada: ${label}`);
+    return null;
+  }
+
+  async function handleRecover(
+    label: string,
+    lines: Array<{ productId: string; quantity: number }>,
+  ) {
+    const idsResult = await getProductsByIdsAction({ ids: lines.map((line) => line.productId) });
+    if (!idsResult.ok) {
+      setCartNotice("No se pudo verificar el stock para recuperar la venta.");
+      return;
+    }
+
+    const byId = new Map(idsResult.data.map((product) => [product.id, product]));
+    let recovered: Cart = createCart();
+    let skipped = 0;
+
+    for (const line of lines) {
+      const product = byId.get(line.productId);
+      if (!product) {
+        skipped += 1;
+        continue;
+      }
+      const result = addProduct(recovered, toCartProduct(product), cartOptions, line.quantity);
+      if (!result.ok) {
+        skipped += 1;
+        continue;
+      }
+      recovered = result.cart;
+    }
+
+    if (recovered.lines.length === 0) {
+      setCartNotice("Ningún producto de la venta pausada está disponible.");
+      setHeldOpen(false);
+      return;
+    }
+
+    setCart(recovered);
+    setDiscountCents(0);
+    setHeldOpen(false);
+    setCartNotice(
+      skipped > 0
+        ? `Venta "${label}" recuperada. ${skipped} producto(s) no disponibles.`
+        : `Venta "${label}" recuperada.`,
+    );
     searchRef.current?.focus();
   }
 
@@ -314,6 +375,26 @@ export function PosClient({ initialProducts, categories, overview }: PosClientPr
                 </Button>
               </CardHeader>
               <CardContent className="space-y-3">
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="flex-1"
+                    onClick={() => setPauseOpen(true)}
+                    disabled={cart.lines.length === 0}
+                  >
+                    <Pause className="size-4" aria-hidden="true" />
+                    Pausar venta
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="flex-1"
+                    onClick={() => setHeldOpen(true)}
+                  >
+                    Pausadas
+                  </Button>
+                </div>
                 {cart.lines.length === 0 ? (
                   <EmptyState
                     title="Carrito vacío"
@@ -455,6 +536,21 @@ export function PosClient({ initialProducts, categories, overview }: PosClientPr
             setCart(createCart());
             setDiscountCents(0);
           }}
+        />
+      ) : null}
+
+      {pauseOpen ? (
+        <PauseSaleDialog
+          onClose={() => setPauseOpen(false)}
+          onPaused={() => setPauseOpen(false)}
+          onSave={handlePauseSave}
+        />
+      ) : null}
+
+      {heldOpen ? (
+        <HeldSalesDialog
+          onClose={() => setHeldOpen(false)}
+          onRecovered={handleRecover}
         />
       ) : null}
     </div>

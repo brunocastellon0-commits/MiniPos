@@ -35,3 +35,4 @@
 | 2026-10-30 | E4-03 | DONE | Escaneo: Enter con código exacto agrega 1 unidad, aviso "Código no encontrado", foco conservado · cubierto en pos-client.test.tsx |
 | 2026-10-30 | E4-04 | BLOCKED-DB | Cobro implementado (confirmSaleAction con precios en servidor + RPC confirm_sale + diálogo de pago idempotente con client_request_id y carrito conservado ante error) · 6 tests sales.test OK + 8 componentes OK · pendiente APLICADA DB-004 |
 | 2026-10-31 | DB-004 | APLICADA | 0011_confirm_sale.sql aplicada por el humano → E4-04 pasa a DONE (NO VERIFICADO: cobro real en app + E2E #1) |
+| 2026-10-31 | E4-05 | DONE | Pausar/recuperar/descartar ventas con etiqueta (held_sales ya existente, sin BD) · acciones held-sales (6 tests) + 3 tests de componente · pnpm check verde |
