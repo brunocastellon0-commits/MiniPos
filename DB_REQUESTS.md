@@ -35,29 +35,11 @@ Este archivo debe mantenerse **corto**: el agente lo lee en cada sesión.
 
 ## Pendientes
 
-### DB-003 — RPC atómicas del turno de caja
-- Estado: PENDIENTE
-- Archivo: db/migrations/0010_cash_rpcs.sql
-- Tarea(s) del backlog: E3-01, E3-02, E3-04
-- Qué hace: crea `open_cash_session`, `add_cash_movement`, `close_cash_session` y `get_open_cash_session_public` como funciones `security definer` con `search_path = ''`; valida personal activo, una sola caja abierta, motivo/monto de movimientos, egresos contra efectivo disponible y cálculo atómico de esperado/diferencia al cerrar; registra auditoría y otorga EXECUTE solo a `authenticated`.
-- Por qué: `0004_cash.sql` solo concede `SELECT`; las mutaciones directas están prohibidas y el cierre debe ser atómico.
-- Riesgo / destructivo: no (solo crea/reemplaza funciones y permisos; no borra datos).
-- Cómo verificar: en SQL Editor ejecutar `select proname, prosecdef from pg_proc where proname in ('open_cash_session','add_cash_movement','close_cash_session','get_open_cash_session_public');` y confirmar 4 filas con `prosecdef = true`; luego abrir/cerrar un turno de prueba desde la app.
-- Aplicada el: _(pendiente)_
-
-### DB-004 — RPC atómica de cobro de venta
-- Estado: PENDIENTE
-- Archivo: db/migrations/0011_confirm_sale.sql
-- Tarea(s) del backlog: E4-04
-- Qué hace: crea `confirm_sale` (`security definer`, `search_path = ''`) que valida turno abierto, precios/descuento/stock en servidor, inserta venta + ítems con precio congelado, descuenta stock con `stock_movements` y registra auditoría en una sola transacción; idempotente por `client_request_id`; EXECUTE solo a `authenticated`.
-- Por qué: `0005_sales.sql` solo concede `SELECT`; el cobro debe ser todo-o-nada (invariantes 1, 2 y 4).
-- Riesgo / destructivo: no (solo crea una función).
-- Cómo verificar: `select proname, prosecdef from pg_proc where proname = 'confirm_sale';` → 1 fila con `prosecdef = true`; luego cobrar una venta de prueba en la app.
-- Aplicada el: _(pendiente)_
-
 ## Aplicadas (resumen)
 
 | ID | Archivo | Qué hizo (1 línea) | Aplicada el |
 |---|---|---|---|
 | DB-001 | 0001..0008 | Esquema baseline (tablas, RLS, grants mínimos, triggers inmutables, vista POS, private helpers) | 2026-10-28 |
 | DB-002 | 0009_prevent_last_owner_removal.sql | Trigger para evitar desactivar, degradar o borrar al último dueño activo | 2026-10-29 |
+| DB-003 | 0010_cash_rpcs.sql | RPCs de turno (apertura, movimientos, cierre, resumen) security definer con auditoría | 2026-10-30 |
+| DB-004 | 0011_confirm_sale.sql | RPC atómica `confirm_sale` (idempotente, precios/stock en servidor, venta+ítems+stock en una transacción) | 2026-10-31 |
