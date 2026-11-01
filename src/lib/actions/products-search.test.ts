@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { MemoryStore } from "@/lib/repos/memory/memory-store";
 import { MemoryProductsRepo } from "@/lib/repos/memory/products";
 import type { ProductsRepo, UserContext } from "@/lib/repos/types";
-import { createSearchPosProductsAction } from "./products-search-core";
+import { createListPosProductsAction, createSearchPosProductsAction } from "./products-search-core";
 import type { AuthenticatedUser } from "./secure-action";
 
 const owner: AuthenticatedUser = {
@@ -99,6 +99,21 @@ describe("Búsqueda POS - Server Action (E2-04)", () => {
     expect(ownerResult.ok).toBe(true);
     if (ownerResult.ok) {
       expect(ownerResult.data[0]?.cost_cents).toBe(500);
+    }
+  });
+
+  it("lista solo productos activos para el catálogo del POS", async () => {
+    const { makeDeps } = await setup();
+    const list = createListPosProductsAction(makeDeps(cashier));
+
+    const result = await list({});
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.map((product) => product.name)).toEqual([
+        "Café molido",
+        "Cafetera eléctrica",
+      ]);
     }
   });
 

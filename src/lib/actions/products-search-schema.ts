@@ -12,3 +12,11 @@ export const searchPosProductsSchema = z
   .strict();
 
 export type SearchPosProductsInput = z.infer<typeof searchPosProductsSchema>;
+
+export const listPosProductsSchema = z
+  .object({
+    limit: z.number().int().min(1).max(500).optional(),
+  })
+  .strict();
+
+export type ListPosProductsInput = z.infer<typeof listPosProductsSchema>;

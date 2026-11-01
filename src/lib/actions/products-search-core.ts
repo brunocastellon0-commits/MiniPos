@@ -4,6 +4,8 @@ import type { Product, ProductsRepo, UserContext } from "@/lib/repos/types";
 import { createClient } from "@/lib/supabase/server";
 import { type ActionResult, type AuthenticatedUser, secureAction } from "./secure-action";
 import {
+  type ListPosProductsInput,
+  listPosProductsSchema,
   type SearchPosProductsInput,
   searchPosProductsSchema,
 } from "./products-search-schema";
@@ -49,6 +51,24 @@ export function createSearchPosProductsAction(deps: ProductsSearchActionDeps = {
 
         const products = await repo.list({ activeOnly: true });
         return searchProducts(products, validatedInput.query, limit);
+      },
+    })(input);
+  };
+}
+
+export function createListPosProductsAction(deps: ProductsSearchActionDeps = {}) {
+  const { currentUserResolver, productsRepoFactory = defaultProductsRepoFactory } = deps;
+
+  return async (input: ListPosProductsInput = {}): Promise<ActionResult<Product[]>> => {
+    return secureAction<ListPosProductsInput, Product[]>({
+      roles: ["owner", "cashier"],
+      schema: listPosProductsSchema,
+      currentUserResolver,
+      handler: async (validatedInput, ctx) => {
+        const repo = await productsRepoFactory(toUserContext(ctx.user));
+        const products = await repo.list({ activeOnly: true });
+        const limit = validatedInput.limit ?? 200;
+        return products.slice(0, limit);
       },
     })(input);
   };
