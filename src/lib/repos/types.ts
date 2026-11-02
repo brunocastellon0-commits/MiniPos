@@ -57,6 +57,7 @@ export interface BusinessPublicSettings {
   logo_url: string | null;
   allow_negative_stock: boolean;
   low_stock_default: number;
+  cashier_can_discount: boolean;
 }
 
 export type AuditLog = Tables<"audit_log">;

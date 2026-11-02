@@ -33,6 +33,7 @@ export interface PosClientProps {
   initialProducts: Product[];
   categories: Category[];
   overview: CashOverview;
+  canDiscount: boolean;
 }
 
 const cartOptions = { allowNegativeStock: false };
@@ -55,7 +56,12 @@ function StockBadge({ product }: { product: Product }) {
   return <Badge tone="success">Disponible · {product.stock_qty}</Badge>;
 }
 
-export function PosClient({ initialProducts, categories, overview }: PosClientProps) {
+export function PosClient({
+  initialProducts,
+  categories,
+  overview,
+  canDiscount,
+}: PosClientProps) {
   const [searchResults, setSearchResults] = useState<Product[] | null>(null);
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
@@ -64,6 +70,7 @@ export function PosClient({ initialProducts, categories, overview }: PosClientPr
   const [discountCents, setDiscountCents] = useState(0);
   const [discountInput, setDiscountInput] = useState("");
   const [discountError, setDiscountError] = useState<string | null>(null);
+  const [discountType, setDiscountType] = useState<"amount" | "percent">("amount");
   const [showDiscount, setShowDiscount] = useState(false);
   const [cartNotice, setCartNotice] = useState<string | null>(null);
   const [paymentOpen, setPaymentOpen] = useState(false);
@@ -139,17 +146,30 @@ export function PosClient({ initialProducts, categories, overview }: PosClientPr
 
   function applyDiscount() {
     setDiscountError(null);
-    let valueCents: number;
-    try {
-      valueCents = toCents(discountInput || "0");
-    } catch {
-      setDiscountError("Ingresa un descuento válido.");
-      return;
+    let discount:
+      | { type: "amount"; valueCents: number }
+      | { type: "percent"; value: number };
+
+    if (discountType === "amount") {
+      let valueCents: number;
+      try {
+        valueCents = toCents(discountInput || "0");
+      } catch {
+        setDiscountError("Ingresa un descuento válido.");
+        return;
+      }
+      discount = { type: "amount", valueCents };
+    } else {
+      const normalized = discountInput.trim().replace(/\s+/g, "").replace(",", ".");
+      const value = normalized === "" ? 0 : Number(normalized);
+      if (!Number.isFinite(value)) {
+        setDiscountError("Ingresa un descuento válido.");
+        return;
+      }
+      discount = { type: "percent", value };
     }
-    const result = calculateDiscount(cartSubtotalCents(cart), {
-      type: "amount",
-      valueCents,
-    });
+
+    const result = calculateDiscount(cartSubtotalCents(cart), discount);
     if (!result.ok) {
       setDiscountError(result.message);
       return;
@@ -471,39 +491,71 @@ export function PosClient({ initialProducts, categories, overview }: PosClientPr
                   </div>
                 </dl>
 
-                {showDiscount ? (
-                  <div className="space-y-2">
-                    <Input
-                      inputMode="decimal"
-                      placeholder="0,00"
-                      value={discountInput}
-                      aria-label="Monto del descuento"
-                      onChange={(event) => setDiscountInput(event.target.value)}
-                    />
-                    {discountError ? (
-                      <p role="alert" className="text-sm text-danger">
-                        {discountError}
-                      </p>
-                    ) : null}
-                    <div className="flex gap-2">
-                      <Button size="sm" onClick={applyDiscount}>
-                        Aplicar
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => setShowDiscount(false)}>
-                        Cancelar
-                      </Button>
+                {canDiscount ? (
+                  showDiscount ? (
+                    <div className="space-y-2">
+                      <div className="flex gap-2" role="group" aria-label="Tipo de descuento">
+                        <Button
+                          size="sm"
+                          variant={discountType === "amount" ? "primary" : "secondary"}
+                          aria-pressed={discountType === "amount"}
+                          onClick={() => {
+                            setDiscountType("amount");
+                            setDiscountInput("");
+                            setDiscountError(null);
+                          }}
+                        >
+                          Monto (Bs)
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={discountType === "percent" ? "primary" : "secondary"}
+                          aria-pressed={discountType === "percent"}
+                          onClick={() => {
+                            setDiscountType("percent");
+                            setDiscountInput("");
+                            setDiscountError(null);
+                          }}
+                        >
+                          Porcentaje (%)
+                        </Button>
+                      </div>
+                      <Input
+                        inputMode="decimal"
+                        placeholder="0,00"
+                        value={discountInput}
+                        aria-label={
+                          discountType === "amount"
+                            ? "Monto del descuento"
+                            : "Porcentaje del descuento"
+                        }
+                        onChange={(event) => setDiscountInput(event.target.value)}
+                      />
+                      {discountError ? (
+                        <p role="alert" className="text-sm text-danger">
+                          {discountError}
+                        </p>
+                      ) : null}
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={applyDiscount}>
+                          Aplicar
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => setShowDiscount(false)}>
+                          Cancelar
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => setShowDiscount(true)}
-                    disabled={cart.lines.length === 0}
-                  >
-                    Agregar descuento
-                  </Button>
-                )}
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => setShowDiscount(true)}
+                      disabled={cart.lines.length === 0}
+                    >
+                      Agregar descuento
+                    </Button>
+                  )
+                ) : null}
 
                 <div className="flex items-center justify-between border-t border-border pt-3">
                   <span className="text-sm font-medium text-muted">Total</span>
@@ -529,6 +581,7 @@ export function PosClient({ initialProducts, categories, overview }: PosClientPr
           open
           overview={overview}
           totalCents={totals.totalCents}
+          discountCents={totals.discountCents}
           items={cart.lines.map((line) => ({
             productId: line.productId,
             quantity: line.quantity,

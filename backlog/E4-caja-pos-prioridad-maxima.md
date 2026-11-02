@@ -18,4 +18,4 @@
   Aceptación: "Pausar venta" guarda carrito con etiqueta; lista de pausadas; recuperar la restaura; una pausada no cuenta como venta ni descuenta stock; se puede descartar.
   Tests: E2E #2.
 - **E4-06 · Comprobante imprimible** · Deps: E4-04 · DB: no — vista de impresión (CSS `@media print`) con datos del negocio de `business_settings`.
-- **E4-07 · Descuentos autorizados** · Deps: E4-04 · DB: no — según D-008; el descuento queda en la venta.
+- **E4-07 · Descuentos autorizados** · Deps: E4-04 · DB: 🚨 (DB-005, columna `cashier_can_discount` + chequeo en `confirm_sale`) — según D-008; el descuento queda en la venta.

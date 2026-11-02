@@ -41,13 +41,15 @@ describe("confirmSaleAction (E4-02/E4-04)", () => {
     productsRepo = createMemoryRepositories(store, cashierContext).products;
   });
 
-  function makeAction() {
+  function makeAction(user: AuthenticatedUser = cashier) {
     return createConfirmSaleAction({
-      currentUserResolver: async () => cashier,
+      currentUserResolver: async () => user,
       salesRepoFactory: async (ctx: UserContext) =>
         createMemoryRepositories(store, ctx).sales,
       productsRepoFactory: async (ctx: UserContext) =>
         createMemoryRepositories(store, ctx).products,
+      settingsRepoFactory: async (ctx: UserContext) =>
+        createMemoryRepositories(store, ctx).settings,
     });
   }
 
@@ -92,6 +94,68 @@ describe("confirmSaleAction (E4-02/E4-04)", () => {
 
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.code).toBe("BAD_REQUEST");
+  });
+
+  it("el cajero no puede aplicar descuentos sin permiso (D-008)", async () => {
+    const result = await makeAction()({ ...baseInput(), discountCents: 500 });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.code).toBe("FORBIDDEN");
+
+    const updated = await productsRepo.getById(product.id);
+    expect(updated?.stock_qty).toBe(10);
+    const sales = await salesRepo.list({ sessionId });
+    expect(sales).toHaveLength(0);
+  });
+
+  it("el cajero puede aplicar descuentos cuando cashier_can_discount está habilitado", async () => {
+    const ownerRepos = createMemoryRepositories(store, {
+      id: "owner-1",
+      role: "owner",
+      active: true,
+    });
+    await ownerRepos.settings.updateSettings({ cashier_can_discount: true });
+
+    const result = await makeAction()({
+      ...baseInput(),
+      clientRequestId: "req-desc-ok",
+      discountCents: 500,
+      cashReceivedCents: 3000,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.sale.discount_cents).toBe(500);
+    expect(result.data.sale.total_cents).toBe(2500);
+  });
+
+  it("el dueño siempre puede aplicar descuentos sin la casilla habilitada", async () => {
+    const owner: AuthenticatedUser = {
+      id: "owner-1",
+      name: "Ana Quispe",
+      role: "owner",
+      isActive: true,
+    };
+
+    const result = await makeAction(owner)({
+      ...baseInput(),
+      clientRequestId: "req-owner-desc",
+      discountCents: 500,
+      cashReceivedCents: 3000,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.sale.discount_cents).toBe(500);
+    expect(result.data.sale.total_cents).toBe(2500);
+  });
+
+  it("el cajero sin permiso cobra sin descuento normalmente", async () => {
+    const result = await makeAction()({ ...baseInput(), clientRequestId: "req-sin-desc" });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.sale.discount_cents).toBe(0);
   });
 
   it("rechaza productos inexistentes o inactivos para el cajero", async () => {

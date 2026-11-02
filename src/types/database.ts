@@ -43,6 +43,7 @@ export interface Database {
           logo_url: string | null;
           allow_negative_stock: boolean;
           low_stock_default: number;
+          cashier_can_discount: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -55,6 +56,7 @@ export interface Database {
           logo_url?: string | null;
           allow_negative_stock?: boolean;
           low_stock_default?: number;
+          cashier_can_discount?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -67,6 +69,7 @@ export interface Database {
           logo_url?: string | null;
           allow_negative_stock?: boolean;
           low_stock_default?: number;
+          cashier_can_discount?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -665,6 +668,7 @@ export interface Database {
           logo_url: string | null;
           allow_negative_stock: boolean;
           low_stock_default: number;
+          cashier_can_discount: boolean;
         }[];
       };
       products_with_cost: {

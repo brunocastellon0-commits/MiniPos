@@ -14,6 +14,7 @@ export interface PaymentDialogProps {
   open: boolean;
   overview: CashOverview;
   totalCents: number;
+  discountCents: number;
   items: Array<{ productId: string; quantity: number }>;
   onClose: () => void;
   onConfirmed: (result: { sale: Sale; items: SaleItem[]; changeCents: number }) => void;
@@ -31,6 +32,7 @@ export function PaymentDialog({
   open,
   overview,
   totalCents,
+  discountCents,
   items,
   onClose,
   onConfirmed,
@@ -72,6 +74,7 @@ export function PaymentDialog({
         sessionId: overview.session.id,
         paymentMethod: method,
         clientRequestId,
+        discountCents,
         items: items.map((line) => ({
           productId: line.productId,
           quantity: line.quantity,

@@ -363,6 +363,7 @@ describe("Repositories Contract Suite (Memory)", () => {
       const pubSettings = await cashierRepos.settings.getPublicSettings();
       expect(pubSettings.name).toBe("Mi Minimarket");
       expect(pubSettings.currency_symbol).toBe("Bs");
+      expect(pubSettings.cashier_can_discount).toBe(false);
     });
 
     it("registra eventos de auditoría inmutables", async () => {

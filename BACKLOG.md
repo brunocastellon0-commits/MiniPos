@@ -83,7 +83,7 @@
 | E4-04 | Cobro y confirmación atómica | E4-02, E0-05 aplicada | 🚨 | DONE |
 | E4-05 | Pausar y recuperar ventas | E4-02 |  | DONE |
 | E4-06 | Comprobante imprimible | E4-04 |  | DONE |
-| E4-07 | Descuentos autorizados | E4-04 | 🚨 | DOING |
+| E4-07 | Descuentos autorizados | E4-04 | 🚨 | BLOCKED-DB |
 
 ## E5 — Historial de ventas y anulaciones  ·  [backlog/E5-historial-de-ventas-y-anulaciones.md](backlog/E5-historial-de-ventas-y-anulaciones.md)
 

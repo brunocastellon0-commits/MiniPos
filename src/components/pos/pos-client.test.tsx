@@ -54,9 +54,14 @@ const overview: CashOverview = {
   expectedCents: 10000,
 };
 
-function renderPos() {
+function renderPos(canDiscount = true) {
   return render(
-    <PosClient initialProducts={[arroz, leche]} categories={[]} overview={overview} />,
+    <PosClient
+      initialProducts={[arroz, leche]}
+      categories={[]}
+      overview={overview}
+      canDiscount={canDiscount}
+    />,
   );
 }
 
@@ -141,6 +146,7 @@ describe("PosClient (E4-02/E4-03/E4-04)", () => {
         sessionId: "s-1",
         paymentMethod: "cash",
         clientRequestId: expect.any(String),
+        discountCents: 0,
         items: [{ productId: "p-1", quantity: 1 }],
         cashReceivedCents: 2000,
       });
@@ -323,5 +329,93 @@ describe("PosClient (E4-02/E4-03/E4-04)", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Recuperar" }));
 
     expect(await screen.findByText("Ningún producto de la venta pausada está disponible.")).toBeInTheDocument();
+  });
+
+  it("aplica descuento por monto en el carrito (E4-07)", () => {
+    renderPos();
+    addToCart("Arroz 1kg");
+
+    fireEvent.click(screen.getByRole("button", { name: "Agregar descuento" }));
+    fireEvent.change(screen.getByLabelText("Monto del descuento"), {
+      target: { value: "2,00" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Aplicar" }));
+
+    const cart = screen.getByLabelText("Carrito");
+    expect(cart).toHaveTextContent("-Bs 2,00");
+    expect(cart).toHaveTextContent("Bs 10,00");
+  });
+
+  it("aplica descuento por porcentaje y valida el rango (E4-07)", () => {
+    renderPos();
+    addToCart("Arroz 1kg");
+
+    fireEvent.click(screen.getByRole("button", { name: "Agregar descuento" }));
+    fireEvent.click(screen.getByRole("button", { name: "Porcentaje (%)" }));
+
+    fireEvent.change(screen.getByLabelText("Porcentaje del descuento"), {
+      target: { value: "150" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Aplicar" }));
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "El porcentaje debe estar entre 0 y 100.",
+    );
+
+    fireEvent.change(screen.getByLabelText("Porcentaje del descuento"), {
+      target: { value: "10" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Aplicar" }));
+
+    const cart = screen.getByLabelText("Carrito");
+    expect(cart).toHaveTextContent("-Bs 1,20");
+    expect(cart).toHaveTextContent("Bs 10,80");
+  });
+
+  it("oculta el control de descuento cuando el rol no tiene permiso (E4-07)", () => {
+    renderPos(false);
+    addToCart("Arroz 1kg");
+
+    expect(
+      screen.queryByRole("button", { name: "Agregar descuento" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Carrito")).toHaveTextContent("-Bs 0,00");
+  });
+
+  it("envía el descuento aplicado al confirmar la venta (E4-07)", async () => {
+    vi.mocked(confirmSaleAction).mockResolvedValue({
+      ok: true,
+      data: {
+        sale: buildSale({ id: "sale-3", number: 103, total_cents: 1000 }),
+        items: [buildSaleItem()],
+      },
+    });
+
+    renderPos();
+    addToCart("Arroz 1kg");
+    fireEvent.click(screen.getByRole("button", { name: "Agregar descuento" }));
+    fireEvent.change(screen.getByLabelText("Monto del descuento"), {
+      target: { value: "2,00" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Aplicar" }));
+
+    fireEvent.click(screen.getByRole("button", { name: /cobrar \(f9\)/i }));
+    const dialog = await screen.findByRole("dialog");
+    expect(dialog).toHaveTextContent("Total a pagar: Bs 10,00");
+
+    fireEvent.change(within(dialog).getByLabelText("Efectivo recibido"), {
+      target: { value: "10,00" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Confirmar cobro" }));
+
+    await waitFor(() => {
+      expect(confirmSaleAction).toHaveBeenCalledWith({
+        sessionId: "s-1",
+        paymentMethod: "cash",
+        clientRequestId: expect.any(String),
+        discountCents: 200,
+        items: [{ productId: "p-1", quantity: 1 }],
+        cashReceivedCents: 1000,
+      });
+    });
   });
 });

@@ -235,6 +235,7 @@ export function buildBusinessSettings(overrides: Partial<BusinessSettings> = {})
     logo_url: overrides.logo_url ?? null,
     allow_negative_stock: overrides.allow_negative_stock ?? false,
     low_stock_default: overrides.low_stock_default ?? 5,
+    cashier_can_discount: overrides.cashier_can_discount ?? false,
     created_at: overrides.created_at || now,
     updated_at: overrides.updated_at || now,
   };

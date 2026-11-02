@@ -43,6 +43,7 @@ export class MemoryStore {
       logo_url: null,
       allow_negative_stock: false,
       low_stock_default: 5,
+      cashier_can_discount: false,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -77,6 +78,7 @@ export class MemoryStore {
       logo_url: null,
       allow_negative_stock: false,
       low_stock_default: 5,
+      cashier_can_discount: false,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };

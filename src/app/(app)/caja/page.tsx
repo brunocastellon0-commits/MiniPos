@@ -5,6 +5,7 @@ import { PosClient } from "@/components/pos/pos-client";
 import { getCashOverviewAction } from "@/lib/actions/cash";
 import { listCategoriesAction } from "@/lib/actions/categories";
 import { listPosProductsAction } from "@/lib/actions/products-search";
+import { getBusinessPublicAction } from "@/lib/actions/settings";
 import { requireUser } from "@/lib/auth";
 import { EmptyState } from "@/components/ui/empty-state";
 
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
 };
 
 export default async function CajaPage() {
-  await requireUser("/login");
+  const user = await requireUser("/login");
 
   const overviewResult = await getCashOverviewAction();
   const overview = overviewResult.ok ? overviewResult.data : null;
@@ -61,6 +62,16 @@ export default async function CajaPage() {
     ? categories.data.filter((item) => item.active)
     : [];
 
+  let canDiscount = true;
+  if (user.role !== "owner") {
+    try {
+      const publicSettings = await getBusinessPublicAction();
+      canDiscount = publicSettings.ok && publicSettings.data.cashier_can_discount;
+    } catch {
+      canDiscount = false;
+    }
+  }
+
   if (!initialProducts.ok) {
     return (
       <div className="space-y-4">
@@ -86,7 +97,12 @@ export default async function CajaPage() {
           Busca productos, agrega al carrito y cobra. F2 para buscar · F9 para cobrar.
         </p>
       </div>
-      <PosClient initialProducts={products} categories={categoryList} overview={overview} />
+      <PosClient
+        initialProducts={products}
+        categories={categoryList}
+        overview={overview}
+        canDiscount={canDiscount}
+      />
     </div>
   );
 }

@@ -70,6 +70,7 @@ export function createConfirmSaleAction(deps: SalesActionDeps = {}) {
     currentUserResolver,
     salesRepoFactory = defaultSalesRepoFactory,
     productsRepoFactory = defaultProductsRepoFactory,
+    settingsRepoFactory = defaultSettingsRepoFactory,
   } = deps;
 
   return async (input: ConfirmSaleInput): Promise<ActionResult<ConfirmSaleResult>> => {
@@ -133,6 +134,22 @@ export function createConfirmSaleAction(deps: SalesActionDeps = {}) {
             "El descuento no puede superar el subtotal.",
             "BAD_REQUEST",
           );
+        }
+        // D-008: el dueño siempre; el cajero solo si cashier_can_discount está habilitado.
+        if (discountCents > 0 && ctx.user.role !== "owner") {
+          let cashierCanDiscount = false;
+          try {
+            const settingsRepo = await settingsRepoFactory(userContext);
+            cashierCanDiscount = (await settingsRepo.getPublicSettings()).cashier_can_discount;
+          } catch {
+            cashierCanDiscount = false;
+          }
+          if (!cashierCanDiscount) {
+            throw new ActionException(
+              "Tu rol no tiene permiso para aplicar descuentos.",
+              "FORBIDDEN",
+            );
+          }
         }
         const totalCents = subtotalCents - discountCents;
 
