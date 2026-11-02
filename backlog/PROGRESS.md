@@ -38,3 +38,4 @@
 | 2026-10-31 | E4-05 | DONE | Pausar/recuperar/descartar ventas con etiqueta (held_sales ya existente, sin BD) · acciones held-sales (6 tests) + 3 tests de componente · pnpm check verde |
 | 2026-10-31 | E4-06 | DONE | Comprobante imprimible: getSaleTicketAction (venta+ítems+get_business_public) + TicketDialog con CSS print y botón Imprimir en confirmación · 6 tests acción + 3 componente · pnpm check verde |
 | 2026-11-02 | E4-07 | BLOCKED-DB | Descuentos autorizados (D-008): chequeo de permiso en confirmSaleAction (FORBIDDEN, falla-closed) + RPC confirm_sale (42501) + UI oculta el descuento sin permiso y toggle Monto/Porcentaje + PaymentDialog ahora envía discountCents (antes se perdía) → 4 tests sales + 3 settings + 4 componente + 1 contrato → pnpm check verde → pendiente APLICADA DB-005 |
+| 2026-11-02 | DB-005 | APLICADA | 0012_cashier_discount.sql aplicada por el humano → E4-07 pasa a DONE (NO VERIFICADO: cobro con descuento real en app con rol de cajero) |
