@@ -1,11 +1,14 @@
 import { SupabaseProductsRepo } from "@/lib/repos/supabase/products";
 import { SupabaseSalesRepo } from "@/lib/repos/supabase/sales";
+import { SupabaseSettingsRepo } from "@/lib/repos/supabase/settings";
 import type {
+  BusinessPublicSettings,
   Product,
   ProductsRepo,
   Sale,
   SaleItem,
   SalesRepo,
+  SettingsRepo,
   UserContext,
 } from "@/lib/repos/types";
 import { createClient } from "@/lib/supabase/server";
@@ -15,17 +18,24 @@ import {
   type AuthenticatedUser,
   secureAction,
 } from "./secure-action";
-import { type ConfirmSaleInput, confirmSaleSchema } from "./sales-schema";
+import { type ConfirmSaleInput, confirmSaleSchema, type GetSaleTicketInput, getSaleTicketSchema } from "./sales-schema";
 
 export interface ConfirmSaleResult {
   sale: Sale;
   items: SaleItem[];
 }
 
+export interface SaleTicket {
+  sale: Sale;
+  items: SaleItem[];
+  business: BusinessPublicSettings;
+}
+
 export interface SalesActionDeps {
   currentUserResolver?: () => Promise<AuthenticatedUser | null>;
   salesRepoFactory?: (user: UserContext) => Promise<SalesRepo>;
   productsRepoFactory?: (user: UserContext) => Promise<ProductsRepo>;
+  settingsRepoFactory?: (user: UserContext) => Promise<SettingsRepo>;
 }
 
 async function defaultSalesRepoFactory(user: UserContext): Promise<SalesRepo> {
@@ -36,6 +46,11 @@ async function defaultSalesRepoFactory(user: UserContext): Promise<SalesRepo> {
 async function defaultProductsRepoFactory(user: UserContext): Promise<ProductsRepo> {
   const supabase = await createClient();
   return new SupabaseProductsRepo(supabase, user);
+}
+
+async function defaultSettingsRepoFactory(user: UserContext): Promise<SettingsRepo> {
+  const supabase = await createClient();
+  return new SupabaseSettingsRepo(supabase, user);
 }
 
 function toUserContext(user: AuthenticatedUser): UserContext {
@@ -152,6 +167,35 @@ export function createConfirmSaleAction(deps: SalesActionDeps = {}) {
         } catch (error) {
           translateSaleError(error);
         }
+      },
+    })(input);
+  };
+}
+
+export function createGetSaleTicketAction(deps: SalesActionDeps = {}) {
+  const {
+    currentUserResolver,
+    salesRepoFactory = defaultSalesRepoFactory,
+    settingsRepoFactory = defaultSettingsRepoFactory,
+  } = deps;
+
+  return async (input: GetSaleTicketInput): Promise<ActionResult<SaleTicket>> => {
+    return secureAction<GetSaleTicketInput, SaleTicket>({
+      roles: ["owner", "cashier"],
+      schema: getSaleTicketSchema,
+      currentUserResolver,
+      handler: async (validatedInput, ctx) => {
+        const userContext = toUserContext(ctx.user);
+        const salesRepo = await salesRepoFactory(userContext);
+        const settingsRepo = await settingsRepoFactory(userContext);
+
+        const result = await salesRepo.getById(validatedInput.saleId);
+        if (!result) {
+          throw new ActionException("Venta no encontrada.", "NOT_FOUND");
+        }
+
+        const business = await settingsRepo.getPublicSettings();
+        return { sale: result.sale, items: result.items, business };
       },
     })(input);
   };

@@ -27,6 +27,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { HeldSalesDialog, PauseSaleDialog } from "./held-sales";
 import { PaymentDialog, SaleConfirmation } from "./payment-dialog";
+import { TicketDialog } from "./ticket";
 
 export interface PosClientProps {
   initialProducts: Product[];
@@ -68,6 +69,7 @@ export function PosClient({ initialProducts, categories, overview }: PosClientPr
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [pauseOpen, setPauseOpen] = useState(false);
   const [heldOpen, setHeldOpen] = useState(false);
+  const [ticketOpen, setTicketOpen] = useState(false);
   const [completedSale, setCompletedSale] = useState<{
     sale: Sale;
     changeCents: number;
@@ -269,8 +271,10 @@ export function PosClient({ initialProducts, categories, overview }: PosClientPr
         <SaleConfirmation
           sale={completedSale.sale}
           changeCents={completedSale.changeCents}
+          onPrint={() => setTicketOpen(true)}
           onNewSale={() => {
             setCompletedSale(null);
+            setTicketOpen(false);
             setCart(createCart());
             setDiscountCents(0);
             searchRef.current?.focus();
@@ -552,6 +556,10 @@ export function PosClient({ initialProducts, categories, overview }: PosClientPr
           onClose={() => setHeldOpen(false)}
           onRecovered={handleRecover}
         />
+      ) : null}
+
+      {completedSale && ticketOpen ? (
+        <TicketDialog saleId={completedSale.sale.id} onClose={() => setTicketOpen(false)} />
       ) : null}
     </div>
   );

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { createMemoryRepositories, MemoryStore, type UserContext } from "@/lib/repos";
 import type { Product, ProductsRepo, SalesRepo } from "@/lib/repos/types";
-import { createConfirmSaleAction } from "./sales-core";
+import { createConfirmSaleAction, createGetSaleTicketAction } from "./sales-core";
 import type { AuthenticatedUser } from "./secure-action";
 
 const cashier: AuthenticatedUser = {
@@ -154,5 +154,93 @@ describe("confirmSaleAction (E4-02/E4-04)", () => {
     const anonResult = await anon(baseInput());
     expect(anonResult.ok).toBe(false);
     if (!anonResult.ok) expect(anonResult.code).toBe("UNAUTHENTICATED");
+  });
+});
+
+describe("getSaleTicketAction (E4-06)", () => {
+  let store: MemoryStore;
+  let saleId: string;
+
+  beforeEach(async () => {
+    store = new MemoryStore();
+    const ownerRepos = createMemoryRepositories(store, {
+      id: "owner-1",
+      role: "owner",
+      active: true,
+    });
+    const product = await ownerRepos.products.create({
+      name: "Arroz 1kg",
+      price_cents: 1500,
+      stock_qty: 10,
+    });
+
+    const cashierRepos = createMemoryRepositories(store, cashierContext);
+    const session = await cashierRepos.cash.openSession(10000);
+    const { sale } = await cashierRepos.sales.createSale(
+      {
+        session_id: session.id,
+        subtotal_cents: 3000,
+        discount_cents: 0,
+        total_cents: 3000,
+        payment_method: "cash",
+        cash_received_cents: 5000,
+        client_request_id: "ticket-req-1",
+      },
+      [
+        {
+          product_id: product.id,
+          name_snapshot: "Arroz 1kg",
+          unit_price_cents: 1500,
+          quantity: 2,
+          line_total_cents: 3000,
+        },
+      ],
+    );
+    saleId = sale.id;
+  });
+
+  function makeTicketAction(user: AuthenticatedUser | null) {
+    return createGetSaleTicketAction({
+      currentUserResolver: async () => user,
+      salesRepoFactory: async (ctx: UserContext) =>
+        createMemoryRepositories(store, ctx).sales,
+      settingsRepoFactory: async (ctx: UserContext) =>
+        createMemoryRepositories(store, ctx).settings,
+    });
+  }
+
+  it("devuelve venta, ítems y datos públicos del negocio", async () => {
+    const result = await makeTicketAction(cashier)({ saleId });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.data.sale.id).toBe(saleId);
+    expect(result.data.items).toHaveLength(1);
+    expect(result.data.items[0]?.name_snapshot).toBe("Arroz 1kg");
+    expect(result.data.business.name).toBeTruthy();
+    expect(result.data.business.currency_symbol).toBe("Bs");
+  });
+
+  it("un cajero no puede ver la venta de otro cajero", async () => {
+    const result = await makeTicketAction({
+      id: "cashier-9",
+      name: "Otra",
+      role: "cashier",
+      isActive: true,
+    })({ saleId });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.code).toBe("NOT_FOUND");
+  });
+
+  it("rechaza venta inexistente y usuario no autenticado", async () => {
+    const missing = await makeTicketAction(cashier)({ saleId: "no-existe" });
+    expect(missing.ok).toBe(false);
+    if (!missing.ok) expect(missing.code).toBe("NOT_FOUND");
+
+    const anon = await makeTicketAction(null)({ saleId });
+    expect(anon.ok).toBe(false);
+    if (!anon.ok) expect(anon.code).toBe("UNAUTHENTICATED");
   });
 });

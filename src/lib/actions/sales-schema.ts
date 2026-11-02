@@ -38,3 +38,11 @@ export const confirmSaleSchema = z
   .strict();
 
 export type ConfirmSaleInput = z.infer<typeof confirmSaleSchema>;
+
+export const getSaleTicketSchema = z
+  .object({
+    saleId: z.string().min(1, { message: "ID de venta requerido." }),
+  })
+  .strict();
+
+export type GetSaleTicketInput = z.infer<typeof getSaleTicketSchema>;

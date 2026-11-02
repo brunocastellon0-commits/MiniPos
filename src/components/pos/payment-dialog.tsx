@@ -173,10 +173,12 @@ export function SaleConfirmation({
   sale,
   changeCents,
   onNewSale,
+  onPrint,
 }: {
   sale: Sale;
   changeCents: number;
   onNewSale: () => void;
+  onPrint?: () => void;
 }) {
   return (
     <div className="mx-auto max-w-md rounded-card border border-success/30 bg-success/10 p-6 text-center">
@@ -194,9 +196,16 @@ export function SaleConfirmation({
           <p className="text-lg font-semibold text-foreground">{formatBs(changeCents)}</p>
         </>
       ) : null}
-      <Button className="mt-4 w-full" onClick={onNewSale}>
-        Nueva venta
-      </Button>
+      <div className="mt-4 flex gap-2">
+        {onPrint ? (
+          <Button variant="secondary" className="flex-1" onClick={onPrint}>
+            Imprimir
+          </Button>
+        ) : null}
+        <Button className="flex-1" onClick={onNewSale}>
+          Nueva venta
+        </Button>
+      </div>
     </div>
   );
 }
