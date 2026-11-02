@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/types/database";
 import type {
   SalesRepo,
+  SalesListFilter,
   Sale,
   SaleItem,
   HeldSale,
@@ -94,7 +95,7 @@ export class SupabaseSalesRepo implements SalesRepo {
     return { sale, items: items || [] };
   }
 
-  async list(filter?: { sessionId?: string; cashierId?: string; limit?: number }): Promise<Sale[]> {
+  async list(filter?: SalesListFilter): Promise<Sale[]> {
     let query = this.supabase.from("sales").select("*").order("created_at", { ascending: false });
 
     if (filter?.sessionId) {
@@ -102,6 +103,18 @@ export class SupabaseSalesRepo implements SalesRepo {
     }
     if (filter?.cashierId) {
       query = query.eq("cashier_id", filter.cashierId);
+    }
+    if (filter?.paymentMethod) {
+      query = query.eq("payment_method", filter.paymentMethod);
+    }
+    if (filter?.status) {
+      query = query.eq("status", filter.status);
+    }
+    if (filter?.dateFrom) {
+      query = query.gte("created_at", filter.dateFrom);
+    }
+    if (filter?.dateTo) {
+      query = query.lte("created_at", filter.dateTo);
     }
     if (filter?.limit) {
       query = query.limit(filter.limit);

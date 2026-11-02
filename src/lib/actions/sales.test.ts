@@ -1,7 +1,13 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { createMemoryRepositories, MemoryStore, type UserContext } from "@/lib/repos";
 import type { Product, ProductsRepo, SalesRepo } from "@/lib/repos/types";
-import { createConfirmSaleAction, createGetSaleTicketAction } from "./sales-core";
+import { buildProfile, buildSale, buildSaleItem } from "@/test/factories";
+import {
+  createConfirmSaleAction,
+  createGetSaleDetailAction,
+  createGetSaleTicketAction,
+  createListSalesAction,
+} from "./sales-core";
 import type { AuthenticatedUser } from "./secure-action";
 
 const cashier: AuthenticatedUser = {
@@ -12,6 +18,8 @@ const cashier: AuthenticatedUser = {
 };
 
 const cashierContext: UserContext = { id: "cashier-1", role: "cashier", active: true };
+
+const ownerContext: UserContext = { id: "owner-1", role: "owner", active: true };
 
 describe("confirmSaleAction (E4-02/E4-04)", () => {
   let store: MemoryStore;
@@ -304,6 +312,202 @@ describe("getSaleTicketAction (E4-06)", () => {
     if (!missing.ok) expect(missing.code).toBe("NOT_FOUND");
 
     const anon = await makeTicketAction(null)({ saleId });
+    expect(anon.ok).toBe(false);
+    if (!anon.ok) expect(anon.code).toBe("UNAUTHENTICATED");
+  });
+});
+
+const ownerUser: AuthenticatedUser = {
+  id: "owner-1",
+  name: "Ana Quispe",
+  role: "owner",
+  isActive: true,
+};
+
+function seedSalesStore(store: MemoryStore): void {
+  store.profiles.set(
+    "owner-1",
+    buildProfile({ id: "owner-1", full_name: "Ana Quispe", role: "owner" }),
+  );
+  store.profiles.set(
+    "cashier-1",
+    buildProfile({ id: "cashier-1", full_name: "Carlos Mamani", role: "cashier" }),
+  );
+  store.sales.set(
+    "sale-1",
+    buildSale({
+      id: "sale-1",
+      number: 101,
+      cashier_id: "cashier-1",
+      payment_method: "cash",
+      created_at: "2026-10-01T12:00:00.000Z",
+    }),
+  );
+  store.sales.set(
+    "sale-2",
+    buildSale({
+      id: "sale-2",
+      number: 102,
+      cashier_id: "owner-1",
+      payment_method: "qr",
+      created_at: "2026-11-01T18:00:00.000Z",
+    }),
+  );
+}
+
+function makeListAction(store: MemoryStore, user: AuthenticatedUser | null) {
+  return createListSalesAction({
+    currentUserResolver: async () => user,
+    salesRepoFactory: async (ctx: UserContext) => createMemoryRepositories(store, ctx).sales,
+    usersRepoFactory: async (ctx: UserContext) => createMemoryRepositories(store, ctx).users,
+  });
+}
+
+function makeDetailAction(store: MemoryStore, user: AuthenticatedUser | null) {
+  return createGetSaleDetailAction({
+    currentUserResolver: async () => user,
+    salesRepoFactory: async (ctx: UserContext) => createMemoryRepositories(store, ctx).sales,
+    usersRepoFactory: async (ctx: UserContext) => createMemoryRepositories(store, ctx).users,
+  });
+}
+
+describe("listSalesAction (E5-01)", () => {
+  let store: MemoryStore;
+
+  beforeEach(() => {
+    store = new MemoryStore();
+    seedSalesStore(store);
+  });
+
+  it("el dueño lista todas las ventas con nombres de cajeros", async () => {
+    const result = await makeListAction(store, ownerUser)({});
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.sales.map((sale) => sale.id).sort()).toEqual(["sale-1", "sale-2"]);
+    expect(result.data.cashierNames).toEqual({
+      "cashier-1": "Carlos Mamani",
+      "owner-1": "Ana Quispe",
+    });
+  });
+
+  it("filtra por método de pago", async () => {
+    const result = await makeListAction(store, ownerUser)({ paymentMethod: "qr" });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.sales.map((sale) => sale.id)).toEqual(["sale-2"]);
+  });
+
+  it("filtra por estado pagadas/anuladas", async () => {
+    const ownerRepos = createMemoryRepositories(store, ownerContext);
+    await ownerRepos.sales.voidSale("sale-1", "Error de cobro");
+
+    const voided = await makeListAction(store, ownerUser)({ status: "voided" });
+    expect(voided.ok).toBe(true);
+    if (!voided.ok) return;
+    expect(voided.data.sales.map((sale) => sale.id)).toEqual(["sale-1"]);
+
+    const paid = await makeListAction(store, ownerUser)({ status: "paid" });
+    expect(paid.ok).toBe(true);
+    if (!paid.ok) return;
+    expect(paid.data.sales.map((sale) => sale.id)).toEqual(["sale-2"]);
+  });
+
+  it("filtra por rango de fechas en zona La Paz", async () => {
+    const from = await makeListAction(store, ownerUser)({ dateFrom: "2026-11-01" });
+    expect(from.ok).toBe(true);
+    if (!from.ok) return;
+    expect(from.data.sales.map((sale) => sale.id)).toEqual(["sale-2"]);
+
+    const to = await makeListAction(store, ownerUser)({ dateTo: "2026-10-31" });
+    expect(to.ok).toBe(true);
+    if (!to.ok) return;
+    expect(to.data.sales.map((sale) => sale.id)).toEqual(["sale-1"]);
+  });
+
+  it("rechaza fechas inválidas y rangos invertidos", async () => {
+    const invalid = await makeListAction(store, ownerUser)({ dateFrom: "2026-99-99" });
+    expect(invalid.ok).toBe(false);
+    if (!invalid.ok) expect(invalid.code).toBe("VALIDATION_ERROR");
+
+    const inverted = await makeListAction(store, ownerUser)({
+      dateFrom: "2026-11-02",
+      dateTo: "2026-11-01",
+    });
+    expect(inverted.ok).toBe(false);
+    if (!inverted.ok) expect(inverted.code).toBe("VALIDATION_ERROR");
+  });
+
+  it("el cajero solo lista las suyas aunque pida otro cajero", async () => {
+    const result = await makeListAction(store, cashier)({ cashierId: "owner-1" });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.sales.map((sale) => sale.id)).toEqual(["sale-1"]);
+    expect(result.data.cashierNames).toEqual({ "cashier-1": "Carlos Mamani" });
+  });
+
+  it("exige usuario autenticado", async () => {
+    const anon = await makeListAction(store, null)({});
+    expect(anon.ok).toBe(false);
+    if (!anon.ok) expect(anon.code).toBe("UNAUTHENTICATED");
+  });
+});
+
+describe("getSaleDetailAction (E5-01)", () => {
+  let store: MemoryStore;
+
+  beforeEach(() => {
+    store = new MemoryStore();
+    seedSalesStore(store);
+    store.saleItems.set(
+      "item-1",
+      buildSaleItem({
+        id: "item-1",
+        sale_id: "sale-1",
+        name_snapshot: "Arroz 1kg",
+        unit_price_cents: 1500,
+        quantity: 2,
+        line_total_cents: 3000,
+      }),
+    );
+  });
+
+  it("el dueño ve la venta de un cajero con su nombre e ítems congelados", async () => {
+    const result = await makeDetailAction(store, ownerUser)({ saleId: "sale-1" });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.sale.id).toBe("sale-1");
+    expect(result.data.cashierName).toBe("Carlos Mamani");
+    expect(result.data.items).toHaveLength(1);
+    expect(result.data.items[0]?.name_snapshot).toBe("Arroz 1kg");
+    expect(result.data.items[0]?.unit_price_cents).toBe(1500);
+  });
+
+  it("el cajero ve el detalle de su propia venta", async () => {
+    const result = await makeDetailAction(store, cashier)({ saleId: "sale-1" });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.sale.id).toBe("sale-1");
+    expect(result.data.cashierName).toBe("Carlos Mamani");
+  });
+
+  it("el cajero no ve ventas de otro cajero", async () => {
+    const result = await makeDetailAction(store, cashier)({ saleId: "sale-2" });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.code).toBe("NOT_FOUND");
+  });
+
+  it("venta inexistente y usuario no autenticado", async () => {
+    const missing = await makeDetailAction(store, ownerUser)({ saleId: "no-existe" });
+    expect(missing.ok).toBe(false);
+    if (!missing.ok) expect(missing.code).toBe("NOT_FOUND");
+
+    const anon = await makeDetailAction(store, null)({ saleId: "sale-1" });
     expect(anon.ok).toBe(false);
     if (!anon.ok) expect(anon.code).toBe("UNAUTHENTICATED");
   });

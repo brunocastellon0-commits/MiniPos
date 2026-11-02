@@ -46,3 +46,59 @@ export const getSaleTicketSchema = z
   .strict();
 
 export type GetSaleTicketInput = z.infer<typeof getSaleTicketSchema>;
+
+const isoDayPattern = /^\d{4}-\d{2}-\d{2}$/;
+
+function isValidIsoDay(value: string): boolean {
+  const [year = Number.NaN, month = Number.NaN, day = Number.NaN] = value
+    .split("-")
+    .map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
+}
+
+export const listSalesSchema = z
+  .object({
+    dateFrom: z
+      .string()
+      .refine((value) => isoDayPattern.test(value) && isValidIsoDay(value), {
+        message: "Fecha inválida.",
+      })
+      .optional(),
+    dateTo: z
+      .string()
+      .refine((value) => isoDayPattern.test(value) && isValidIsoDay(value), {
+        message: "Fecha inválida.",
+      })
+      .optional(),
+    paymentMethod: z
+      .enum(["cash", "qr", "card"], { message: "Método de pago inválido." })
+      .optional(),
+    status: z.enum(["paid", "voided"], { message: "Estado inválido." }).optional(),
+    cashierId: z.string().min(1, { message: "Cajero requerido." }).optional(),
+    limit: z.number().int().min(1).max(200).optional(),
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    if (value.dateFrom && value.dateTo && value.dateFrom > value.dateTo) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["dateTo"],
+        message: "La fecha final debe ser igual o posterior a la inicial.",
+      });
+    }
+  });
+
+export type ListSalesInput = z.infer<typeof listSalesSchema>;
+
+export const getSaleDetailSchema = z
+  .object({
+    saleId: z.string().min(1, { message: "ID de venta requerido." }),
+  })
+  .strict();
+
+export type GetSaleDetailInput = z.infer<typeof getSaleDetailSchema>;

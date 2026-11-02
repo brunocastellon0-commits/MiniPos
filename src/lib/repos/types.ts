@@ -106,6 +106,16 @@ export interface CashRepo {
   listMovements(sessionId: string): Promise<CashMovement[]>;
 }
 
+export interface SalesListFilter {
+  sessionId?: string;
+  cashierId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  paymentMethod?: Sale["payment_method"];
+  status?: Sale["status"];
+  limit?: number;
+}
+
 export interface SalesRepo {
   createSale(
     sale: Omit<SaleInsert, "number" | "id" | "created_at" | "cashier_id">,
@@ -113,7 +123,7 @@ export interface SalesRepo {
   ): Promise<{ sale: Sale; items: SaleItem[] }>;
   getById(id: string): Promise<{ sale: Sale; items: SaleItem[] } | null>;
   getByClientRequestId(clientRequestId: string): Promise<{ sale: Sale; items: SaleItem[] } | null>;
-  list(filter?: { sessionId?: string; cashierId?: string; limit?: number }): Promise<Sale[]>;
+  list(filter?: SalesListFilter): Promise<Sale[]>;
   voidSale(id: string, reason: string): Promise<Sale>;
   getHeldSales(): Promise<HeldSale[]>;
   saveHeldSale(label: string, items: unknown[]): Promise<HeldSale>;

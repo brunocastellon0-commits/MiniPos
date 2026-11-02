@@ -1,15 +1,19 @@
 import { SupabaseProductsRepo } from "@/lib/repos/supabase/products";
 import { SupabaseSalesRepo } from "@/lib/repos/supabase/sales";
 import { SupabaseSettingsRepo } from "@/lib/repos/supabase/settings";
+import { SupabaseUsersRepo } from "@/lib/repos/supabase/users";
+import { endOfLaPazDay, startOfLaPazDay } from "@/lib/dates";
 import type {
   BusinessPublicSettings,
   Product,
   ProductsRepo,
   Sale,
   SaleItem,
+  SalesListFilter,
   SalesRepo,
   SettingsRepo,
   UserContext,
+  UsersRepo,
 } from "@/lib/repos/types";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -18,7 +22,16 @@ import {
   type AuthenticatedUser,
   secureAction,
 } from "./secure-action";
-import { type ConfirmSaleInput, confirmSaleSchema, type GetSaleTicketInput, getSaleTicketSchema } from "./sales-schema";
+import {
+  type ConfirmSaleInput,
+  confirmSaleSchema,
+  type GetSaleDetailInput,
+  getSaleDetailSchema,
+  type GetSaleTicketInput,
+  getSaleTicketSchema,
+  type ListSalesInput,
+  listSalesSchema,
+} from "./sales-schema";
 
 export interface ConfirmSaleResult {
   sale: Sale;
@@ -31,11 +44,23 @@ export interface SaleTicket {
   business: BusinessPublicSettings;
 }
 
+export interface ListSalesResult {
+  sales: Sale[];
+  cashierNames: Record<string, string>;
+}
+
+export interface SaleDetail {
+  sale: Sale;
+  items: SaleItem[];
+  cashierName: string;
+}
+
 export interface SalesActionDeps {
   currentUserResolver?: () => Promise<AuthenticatedUser | null>;
   salesRepoFactory?: (user: UserContext) => Promise<SalesRepo>;
   productsRepoFactory?: (user: UserContext) => Promise<ProductsRepo>;
   settingsRepoFactory?: (user: UserContext) => Promise<SettingsRepo>;
+  usersRepoFactory?: (user: UserContext) => Promise<UsersRepo>;
 }
 
 async function defaultSalesRepoFactory(user: UserContext): Promise<SalesRepo> {
@@ -51,6 +76,11 @@ async function defaultProductsRepoFactory(user: UserContext): Promise<ProductsRe
 async function defaultSettingsRepoFactory(user: UserContext): Promise<SettingsRepo> {
   const supabase = await createClient();
   return new SupabaseSettingsRepo(supabase, user);
+}
+
+async function defaultUsersRepoFactory(user: UserContext): Promise<UsersRepo> {
+  const supabase = await createClient();
+  return new SupabaseUsersRepo(supabase, user);
 }
 
 function toUserContext(user: AuthenticatedUser): UserContext {
@@ -213,6 +243,96 @@ export function createGetSaleTicketAction(deps: SalesActionDeps = {}) {
 
         const business = await settingsRepo.getPublicSettings();
         return { sale: result.sale, items: result.items, business };
+      },
+    })(input);
+  };
+}
+
+function laPazDayBoundsIso(day: string): { start: string; end: string } {
+  const [year = 2000, month = 1, date = 1] = day.split("-").map(Number);
+  const reference = new Date(Date.UTC(year, month - 1, date, 12));
+  return {
+    start: startOfLaPazDay(reference).toISOString(),
+    end: endOfLaPazDay(reference).toISOString(),
+  };
+}
+
+export function createListSalesAction(deps: SalesActionDeps = {}) {
+  const {
+    currentUserResolver,
+    salesRepoFactory = defaultSalesRepoFactory,
+    usersRepoFactory = defaultUsersRepoFactory,
+  } = deps;
+
+  return async (input: ListSalesInput): Promise<ActionResult<ListSalesResult>> => {
+    return secureAction<ListSalesInput, ListSalesResult>({
+      roles: ["owner", "cashier"],
+      schema: listSalesSchema,
+      currentUserResolver,
+      handler: async (validatedInput, ctx) => {
+        const userContext = toUserContext(ctx.user);
+        const salesRepo = await salesRepoFactory(userContext);
+
+        const filter: SalesListFilter = {};
+        if (validatedInput.dateFrom) {
+          filter.dateFrom = laPazDayBoundsIso(validatedInput.dateFrom).start;
+        }
+        if (validatedInput.dateTo) {
+          filter.dateTo = laPazDayBoundsIso(validatedInput.dateTo).end;
+        }
+        if (validatedInput.paymentMethod) filter.paymentMethod = validatedInput.paymentMethod;
+        if (validatedInput.status) filter.status = validatedInput.status;
+        if (validatedInput.limit) filter.limit = validatedInput.limit;
+        // El cajero siempre lista solo las suyas, aunque envíe otro cashierId.
+        filter.cashierId =
+          ctx.user.role === "cashier" ? ctx.user.id : validatedInput.cashierId;
+
+        const sales = await salesRepo.list(filter);
+
+        let cashierNames: Record<string, string>;
+        if (ctx.user.role === "owner") {
+          const usersRepo = await usersRepoFactory(userContext);
+          const profiles = await usersRepo.listProfiles();
+          cashierNames = Object.fromEntries(profiles.map((profile) => [profile.id, profile.full_name]));
+        } else {
+          cashierNames = { [ctx.user.id]: ctx.user.name };
+        }
+
+        return { sales, cashierNames };
+      },
+    })(input);
+  };
+}
+
+export function createGetSaleDetailAction(deps: SalesActionDeps = {}) {
+  const {
+    currentUserResolver,
+    salesRepoFactory = defaultSalesRepoFactory,
+    usersRepoFactory = defaultUsersRepoFactory,
+  } = deps;
+
+  return async (input: GetSaleDetailInput): Promise<ActionResult<SaleDetail>> => {
+    return secureAction<GetSaleDetailInput, SaleDetail>({
+      roles: ["owner", "cashier"],
+      schema: getSaleDetailSchema,
+      currentUserResolver,
+      handler: async (validatedInput, ctx) => {
+        const userContext = toUserContext(ctx.user);
+        const salesRepo = await salesRepoFactory(userContext);
+
+        const result = await salesRepo.getById(validatedInput.saleId);
+        if (!result) {
+          throw new ActionException("Venta no encontrada.", "NOT_FOUND");
+        }
+
+        let cashierName = ctx.user.name;
+        if (ctx.user.role === "owner" && result.sale.cashier_id !== ctx.user.id) {
+          const usersRepo = await usersRepoFactory(userContext);
+          const profile = await usersRepo.getProfile(result.sale.cashier_id);
+          cashierName = profile?.full_name ?? "—";
+        }
+
+        return { sale: result.sale, items: result.items, cashierName };
       },
     })(input);
   };

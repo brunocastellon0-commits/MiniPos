@@ -1,5 +1,6 @@
 import type {
   SalesRepo,
+  SalesListFilter,
   Sale,
   SaleItem,
   HeldSale,
@@ -171,7 +172,7 @@ export class MemorySalesRepo implements SalesRepo {
     return { sale, items };
   }
 
-  async list(filter?: { sessionId?: string; cashierId?: string; limit?: number }): Promise<Sale[]> {
+  async list(filter?: SalesListFilter): Promise<Sale[]> {
     let sales = Array.from(this.store.sales.values());
 
     if (this.user.role === "cashier") {
@@ -182,6 +183,20 @@ export class MemorySalesRepo implements SalesRepo {
 
     if (filter?.sessionId) {
       sales = sales.filter((s) => s.session_id === filter.sessionId);
+    }
+    if (filter?.paymentMethod) {
+      sales = sales.filter((s) => s.payment_method === filter.paymentMethod);
+    }
+    if (filter?.status) {
+      sales = sales.filter((s) => s.status === filter.status);
+    }
+    if (filter?.dateFrom) {
+      const from = Date.parse(filter.dateFrom);
+      sales = sales.filter((s) => new Date(s.created_at).getTime() >= from);
+    }
+    if (filter?.dateTo) {
+      const to = Date.parse(filter.dateTo);
+      sales = sales.filter((s) => new Date(s.created_at).getTime() <= to);
     }
 
     return sales

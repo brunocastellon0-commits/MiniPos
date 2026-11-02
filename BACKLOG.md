@@ -89,7 +89,7 @@
 
 | ID | Tarea | Deps | BD | Estado |
 |---|---|---|---|---|
-| E5-01 | Listado y detalle de ventas | E4-04 |  | TODO |
+| E5-01 | Listado y detalle de ventas | E4-04 |  | DONE |
 | E5-02 | Anular venta (dueño) | E5-01 | 🚨 | TODO |
 
 ## E6 — Inventario  ·  [backlog/E6-inventario.md](backlog/E6-inventario.md)
