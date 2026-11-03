@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 
 export default async function CajaPage() {
   const user = await requireUser("/login");
-
+  
   const overviewResult = await getCashOverviewAction();
   const overview = overviewResult.ok ? overviewResult.data : null;
 

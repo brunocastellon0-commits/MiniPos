@@ -40,8 +40,8 @@ describe("updateSession", () => {
 
     const mockFactory: ClientFactory = () => ({
       auth: {
-        getClaims: vi.fn().mockResolvedValue({
-          data: null,
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: null },
           error: null,
         }),
       },
@@ -60,8 +60,8 @@ describe("updateSession", () => {
 
     const mockFactory: ClientFactory = () => ({
       auth: {
-        getClaims: vi.fn().mockResolvedValue({
-          data: null,
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: null },
           error: null,
         }),
       },
@@ -78,8 +78,8 @@ describe("updateSession", () => {
 
     const mockFactory: ClientFactory = () => ({
       auth: {
-        getClaims: vi.fn().mockResolvedValue({
-          data: { claims: { sub: "user-123", role: "cashier" } },
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: { id: "user-123" } },
           error: null,
         }),
       },
@@ -97,8 +97,8 @@ describe("updateSession", () => {
 
     const mockFactory: ClientFactory = () => ({
       auth: {
-        getClaims: vi.fn().mockResolvedValue({
-          data: { claims: { sub: "user-123", role: "cashier" } },
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: { id: "user-123" } },
           error: null,
         }),
       },
@@ -130,8 +130,8 @@ describe("updateSession", () => {
 
       return {
         auth: {
-          getClaims: vi.fn().mockResolvedValue({
-            data: { claims: { sub: "user-123" } },
+          getUser: vi.fn().mockResolvedValue({
+            data: { user: { id: "user-123" } },
             error: null,
           }),
         },

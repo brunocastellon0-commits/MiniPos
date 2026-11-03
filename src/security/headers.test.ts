@@ -26,8 +26,8 @@ describe("Security Headers & CSP", () => {
 
     const mockFactory: ClientFactory = () => ({
       auth: {
-        getClaims: async () => ({
-          data: null,
+        getUser: async () => ({
+          data: { user: null },
           error: null,
         }),
       },

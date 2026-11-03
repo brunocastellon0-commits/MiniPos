@@ -66,28 +66,22 @@ export type ClientFactory = (
   options: Parameters<typeof createServerClient<Database>>[2],
 ) => {
   auth: {
-    getClaims: () => Promise<{
-      data: { claims: Record<string, unknown> } | null;
+    getUser: () => Promise<{
+      data: { user: { id: string } | null };
       error: unknown | null;
     }>;
   };
 };
 
-export async function updateSession(
-  request: NextRequest,
-  clientFactory?: ClientFactory,
-): Promise<NextResponse> {
+export async function updateSession(request: NextRequest, clientFactory?: ClientFactory) {
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-nonce", nonce);
   const csp = generateCsp(nonce);
-  requestHeaders.set("Content-Security-Policy", csp);
 
-  let response = NextResponse.next({
-    request: {
-      headers: requestHeaders,
-    },
-  });
+  // Modificamos el request directamente (así request.cookies.set también se propaga)
+  request.headers.set("x-nonce", nonce);
+  request.headers.set("Content-Security-Policy", csp);
+
+  let response = NextResponse.next({ request });
 
   const { url, key } = getSupabaseEnv();
   const createClient = clientFactory || createServerClient<Database>;
@@ -98,52 +92,44 @@ export async function updateSession(
         return request.cookies.getAll();
       },
       setAll(cookiesToSet, headers) {
-        cookiesToSet.forEach(({ name, value }) => {
-          request.cookies.set(name, value);
-        });
-        response = NextResponse.next({
-          request: {
-            headers: requestHeaders,
-          },
-        });
-        cookiesToSet.forEach(({ name, value, options }) => {
-          response.cookies.set(name, value, options);
-        });
+        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+        response = NextResponse.next({ request }); // ✅ ahora sí lleva las cookies nuevas
+        cookiesToSet.forEach(({ name, value, options }) =>
+          response.cookies.set(name, value, options),
+        );
         if (headers) {
-          Object.entries(headers).forEach(([headerKey, value]) => {
-            response.headers.set(headerKey, value);
-          });
+          Object.entries(headers).forEach(([k, v]) => response.headers.set(k, v));
         }
       },
     },
   });
 
-  // REGLA FUNDAMENTAL DE SEGURIDAD (Supabase SSR):
-  // No ejecutar ninguna lógica entre crear el cliente y getClaims()
-  const { data, error } = await supabase.auth.getClaims();
-  const claims = data?.claims ?? null;
-  const isAuthenticated = !error && Boolean(claims);
-
+  const { data, error } = await supabase.auth.getUser();
+  
+  
+  const isAuthenticated = !error && Boolean(data?.user);
   const pathname = request.nextUrl.pathname;
 
-  // 1. Redirección si usuario sin sesión intenta acceder a una ruta privada
+  // Helper: redirect conservando las cookies refrescadas
+  const redirectTo = (url: URL) => {
+    const redirectResponse = NextResponse.redirect(url);
+    response.cookies.getAll().forEach((c) => redirectResponse.cookies.set(c));
+    applySecurityHeaders(redirectResponse, nonce);
+    return redirectResponse;
+  };
+
   if (!isAuthenticated && isProtectedRoute(pathname)) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     loginUrl.searchParams.set("redirectTo", pathname);
-    const redirectResponse = NextResponse.redirect(loginUrl);
-    applySecurityHeaders(redirectResponse, nonce);
-    return redirectResponse;
+    return redirectTo(loginUrl);
   }
 
-  // 2. Redirección si usuario con sesión activa intenta ir al login
   if (isAuthenticated && isAuthRoute(pathname)) {
-    const defaultAppUrl = request.nextUrl.clone();
-    defaultAppUrl.pathname = "/caja";
-    defaultAppUrl.search = "";
-    const redirectResponse = NextResponse.redirect(defaultAppUrl);
-    applySecurityHeaders(redirectResponse, nonce);
-    return redirectResponse;
+    const appUrl = request.nextUrl.clone();
+    appUrl.pathname = "/caja";
+    appUrl.search = "";
+    return redirectTo(appUrl);
   }
 
   applySecurityHeaders(response, nonce);

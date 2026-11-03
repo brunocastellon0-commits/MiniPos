@@ -217,21 +217,27 @@ export function secureAction<TInput, TOutput>(options: SecureActionOptions<TInpu
         user: user as AuthenticatedUser,
       });
       result = { ok: true, data };
-    } catch (error) {
-      if (isKnownActionError(error)) {
-        result = {
-          ok: false,
-          code: error.code,
-          message: error.message,
-        };
-      } else {
-        result = {
-          ok: false,
-          code: "INTERNAL_ERROR",
-          message: "Ocurrió un error inesperado al procesar la solicitud.",
-        };
-      }
-    }
+   } catch (error) {
+  console.error("[SECURE ACTION ERROR]", {
+    error,
+    message: error instanceof Error ? error.message : String(error),
+    stack: error instanceof Error ? error.stack : undefined,
+  });
+
+  if (isKnownActionError(error)) {
+    result = {
+      ok: false,
+      code: error.code,
+      message: error.message,
+    };
+  } else {
+    result = {
+      ok: false,
+      code: "INTERNAL_ERROR",
+      message: "Ocurrió un error inesperado al procesar la solicitud.",
+    };
+  }
+}
 
     // 6. Auditar
     if (options.audit) {
