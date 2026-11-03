@@ -114,19 +114,19 @@
 
 | ID | Tarea | Deps | BD | Estado |
 |---|---|---|---|---|
-| E8-01 | Dominio de métricas del día | E5-01 |  | TODO |
-| E8-02 | UI del panel | E8-01, E3-01, E6-04 |  | TODO |
-| E8-03 | Notificaciones (campana) | E8-02 |  | TODO |
+| E8-01 | Dominio de métricas del día | E5-01 |  | DONE |
+| E8-02 | UI del panel | E8-01, E3-01, E6-04 |  | DONE |
+| E8-03 | Notificaciones (campana) | E8-02 |  | DONE |
 
 ## E9 — Reportes (dueño)  ·  [backlog/E9-reportes-dueno.md](backlog/E9-reportes-dueno.md)
 
 | ID | Tarea | Deps | BD | Estado |
 |---|---|---|---|---|
-| E9-01 | Ventas por día/periodo con comparación | E5-01 |  | TODO |
-| E9-02 | Productos más y menos vendidos | E9-01 |  | TODO |
-| E9-03 | Reporte de inventario y valorización | E6-01 |  | TODO |
-| E9-04 | Reporte de caja y de compras | E3-05, E7-04 |  | TODO |
-| E9-05 | Exportar a CSV | E9-01 |  | TODO |
+| E9-01 | Ventas por día/periodo con comparación | E5-01 |  | DONE |
+| E9-02 | Productos más y menos vendidos | E9-01 |  | DONE |
+| E9-03 | Reporte de inventario y valorización | E6-01 |  | DONE |
+| E9-04 | Reporte de caja y de compras | E3-05, E7-04 |  | DONE |
+| E9-05 | Exportar a CSV | E9-01 |  | DONE |
 
 ## E10 — Configuración  ·  [backlog/E10-configuracion.md](backlog/E10-configuracion.md)
 

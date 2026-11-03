@@ -172,6 +172,19 @@ export class MemorySalesRepo implements SalesRepo {
     return { sale, items };
   }
 
+  async listItemsForSales(saleIds: readonly string[]): Promise<SaleItem[]> {
+    if (saleIds.length === 0) return [];
+    const requested = new Set(saleIds);
+    const accessible = new Set<string>();
+    for (const saleId of requested) {
+      const sale = this.store.sales.get(saleId);
+      if (!sale) continue;
+      if (this.user.role === "cashier" && sale.cashier_id !== this.user.id) continue;
+      accessible.add(saleId);
+    }
+    return Array.from(this.store.saleItems.values()).filter((it) => accessible.has(it.sale_id));
+  }
+
   async list(filter?: SalesListFilter): Promise<Sale[]> {
     let sales = Array.from(this.store.sales.values());
 

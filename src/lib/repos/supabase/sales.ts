@@ -95,6 +95,19 @@ export class SupabaseSalesRepo implements SalesRepo {
     return { sale, items: items || [] };
   }
 
+  async listItemsForSales(saleIds: readonly string[]): Promise<SaleItem[]> {
+    const ids = Array.from(new Set(saleIds));
+    const items: SaleItem[] = [];
+    const CHUNK = 200;
+    for (let i = 0; i < ids.length; i += CHUNK) {
+      const chunk = ids.slice(i, i + CHUNK);
+      const { data, error } = await this.supabase.from("sale_items").select("*").in("sale_id", chunk);
+      if (error) throw new Error(error.message);
+      items.push(...(data || []));
+    }
+    return items;
+  }
+
   async list(filter?: SalesListFilter): Promise<Sale[]> {
     let query = this.supabase.from("sales").select("*").order("created_at", { ascending: false });
 

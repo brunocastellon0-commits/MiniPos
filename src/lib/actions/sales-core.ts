@@ -2,7 +2,7 @@ import { SupabaseProductsRepo } from "@/lib/repos/supabase/products";
 import { SupabaseSalesRepo } from "@/lib/repos/supabase/sales";
 import { SupabaseSettingsRepo } from "@/lib/repos/supabase/settings";
 import { SupabaseUsersRepo } from "@/lib/repos/supabase/users";
-import { endOfLaPazDay, startOfLaPazDay } from "@/lib/dates";
+import { laPazDayBoundsIso } from "@/lib/dates";
 import type {
   BusinessPublicSettings,
   Product,
@@ -247,15 +247,6 @@ export function createGetSaleTicketAction(deps: SalesActionDeps = {}) {
         return { sale: result.sale, items: result.items, business };
       },
     })(input);
-  };
-}
-
-function laPazDayBoundsIso(day: string): { start: string; end: string } {
-  const [year = 2000, month = 1, date = 1] = day.split("-").map(Number);
-  const reference = new Date(Date.UTC(year, month - 1, date, 12));
-  return {
-    start: startOfLaPazDay(reference).toISOString(),
-    end: endOfLaPazDay(reference).toISOString(),
   };
 }
 

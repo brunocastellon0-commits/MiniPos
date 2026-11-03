@@ -123,6 +123,7 @@ export interface SalesRepo {
   ): Promise<{ sale: Sale; items: SaleItem[] }>;
   getById(id: string): Promise<{ sale: Sale; items: SaleItem[] } | null>;
   getByClientRequestId(clientRequestId: string): Promise<{ sale: Sale; items: SaleItem[] } | null>;
+  listItemsForSales(saleIds: readonly string[]): Promise<SaleItem[]>;
   list(filter?: SalesListFilter): Promise<Sale[]>;
   voidSale(id: string, reason: string): Promise<Sale>;
   getHeldSales(): Promise<HeldSale[]>;

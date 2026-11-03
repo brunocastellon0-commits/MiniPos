@@ -77,3 +77,12 @@ export function startOfLaPazDay(date: Date): Date {
 export function endOfLaPazDay(date: Date): Date {
   return new Date(startOfLaPazDay(date).getTime() + DAY_MS - 1);
 }
+
+export function laPazDayBoundsIso(day: string): { start: string; end: string } {
+  const [year = 2000, month = 1, date = 1] = day.split("-").map(Number);
+  const reference = new Date(Date.UTC(year, month - 1, date, 12));
+  return {
+    start: startOfLaPazDay(reference).toISOString(),
+    end: endOfLaPazDay(reference).toISOString(),
+  };
+}
