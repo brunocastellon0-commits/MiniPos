@@ -126,22 +126,21 @@ export class SupabaseSalesRepo implements SalesRepo {
   }
 
   async voidSale(id: string, reason: string): Promise<Sale> {
-    // En tareas posteriores (E5), esto se delegará a la RPC void_sale
-    const now = new Date().toISOString();
-    const { data, error } = await this.supabase
+    const { data: saleId, error: rpcError } = await this.supabase.rpc("void_sale", {
+      p_sale_id: id,
+      p_reason: reason,
+    });
+
+    if (rpcError) throw new Error(rpcError.message);
+
+    const { data: sale, error } = await this.supabase
       .from("sales")
-      .update({
-        status: "voided",
-        voided_by: this.user.id,
-        voided_at: now,
-        void_reason: reason,
-      })
-      .eq("id", id)
-      .select()
+      .select("*")
+      .eq("id", saleId)
       .single();
 
     if (error) throw new Error(error.message);
-    return data;
+    return sale;
   }
 
   async getHeldSales(): Promise<HeldSale[]> {

@@ -743,6 +743,13 @@ export interface Database {
         };
         Returns: string;
       };
+      void_sale: {
+        Args: {
+          p_sale_id: string;
+          p_reason: string;
+        };
+        Returns: string;
+      };
     };
     Enums: {
       user_role: "owner" | "cashier";

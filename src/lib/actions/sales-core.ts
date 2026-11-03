@@ -31,6 +31,8 @@ import {
   getSaleTicketSchema,
   type ListSalesInput,
   listSalesSchema,
+  type VoidSaleInput,
+  voidSaleSchema,
 } from "./sales-schema";
 
 export interface ConfirmSaleResult {
@@ -333,6 +335,33 @@ export function createGetSaleDetailAction(deps: SalesActionDeps = {}) {
         }
 
         return { sale: result.sale, items: result.items, cashierName };
+      },
+    })(input);
+  };
+}
+
+export function createVoidSaleAction(deps: SalesActionDeps = {}) {
+  const { currentUserResolver, salesRepoFactory = defaultSalesRepoFactory } = deps;
+
+  return async (input: VoidSaleInput): Promise<ActionResult<Sale>> => {
+    return secureAction<VoidSaleInput, Sale>({
+      roles: ["owner"],
+      schema: voidSaleSchema,
+      currentUserResolver,
+      handler: async (validatedInput, ctx) => {
+        const salesRepo = await salesRepoFactory(toUserContext(ctx.user));
+
+        const existing = await salesRepo.getById(validatedInput.saleId);
+        if (!existing) {
+          throw new ActionException("Venta no encontrada.", "NOT_FOUND");
+        }
+
+        // Idempotente: si ya está anulada, devuelve la venta tal cual.
+        if (existing.sale.status === "voided") {
+          return existing.sale;
+        }
+
+        return salesRepo.voidSale(validatedInput.saleId, validatedInput.reason);
       },
     })(input);
   };

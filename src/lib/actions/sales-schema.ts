@@ -102,3 +102,16 @@ export const getSaleDetailSchema = z
   .strict();
 
 export type GetSaleDetailInput = z.infer<typeof getSaleDetailSchema>;
+
+export const voidSaleSchema = z
+  .object({
+    saleId: z.string().min(1, { message: "ID de venta requerido." }),
+    reason: z
+      .string()
+      .trim()
+      .min(1, { message: "El motivo de anulación es obligatorio." })
+      .max(300, { message: "El motivo no puede superar 300 caracteres." }),
+  })
+  .strict();
+
+export type VoidSaleInput = z.infer<typeof voidSaleSchema>;

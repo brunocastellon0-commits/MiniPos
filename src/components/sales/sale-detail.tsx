@@ -4,6 +4,7 @@ import { formatBs } from "@/lib/money";
 import type { Sale, SaleItem } from "@/lib/repos/types";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { VoidSaleButton } from "./void-sale-button";
 
 const METHOD_LABELS: Record<string, string> = { cash: "Efectivo", qr: "QR", card: "Tarjeta" };
 
@@ -14,9 +15,10 @@ export interface SaleDetailProps {
   sale: Sale;
   items: SaleItem[];
   cashierName: string;
+  canVoid?: boolean;
 }
 
-export function SaleDetail({ sale, items, cashierName }: SaleDetailProps) {
+export function SaleDetail({ sale, items, cashierName, canVoid = false }: SaleDetailProps) {
   return (
     <div className="space-y-4">
       <Link href="/ventas" className={backLinkClasses}>
@@ -26,9 +28,12 @@ export function SaleDetail({ sale, items, cashierName }: SaleDetailProps) {
       <Card>
         <CardHeader className="flex-row items-center justify-between">
           <CardTitle>Venta #{sale.number}</CardTitle>
-          <Badge tone={sale.status === "voided" ? "danger" : "success"}>
-            {sale.status === "voided" ? "Anulada" : "Pagada"}
-          </Badge>
+          <div className="flex items-center gap-2">
+            {canVoid && sale.status === "paid" ? <VoidSaleButton saleId={sale.id} /> : null}
+            <Badge tone={sale.status === "voided" ? "danger" : "success"}>
+              {sale.status === "voided" ? "Anulada" : "Pagada"}
+            </Badge>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <dl className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">

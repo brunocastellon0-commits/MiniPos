@@ -17,7 +17,7 @@ export default async function SaleDetailPage({
 }: {
   params: Promise<{ saleId: string }>;
 }) {
-  await requireUser("/login");
+  const user = await requireUser("/login");
   const { saleId } = await params;
 
   const result = await getSaleDetailAction({ saleId });
@@ -50,6 +50,7 @@ export default async function SaleDetailPage({
       sale={result.data.sale}
       items={result.data.items}
       cashierName={result.data.cashierName}
+      canVoid={user.role === "owner"}
     />
   );
 }
