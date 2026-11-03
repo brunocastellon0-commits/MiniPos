@@ -132,9 +132,9 @@
 
 | ID | Tarea | Deps | BD | Estado |
 |---|---|---|---|---|
-| E10-01 | Datos del negocio y marca | E1-03 |  | TODO |
-| E10-02 | Preferencias de operación | E10-01 |  | TODO |
-| E10-03 | Asistente de configuración inicial (onboarding) | E10-01, E2-03 |  | TODO |
+| E10-01 | Datos del negocio y marca | E1-03 | 🚨 | BLOCKED-DB |
+| E10-02 | Preferencias de operación | E10-01 |  | DONE |
+| E10-03 | Asistente de configuración inicial (onboarding) | E10-01, E2-03 |  | DONE |
 
 ## E11 — Calidad, seguridad y pulido  ·  [backlog/E11-calidad-seguridad-y-pulido.md](backlog/E11-calidad-seguridad-y-pulido.md)
 

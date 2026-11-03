@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import { AppLayoutClient } from "@/components/layout/app-layout-client";
 import { getOpenCashSessionAction, listCashSessionsAction } from "@/lib/actions/cash";
 import { listInventoryProductsAction } from "@/lib/actions/inventory";
+import { getBusinessPublicAction } from "@/lib/actions/settings";
 import { requireUser } from "@/lib/auth";
 import { buildDashboardNotifications, type DashboardNotification } from "@/lib/domain/dashboard";
 import { countLowStock } from "@/lib/domain/inventory";
 import type { OpenCashSessionPublic } from "@/lib/repos/types";
-import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: {
@@ -26,19 +26,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   let notifications: DashboardNotification[] | null = null;
 
   try {
-    const supabase = await createClient();
-
-    const { data: settings } = await supabase
-      .from("business_settings")
-      .select("name, logo_url")
-      .eq("id", 1)
-      .maybeSingle();
-
-    if (settings?.name) {
-      businessName = settings.name;
-    }
-    if (settings?.logo_url) {
-      logoUrl = settings.logo_url;
+    const publicSettingsResult = await getBusinessPublicAction();
+    if (publicSettingsResult.ok) {
+      businessName = publicSettingsResult.data.name;
+      logoUrl = publicSettingsResult.data.logo_url;
     }
 
     const openSessionResult = await getOpenCashSessionAction();

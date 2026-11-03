@@ -13,6 +13,7 @@ export interface ProductFormDialogProps {
   product: Product | null;
   categories: Category[];
   open: boolean;
+  defaultMinStock?: number;
   onClose: () => void;
   onSaved: (product: Product) => void;
 }
@@ -21,6 +22,7 @@ export function ProductFormDialog({
   product,
   categories,
   open,
+  defaultMinStock = 5,
   onClose,
   onSaved,
 }: ProductFormDialogProps) {
@@ -40,6 +42,7 @@ export function ProductFormDialog({
         key={product?.id ?? "new"}
         product={product}
         categories={categories}
+        defaultMinStock={defaultMinStock}
         onClose={onClose}
         onSaved={onSaved}
       />
@@ -61,11 +64,13 @@ function parseInteger(value: string): number | null {
 function ProductForm({
   product,
   categories,
+  defaultMinStock,
   onClose,
   onSaved,
 }: {
   product: Product | null;
   categories: Category[];
+  defaultMinStock: number;
   onClose: () => void;
   onSaved: (product: Product) => void;
 }) {
@@ -77,7 +82,7 @@ function ProductForm({
   const [price, setPrice] = useState(centsToInput(product?.price_cents));
   const [cost, setCost] = useState(centsToInput(product?.cost_cents));
   const [stock, setStock] = useState(String(product?.stock_qty ?? 0));
-  const [minStock, setMinStock] = useState(String(product?.min_stock ?? 5));
+  const [minStock, setMinStock] = useState(String(product?.min_stock ?? defaultMinStock));
   const [active, setActive] = useState(product?.active ?? true);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);

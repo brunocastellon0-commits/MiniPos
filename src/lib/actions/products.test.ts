@@ -3,7 +3,8 @@ import { MemoryAuditRepo } from "@/lib/repos/memory/audit";
 import { MemoryCategoriesRepo } from "@/lib/repos/memory/categories";
 import { MemoryStore } from "@/lib/repos/memory/memory-store";
 import { MemoryProductsRepo } from "@/lib/repos/memory/products";
-import type { AuditRepo, ProductsRepo, UserContext } from "@/lib/repos/types";
+import { MemorySettingsRepo } from "@/lib/repos/memory/settings";
+import type { AuditRepo, ProductsRepo, SettingsRepo, UserContext } from "@/lib/repos/types";
 import {
   createCreateProductAction,
   createListProductsAction,
@@ -41,6 +42,8 @@ async function setup() {
       new MemoryProductsRepo(store, ctx),
     auditRepoFactory: async (ctx: UserContext): Promise<AuditRepo> =>
       new MemoryAuditRepo(store, ctx),
+    settingsRepoFactory: async (ctx: UserContext): Promise<SettingsRepo> =>
+      new MemorySettingsRepo(store, ctx),
   });
 
   return { store, category, makeDeps };
@@ -75,8 +78,20 @@ describe("Productos - Server Actions (E2-02)", () => {
     );
   });
 
-  it("rechaza códigos de barras duplicados con un mensaje claro", async () => {
-    const { makeDeps } = await setup();
+  it("usa el umbral de stock bajo por defecto de la configuración (E10-02)", async () => {
+    const { makeDeps, store } = await setup();
+    store.businessSettings.low_stock_default = 2;
+
+    const result = await createCreateProductAction(makeDeps(owner))({
+      name: "Yerba Mate 1kg",
+      priceCents: 4500,
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data.min_stock).toBe(2);
+  });
+
+  it("rechaza códigos de barras duplicados con un mensaje claro", async () => {    const { makeDeps } = await setup();
     await createCreateProductAction(makeDeps(owner))({
       name: "Producto A",
       barcode: "12345",

@@ -14,6 +14,7 @@ export interface CatalogClientProps {
   initialTotal: number;
   initialPage: number;
   initialTotalPages: number;
+  defaultMinStock?: number;
 }
 
 export function CatalogClient({
@@ -22,6 +23,7 @@ export function CatalogClient({
   initialTotal,
   initialPage,
   initialTotalPages,
+  defaultMinStock = 5,
 }: CatalogClientProps) {
   const [tab, setTab] = useState<CatalogTab>("productos");
   const [categories, setCategories] = useState<Category[]>(initialCategories);
@@ -52,6 +54,7 @@ export function CatalogClient({
           initialPage={initialPage}
           initialTotalPages={initialTotalPages}
           categories={categories}
+          defaultMinStock={defaultMinStock}
         />
       ) : (
         <CategoriesPanel initialCategories={categories} onCategoriesChange={setCategories} />

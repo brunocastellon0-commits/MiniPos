@@ -3,6 +3,7 @@ import { Package } from "lucide-react";
 import { CatalogClient } from "@/components/catalog/catalog-client";
 import { listCategoriesAction } from "@/lib/actions/categories";
 import { listProductsAction } from "@/lib/actions/products";
+import { getBusinessPublicAction } from "@/lib/actions/settings";
 import { requireRole } from "@/lib/auth";
 import type { Category, Product } from "@/lib/repos/types";
 
@@ -19,11 +20,13 @@ export default async function ProductosPage() {
   let total = 0;
   let page = 1;
   let totalPages = 1;
+  let lowStockDefault = 5;
 
   try {
-    const [categoriesResult, productsResult] = await Promise.all([
+    const [categoriesResult, productsResult, publicSettingsResult] = await Promise.all([
       listCategoriesAction(),
       listProductsAction({ page: 1, pageSize: 20 }),
+      getBusinessPublicAction(),
     ]);
 
     if (categoriesResult.ok) {
@@ -34,6 +37,9 @@ export default async function ProductosPage() {
       total = productsResult.data.total;
       page = productsResult.data.page;
       totalPages = productsResult.data.totalPages;
+    }
+    if (publicSettingsResult.ok) {
+      lowStockDefault = publicSettingsResult.data.low_stock_default;
     }
   } catch {
     categories = [];
@@ -58,6 +64,7 @@ export default async function ProductosPage() {
         initialTotal={total}
         initialPage={page}
         initialTotalPages={totalPages}
+        defaultMinStock={lowStockDefault}
       />
     </div>
   );

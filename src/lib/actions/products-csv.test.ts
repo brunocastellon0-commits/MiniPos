@@ -3,10 +3,12 @@ import { MemoryAuditRepo } from "@/lib/repos/memory/audit";
 import { MemoryCategoriesRepo } from "@/lib/repos/memory/categories";
 import { MemoryStore } from "@/lib/repos/memory/memory-store";
 import { MemoryProductsRepo } from "@/lib/repos/memory/products";
+import { MemorySettingsRepo } from "@/lib/repos/memory/settings";
 import type {
   AuditRepo,
   CategoriesRepo,
   ProductsRepo,
+  SettingsRepo,
   UserContext,
 } from "@/lib/repos/types";
 import {
@@ -48,6 +50,8 @@ async function setup() {
       new MemoryCategoriesRepo(store, ctx),
     auditRepoFactory: async (ctx: UserContext): Promise<AuditRepo> =>
       new MemoryAuditRepo(store, ctx),
+    settingsRepoFactory: async (ctx: UserContext): Promise<SettingsRepo> =>
+      new MemorySettingsRepo(store, ctx),
   });
 
   return { store, category, makeDeps };
@@ -94,8 +98,19 @@ describe("Importación CSV - Server Actions (E2-03)", () => {
     ).toBe(true);
   });
 
-  it("no importa ninguna fila si el archivo tiene errores", async () => {
+  it("usa low_stock_default cuando la fila no trae stock_minimo (E10-02)", async () => {
     const { makeDeps, store } = await setup();
+    store.businessSettings.low_stock_default = 3;
+    const csv = [header, "Arroz 1kg,779,,Bebidas,unidad,8.00,,5,"].join("\n");
+
+    const result = await createImportProductsCsvAction(makeDeps(owner))({ csv });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data.imported).toBe(1);
+    expect(Array.from(store.products.values())[0]?.min_stock).toBe(3);
+  });
+
+  it("no importa ninguna fila si el archivo tiene errores", async () => {    const { makeDeps, store } = await setup();
     const csv = [
       header,
       "Válido,,,Bebidas,unidad,5.00,,1,1",

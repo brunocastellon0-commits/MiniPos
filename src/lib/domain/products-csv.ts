@@ -46,6 +46,7 @@ export interface ParseProductsCsvOptions {
   categories: Pick<Category, "id" | "name">[];
   existingBarcodes?: Iterable<string>;
   maxRows?: number;
+  defaultMinStock?: number;
 }
 
 function normalizeHeader(value: string): string {
@@ -237,7 +238,12 @@ export function parseProductsCsv(
     const costCents = parseOptionalMoney(cell("costo"), "El costo", rowErrors);
 
     const stockQty = parseInteger(cell("stock"), "El stock", 0, rowErrors);
-    const minStock = parseInteger(cell("stock_minimo"), "El stock mínimo", 5, rowErrors);
+    const minStock = parseInteger(
+      cell("stock_minimo"),
+      "El stock mínimo",
+      options.defaultMinStock ?? 5,
+      rowErrors,
+    );
 
     const categoryName = cell("categoria");
     let categoryId: string | null = null;

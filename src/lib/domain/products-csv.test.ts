@@ -46,6 +46,16 @@ describe("products-csv", () => {
     });
   });
 
+  it("usa defaultMinStock cuando la fila no trae stock_minimo (E10-02)", () => {
+    const csv = [header, "Fideos,770,,Abarrotes,unidad,6.00,,10,"].join("\n");
+
+    const withDefault = parseProductsCsv(csv, { categories, defaultMinStock: 3 });
+    expect(withDefault.rows[0]?.minStock).toBe(3);
+
+    const fallback = parseProductsCsv(csv, { categories });
+    expect(fallback.rows[0]?.minStock).toBe(5);
+  });
+
   it("acepta punto y coma como separador", () => {
     const csv = [header.replace(/,/g, ";"), "Café;123;;Bebidas;unidad;9,00;;5;2"].join("\n");
     const result = parseProductsCsv(csv, { categories });

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   AlertCircle,
   ChevronLeft,
@@ -31,6 +32,7 @@ export interface ProductsPanelProps {
   initialPage: number;
   initialTotalPages: number;
   categories: Category[];
+  defaultMinStock?: number;
 }
 
 export function ProductsPanel({
@@ -39,6 +41,7 @@ export function ProductsPanel({
   initialPage,
   initialTotalPages,
   categories,
+  defaultMinStock = 5,
 }: ProductsPanelProps) {
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [total, setTotal] = useState(initialTotal);
@@ -260,10 +263,18 @@ export function ProductsPanel({
             description="Agrega tu primer producto para empezar a vender."
             icon={<Package className="h-8 w-8" />}
             action={
-              <Button onClick={openCreate} variant="secondary" className="gap-2">
-                <Plus className="h-4 w-4" aria-hidden="true" />
-                Crear producto
-              </Button>
+              <div className="flex flex-wrap justify-center gap-2">
+                <Button onClick={openCreate} variant="secondary" className="gap-2">
+                  <Plus className="h-4 w-4" aria-hidden="true" />
+                  Crear producto
+                </Button>
+                <Link
+                  href="/configuracion/asistente"
+                  className="inline-flex h-9 items-center justify-center rounded-md border border-border bg-surface px-3 text-sm font-medium text-foreground transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                >
+                  Usar el asistente
+                </Link>
+              </div>
             }
           />
         )
@@ -397,6 +408,7 @@ export function ProductsPanel({
         product={editingProduct}
         categories={categories}
         open={isFormOpen}
+        defaultMinStock={defaultMinStock}
         onClose={() => setIsFormOpen(false)}
         onSaved={handleSaved}
       />

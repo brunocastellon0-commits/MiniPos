@@ -1,7 +1,14 @@
 import { normalizeSearchText } from "@/lib/domain/search";
 import { SupabaseAuditRepo } from "@/lib/repos/supabase/audit";
 import { SupabaseProductsRepo } from "@/lib/repos/supabase/products";
-import type { AuditRepo, Product, ProductsRepo, UserContext } from "@/lib/repos/types";
+import { SupabaseSettingsRepo } from "@/lib/repos/supabase/settings";
+import type {
+  AuditRepo,
+  Product,
+  ProductsRepo,
+  SettingsRepo,
+  UserContext,
+} from "@/lib/repos/types";
 import { createClient } from "@/lib/supabase/server";
 import {
   ActionException,
@@ -32,11 +39,17 @@ export interface ProductsActionDeps {
   currentUserResolver?: () => Promise<AuthenticatedUser | null>;
   productsRepoFactory?: (user: UserContext) => Promise<ProductsRepo>;
   auditRepoFactory?: (user: UserContext) => Promise<AuditRepo>;
+  settingsRepoFactory?: (user: UserContext) => Promise<SettingsRepo>;
 }
 
 async function defaultProductsRepoFactory(user: UserContext): Promise<ProductsRepo> {
   const supabase = await createClient();
   return new SupabaseProductsRepo(supabase, user);
+}
+
+async function defaultSettingsRepoFactory(user: UserContext): Promise<SettingsRepo> {
+  const supabase = await createClient();
+  return new SupabaseSettingsRepo(supabase, user);
 }
 
 async function defaultAuditRepoFactory(user: UserContext): Promise<AuditRepo> {
@@ -119,6 +132,7 @@ export function createCreateProductAction(deps: ProductsActionDeps = {}) {
     currentUserResolver,
     productsRepoFactory = defaultProductsRepoFactory,
     auditRepoFactory = defaultAuditRepoFactory,
+    settingsRepoFactory = defaultSettingsRepoFactory,
   } = deps;
 
   return async (input: CreateProductInput): Promise<ActionResult<Product>> => {
@@ -147,12 +161,19 @@ export function createCreateProductAction(deps: ProductsActionDeps = {}) {
         }
       },
       handler: async (validatedInput, ctx) => {
-        const repo = await productsRepoFactory(toUserContext(ctx.user));
+        const context = toUserContext(ctx.user);
+        const repo = await productsRepoFactory(context);
         const barcode = normalizeCode(validatedInput.barcode);
 
         if (barcode) {
           const existing = await repo.getByBarcode(barcode);
           if (existing) throw duplicateBarcodeError();
+        }
+
+        let minStock = validatedInput.minStock;
+        if (minStock === undefined) {
+          const settingsRepo = await settingsRepoFactory(context);
+          minStock = (await settingsRepo.getPublicSettings()).low_stock_default;
         }
 
         return await repo.create({
@@ -164,7 +185,7 @@ export function createCreateProductAction(deps: ProductsActionDeps = {}) {
           price_cents: validatedInput.priceCents,
           cost_cents: validatedInput.costCents ?? null,
           stock_qty: validatedInput.stockQty ?? 0,
-          min_stock: validatedInput.minStock ?? 5,
+          min_stock: minStock,
           active: validatedInput.active ?? true,
         });
       },

@@ -7,10 +7,12 @@ import {
 import { SupabaseAuditRepo } from "@/lib/repos/supabase/audit";
 import { SupabaseCategoriesRepo } from "@/lib/repos/supabase/categories";
 import { SupabaseProductsRepo } from "@/lib/repos/supabase/products";
+import { SupabaseSettingsRepo } from "@/lib/repos/supabase/settings";
 import type {
   AuditRepo,
   CategoriesRepo,
   ProductsRepo,
+  SettingsRepo,
   UserContext,
 } from "@/lib/repos/types";
 import { createClient } from "@/lib/supabase/server";
@@ -42,11 +44,17 @@ export interface ProductsCsvActionDeps {
   productsRepoFactory?: (user: UserContext) => Promise<ProductsRepo>;
   categoriesRepoFactory?: (user: UserContext) => Promise<CategoriesRepo>;
   auditRepoFactory?: (user: UserContext) => Promise<AuditRepo>;
+  settingsRepoFactory?: (user: UserContext) => Promise<SettingsRepo>;
 }
 
 async function defaultProductsRepoFactory(user: UserContext): Promise<ProductsRepo> {
   const supabase = await createClient();
   return new SupabaseProductsRepo(supabase, user);
+}
+
+async function defaultSettingsRepoFactory(user: UserContext): Promise<SettingsRepo> {
+  const supabase = await createClient();
+  return new SupabaseSettingsRepo(supabase, user);
 }
 
 async function defaultCategoriesRepoFactory(user: UserContext): Promise<CategoriesRepo> {
@@ -74,18 +82,25 @@ async function prepareCsv(
   user: UserContext,
   productsRepoFactory: (user: UserContext) => Promise<ProductsRepo>,
   categoriesRepoFactory: (user: UserContext) => Promise<CategoriesRepo>,
+  settingsRepoFactory: (user: UserContext) => Promise<SettingsRepo>,
 ): Promise<PreparedCsv> {
-  const [productsRepo, categoriesRepo] = await Promise.all([
+  const [productsRepo, categoriesRepo, settingsRepo] = await Promise.all([
     productsRepoFactory(user),
     categoriesRepoFactory(user),
+    settingsRepoFactory(user),
   ]);
-  const [products, categories] = await Promise.all([productsRepo.list(), categoriesRepo.list()]);
+  const [products, categories, publicSettings] = await Promise.all([
+    productsRepo.list(),
+    categoriesRepo.list(),
+    settingsRepo.getPublicSettings(),
+  ]);
 
   return parseProductsCsv(csv, {
     categories,
     existingBarcodes: products
       .map((product) => product.barcode)
       .filter((barcode): barcode is string => Boolean(barcode)),
+    defaultMinStock: publicSettings.low_stock_default,
   });
 }
 
@@ -94,6 +109,7 @@ export function createPreviewProductsCsvAction(deps: ProductsCsvActionDeps = {})
     currentUserResolver,
     productsRepoFactory = defaultProductsRepoFactory,
     categoriesRepoFactory = defaultCategoriesRepoFactory,
+    settingsRepoFactory = defaultSettingsRepoFactory,
   } = deps;
 
   return async (input: ProductsCsvInput): Promise<ActionResult<ProductsCsvPreview>> => {
@@ -108,6 +124,7 @@ export function createPreviewProductsCsvAction(deps: ProductsCsvActionDeps = {})
           userContext,
           productsRepoFactory,
           categoriesRepoFactory,
+          settingsRepoFactory,
         );
 
         return {
@@ -133,6 +150,7 @@ export function createImportProductsCsvAction(deps: ProductsCsvActionDeps = {}) 
     productsRepoFactory = defaultProductsRepoFactory,
     categoriesRepoFactory = defaultCategoriesRepoFactory,
     auditRepoFactory = defaultAuditRepoFactory,
+    settingsRepoFactory = defaultSettingsRepoFactory,
   } = deps;
 
   return async (input: ProductsCsvInput): Promise<ActionResult<ImportProductsCsvResult>> => {
@@ -161,6 +179,7 @@ export function createImportProductsCsvAction(deps: ProductsCsvActionDeps = {}) 
           userContext,
           productsRepoFactory,
           categoriesRepoFactory,
+          settingsRepoFactory,
         );
 
         if (parsed.errors.length > 0 || parsed.rows.length === 0) {

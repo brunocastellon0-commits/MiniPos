@@ -35,6 +35,16 @@ Este archivo debe mantenerse **corto**: el agente lo lee en cada sesión.
 
 ## Pendientes
 
+### DB-009 · Branding de la pantalla de login para `anon`
+- Estado: PENDIENTE
+- Archivo: db/migrations/0016_login_branding.sql
+- Tarea(s) del backlog: E10-01
+- Qué hace: `grant select (name, logo_url) on public.business_settings to anon` (solo esas 2 columnas) + política RLS `business_settings_select_login` (`for select to anon using (id = 1)`).
+- Por qué: la pantalla de inicio de sesión corre sin sesión (`anon`); hoy `get_business_public()` exige `is_active_staff()` y el grant de tabla es solo a `authenticated`, así que el login no puede leer la marca y muestra "LILA MARKET" por defecto.
+- Riesgo / destructivo: no — solo lectura de 2 columnas de la fila única; nada de datos sensibles (moneda/prefs/costos siguen denegados).
+- Cómo verificar: en login sin sesión, nombre y logo del negocio aparecen en la cabecera; en SQL Editor: `select name, logo_url from business_settings;` devuelve 1 fila y `select currency_symbol from business_settings;` da error de permisos.
+- Aplicada el: <fecha — la completa el humano>
+
 ## Aplicadas (resumen)
 
 | ID | Archivo | Qué hizo (1 línea) | Aplicada el |
