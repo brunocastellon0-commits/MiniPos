@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Badge } from "@/components/ui/badge";
 import type { AuthenticatedUser } from "@/lib/auth";
 import { cn } from "@/lib/utils/cn";
 import { getNavGroupsForRole } from "./nav-items";
@@ -10,9 +11,10 @@ export interface AppSidebarProps {
   user: AuthenticatedUser;
   onNavigate?: () => void;
   className?: string;
+  lowStockCount?: number;
 }
 
-export function AppSidebar({ user, onNavigate, className }: AppSidebarProps) {
+export function AppSidebar({ user, onNavigate, className, lowStockCount = 0 }: AppSidebarProps) {
   const pathname = usePathname();
   const groups = getNavGroupsForRole(user.role);
 
@@ -44,6 +46,15 @@ export function AppSidebar({ user, onNavigate, className }: AppSidebarProps) {
                   >
                     <Icon className="size-4 shrink-0" aria-hidden="true" />
                     <span>{item.title}</span>
+                    {item.href === "/inventario" && lowStockCount > 0 ? (
+                      <Badge
+                        tone="warning"
+                        className="ms-auto"
+                        aria-label={`${lowStockCount} productos con stock bajo`}
+                      >
+                        {lowStockCount}
+                      </Badge>
+                    ) : null}
                   </Link>
                 );
               })}

@@ -44,3 +44,5 @@ Este archivo debe mantenerse **corto**: el agente lo lee en cada sesión.
 | DB-003 | 0010_cash_rpcs.sql | RPCs de turno (apertura, movimientos, cierre, resumen) security definer con auditoría | 2026-10-30 |
 | DB-004 | 0011_confirm_sale.sql | RPC atómica `confirm_sale` (idempotente, precios/stock en servidor, venta+ítems+stock en una transacción) | 2026-10-31 |
 | DB-005 | 0012_cashier_discount.sql | Columna `business_settings.cashier_can_discount` + `get_business_public()` expone el permiso + `confirm_sale` exige rol owner o casilla habilitada (42501) | 2026-11-02 |
+| DB-006 | 0013_void_sale.sql | RPC `void_sale` (solo dueño, motivo, status→voided, reversa de stock `void_return`, auditoría) | 2026-11-03 |
+| DB-007 | 0014_adjust_stock_receive.sql | RPCs `adjust_stock` y `receive_purchase` (ajustes/mermas y recepción parcial idempotente atómicos con auditoría) | 2026-11-03 |

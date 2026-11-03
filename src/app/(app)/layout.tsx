@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { AppLayoutClient } from "@/components/layout/app-layout-client";
 import { getOpenCashSessionAction } from "@/lib/actions/cash";
+import { listInventoryProductsAction } from "@/lib/actions/inventory";
 import { requireUser } from "@/lib/auth";
+import { countLowStock } from "@/lib/domain/inventory";
 import type { OpenCashSessionPublic } from "@/lib/repos/types";
 import { createClient } from "@/lib/supabase/server";
 
@@ -19,6 +21,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   let businessName = "LILA MARKET";
   let logoUrl: string | null = null;
   let cashSession: OpenCashSessionPublic | null = null;
+  let lowStockCount = 0;
 
   try {
     const supabase = await createClient();
@@ -40,6 +43,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     if (openSessionResult.ok) {
       cashSession = openSessionResult.data;
     }
+
+    if (user.role === "owner") {
+      const inventoryResult = await listInventoryProductsAction();
+      if (inventoryResult.ok) {
+        lowStockCount = countLowStock(inventoryResult.data.filter((product) => product.active));
+      }
+    }
   } catch {
     // Si falla o estamos en entorno sin BD activa, usamos valores por defecto seguros
   }
@@ -50,6 +60,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       businessName={businessName}
       logoUrl={logoUrl}
       cashSession={cashSession}
+      lowStockCount={lowStockCount}
     >
       {children}
     </AppLayoutClient>

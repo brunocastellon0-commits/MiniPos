@@ -12,6 +12,7 @@ export interface AppLayoutClientProps {
   businessName?: string;
   logoUrl?: string | null;
   cashSession?: OpenCashSessionPublic | null;
+  lowStockCount?: number;
   children: React.ReactNode;
 }
 
@@ -20,6 +21,7 @@ export function AppLayoutClient({
   businessName,
   logoUrl,
   cashSession,
+  lowStockCount,
   children,
 }: AppLayoutClientProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -38,7 +40,7 @@ export function AppLayoutClient({
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar escritorio */}
         <div className="hidden lg:block lg:shrink-0">
-          <AppSidebar user={user} className="h-[calc(100vh-4rem)]" />
+          <AppSidebar user={user} lowStockCount={lowStockCount} className="h-[calc(100vh-4rem)]" />
         </div>
 
         {/* Drawer móvil con overlay accesible */}
@@ -53,6 +55,7 @@ export function AppLayoutClient({
               <AppSidebar
                 user={user}
                 onNavigate={() => setMobileNavOpen(false)}
+                lowStockCount={lowStockCount}
                 className="w-full border-r-0 pt-4"
               />
             </div>

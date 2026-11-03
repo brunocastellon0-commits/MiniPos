@@ -90,16 +90,16 @@
 | ID | Tarea | Deps | BD | Estado |
 |---|---|---|---|---|
 | E5-01 | Listado y detalle de ventas | E4-04 |  | DONE |
-| E5-02 | Anular venta (dueño) | E5-01 | 🚨 | TODO |
+| E5-02 | Anular venta (dueño) | E5-01 | 🚨 | DONE |
 
 ## E6 — Inventario  ·  [backlog/E6-inventario.md](backlog/E6-inventario.md)
 
 | ID | Tarea | Deps | BD | Estado |
 |---|---|---|---|---|
-| E6-01 | Vista de inventario | E2-02 |  | TODO |
+| E6-01 | Vista de inventario | E2-02 |  | DONE |
 | E6-02 | Ajustes y mermas | E6-01 | 🚨 | TODO |
-| E6-03 | Historial de movimientos | E6-01 |  | TODO |
-| E6-04 | Alertas de stock bajo (dominio + UI) | E6-01 |  | TODO |
+| E6-03 | Historial de movimientos | E6-01 |  | DONE |
+| E6-04 | Alertas de stock bajo (dominio + UI) | E6-01 |  | DONE |
 
 ## E7 — Compras y proveedores  ·  [backlog/E7-compras-y-proveedores.md](backlog/E7-compras-y-proveedores.md)
 

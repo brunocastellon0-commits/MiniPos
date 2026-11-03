@@ -70,6 +70,20 @@ describe("Navegación y Layout por Rol (E1-03)", () => {
       expect(screen.getByRole("link", { name: /configuración/i })).toBeInTheDocument();
       expect(screen.getByRole("link", { name: /usuarios/i })).toBeInTheDocument();
     });
+
+    it("muestra el contador de stock bajo en el enlace de inventario (E6-04)", () => {
+      render(<AppSidebar user={ownerUser} lowStockCount={3} />);
+
+      expect(screen.getByLabelText("3 productos con stock bajo")).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /inventario/i })).toBeInTheDocument();
+    });
+
+    it("no muestra el contador cuando no hay productos en bajo stock (E6-04)", () => {
+      render(<AppSidebar user={ownerUser} />);
+
+      expect(screen.queryByText("3 productos con stock bajo")).not.toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /inventario/i })).toBeInTheDocument();
+    });
   });
 
   describe("Cabecera: Información de negocio, estado de turno y usuario", () => {
