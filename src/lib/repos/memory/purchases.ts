@@ -21,7 +21,7 @@ export class MemoryPurchasesRepo implements PurchasesRepo {
   }
 
   async createPurchase(
-    purchaseData: Omit<PurchaseInsert, "id" | "created_at" | "updated_at">,
+    purchaseData: Omit<PurchaseInsert, "id" | "created_at" | "updated_at" | "created_by">,
     itemsData: Omit<PurchaseItemInsert, "id" | "purchase_id">[],
   ): Promise<{ purchase: Purchase; items: PurchaseItem[] }> {
     this.checkOwner();
@@ -107,5 +107,92 @@ export class MemoryPurchasesRepo implements PurchasesRepo {
 
     this.store.purchases.set(id, updated);
     return updated;
+  }
+
+  async receivePurchase(
+    purchaseId: string,
+    items: { productId: string; qtyReceived: number }[],
+    updateCost: boolean,
+  ): Promise<void> {
+    this.checkOwner();
+
+    const purchase = this.store.purchases.get(purchaseId);
+    if (!purchase) {
+      throw new Error("Compra no encontrada.");
+    }
+    if (items.length === 0) {
+      throw new Error("Debe indicar las cantidades recibidas.");
+    }
+
+    const now = new Date().toISOString();
+    let hasUpdates = false;
+
+    for (const line of items) {
+      if (!Number.isInteger(line.qtyReceived)) {
+        throw new Error("Producto o cantidad recibida inválida.");
+      }
+      if (line.qtyReceived < 0) {
+        throw new Error("La cantidad recibida no puede ser negativa.");
+      }
+
+      const item = Array.from(this.store.purchaseItems.values()).find(
+        (it) => it.purchase_id === purchaseId && it.product_id === line.productId,
+      );
+      if (!item) {
+        throw new Error("El producto no pertenece a esta compra.");
+      }
+      if (line.qtyReceived > item.qty_ordered) {
+        throw new Error(
+          `La cantidad recibida no puede superar la ordenada (pedido: ${item.qty_ordered}, recibido: ${line.qtyReceived}).`,
+        );
+      }
+
+      const delta = line.qtyReceived - item.qty_received;
+      if (delta === 0) continue;
+
+      hasUpdates = true;
+      item.qty_received = line.qtyReceived;
+
+      const product = this.store.products.get(line.productId);
+      if (product) {
+        if (delta > 0) {
+          product.stock_qty += delta;
+          product.updated_at = now;
+          const movementId = crypto.randomUUID();
+          this.store.stockMovements.set(movementId, {
+            id: movementId,
+            product_id: line.productId,
+            kind: "purchase",
+            delta,
+            reason: "Recepción de compra",
+            ref_type: "purchase",
+            ref_id: purchaseId,
+            user_id: this.user.id,
+            created_at: now,
+          });
+        }
+        if (updateCost) {
+          product.cost_cents = item.unit_cost_cents;
+          product.updated_at = now;
+        }
+      }
+    }
+
+    const purchaseItems = Array.from(this.store.purchaseItems.values()).filter(
+      (it) => it.purchase_id === purchaseId,
+    );
+    const remaining = purchaseItems.reduce(
+      (sum, it) => sum + Math.max(it.qty_ordered - it.qty_received, 0),
+      0,
+    );
+
+    if (remaining === 0) {
+      purchase.status = "received";
+    } else if (hasUpdates) {
+      purchase.status = "partial";
+    }
+    if (hasUpdates) {
+      purchase.updated_at = now;
+    }
   }
 }

@@ -16,7 +16,7 @@ export class SupabasePurchasesRepo implements PurchasesRepo {
   ) {}
 
   async createPurchase(
-    purchaseData: Omit<PurchaseInsert, "id" | "created_at" | "updated_at">,
+    purchaseData: Omit<PurchaseInsert, "id" | "created_at" | "updated_at" | "created_by">,
     itemsData: Omit<PurchaseItemInsert, "id" | "purchase_id">[],
   ): Promise<{ purchase: Purchase; items: PurchaseItem[] }> {
     const { data: purchase, error: purchaseError } = await this.supabase
@@ -93,5 +93,22 @@ export class SupabasePurchasesRepo implements PurchasesRepo {
 
     if (error) throw new Error(error.message);
     return data;
+  }
+
+  async receivePurchase(
+    purchaseId: string,
+    items: { productId: string; qtyReceived: number }[],
+    updateCost: boolean,
+  ): Promise<void> {
+    const { error } = await this.supabase.rpc("receive_purchase", {
+      p_purchase_id: purchaseId,
+      p_items: items.map((item) => ({
+        product_id: item.productId,
+        qty_received: item.qtyReceived,
+      })),
+      p_update_cost: updateCost,
+    });
+
+    if (error) throw new Error(error.message);
   }
 }

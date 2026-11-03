@@ -27,7 +27,6 @@ export class SupabaseInventoryRepo implements InventoryRepo {
   }
 
   async addMovement(movement: StockMovementInsert): Promise<StockMovement> {
-    // En tareas posteriores (E6), esto se delegará a la RPC adjust_stock
     const { data, error } = await this.supabase
       .from("stock_movements")
       .insert({
@@ -36,6 +35,23 @@ export class SupabaseInventoryRepo implements InventoryRepo {
       })
       .select()
       .single();
+
+    if (error) throw new Error(error.message);
+    return data;
+  }
+
+  async adjustStock(input: {
+    productId: string;
+    delta: number;
+    kind: "adjustment" | "waste";
+    reason: string;
+  }): Promise<number> {
+    const { data, error } = await this.supabase.rpc("adjust_stock", {
+      p_product_id: input.productId,
+      p_delta: input.delta,
+      p_kind: input.kind,
+      p_reason: input.reason,
+    });
 
     if (error) throw new Error(error.message);
     return data;

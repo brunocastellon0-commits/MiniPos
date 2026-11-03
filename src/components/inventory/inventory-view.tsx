@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import type { Product, StockMovement } from "@/lib/repos/types";
+import { AdjustStockButton } from "./adjust-stock-button";
 
 type EstadoFilter = "all" | StockState;
 type Tab = "stock" | "history";
@@ -111,9 +112,15 @@ export function InventoryView({
           Historial de movimientos
         </Button>
         {lowCount > 0 ? (
-          <span className="ms-auto inline-flex items-center gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-1.5 text-sm font-medium text-warning">
+          <span className="ms-auto inline-flex flex-wrap items-center gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-1.5 text-sm font-medium text-warning">
             <AlertTriangle className="size-4" aria-hidden="true" />
             {lowCount} {lowCount === 1 ? "producto requiere" : "productos requieren"} reposición
+            <Link
+              href="/compras/nueva?low=1"
+              className="underline underline-offset-2 hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              Crear compra
+            </Link>
           </span>
         ) : null}
       </div>
@@ -174,6 +181,9 @@ export function InventoryView({
                     <th scope="col" className="px-4 py-3 font-medium">
                       Estado
                     </th>
+                    <th scope="col" className="px-4 py-3 font-medium">
+                      Acción
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -204,6 +214,13 @@ export function InventoryView({
                             <meta.Icon className="size-3" aria-hidden="true" />
                             {meta.label}
                           </Badge>
+                        </td>
+                        <td className="px-4 py-3">
+                          <AdjustStockButton
+                            productId={product.id}
+                            productName={product.name}
+                            currentStock={product.stock_qty}
+                          />
                         </td>
                       </tr>
                     );

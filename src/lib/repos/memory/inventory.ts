@@ -65,4 +65,52 @@ export class MemoryInventoryRepo implements InventoryRepo {
     this.store.stockMovements.set(id, movement);
     return movement;
   }
+
+  async adjustStock(input: {
+    productId: string;
+    delta: number;
+    kind: "adjustment" | "waste";
+    reason: string;
+  }): Promise<number> {
+    if (this.user.role !== "owner") {
+      throw new Error("Solo el propietario puede ajustar el inventario.");
+    }
+    if (input.kind !== "adjustment" && input.kind !== "waste") {
+      throw new Error("Tipo de movimiento inválido (adjustment o waste).");
+    }
+    if (input.delta === 0) {
+      throw new Error("El delta debe ser distinto de cero.");
+    }
+
+    const reason = input.reason.trim();
+    if (reason.length === 0) {
+      throw new Error("El motivo es obligatorio.");
+    }
+    if (reason.length > 300) {
+      throw new Error("El motivo no puede superar 300 caracteres.");
+    }
+
+    const product = this.store.products.get(input.productId);
+    if (!product) {
+      throw new Error("Producto no encontrado.");
+    }
+    if (product.stock_qty + input.delta < 0 && !this.store.businessSettings.allow_negative_stock) {
+      throw new Error(
+        `El ajuste dejaría el stock en negativo (disponible: ${product.stock_qty}, delta: ${input.delta}).`,
+      );
+    }
+
+    await this.addMovement({
+      product_id: input.productId,
+      kind: input.kind,
+      delta: input.delta,
+      reason,
+      ref_type: "manual",
+      ref_id: null,
+      user_id: this.user.id,
+    });
+
+    // addMovement muta el producto del store en el lugar
+    return product.stock_qty;
+  }
 }

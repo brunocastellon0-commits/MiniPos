@@ -12,9 +12,15 @@ import { createClient } from "@/lib/supabase/server";
 import {
   type ActionResult,
   type AuthenticatedUser,
+  ActionException,
   secureAction,
 } from "./secure-action";
-import { type ListStockMovementsInput, listStockMovementsSchema } from "./inventory-schema";
+import {
+  type AdjustStockInput,
+  type ListStockMovementsInput,
+  adjustStockSchema,
+  listStockMovementsSchema,
+} from "./inventory-schema";
 
 export interface InventoryActionDeps {
   currentUserResolver?: () => Promise<AuthenticatedUser | null>;
@@ -68,6 +74,41 @@ export function createListStockMovementsAction(deps: InventoryActionDeps = {}) {
           productId: validatedInput.productId,
           limit: validatedInput.limit,
         });
+      },
+    })(input);
+  };
+}
+
+export function createAdjustStockAction(deps: InventoryActionDeps = {}) {
+  const { currentUserResolver, inventoryRepoFactory = defaultInventoryRepoFactory } = deps;
+
+  return async (input: AdjustStockInput): Promise<ActionResult<number>> => {
+    return secureAction<AdjustStockInput, number>({
+      roles: ["owner"],
+      schema: adjustStockSchema,
+      currentUserResolver,
+      rateLimit: {
+        keyPrefix: "inventory.adjust",
+        maxRequests: 30,
+        windowMs: 60_000,
+      },
+      handler: async (validatedInput, ctx) => {
+        const inventoryRepo = await inventoryRepoFactory(toUserContext(ctx.user));
+        try {
+          return await inventoryRepo.adjustStock({
+            productId: validatedInput.productId,
+            delta: validatedInput.delta,
+            kind: validatedInput.kind,
+            reason: validatedInput.reason,
+          });
+        } catch (error) {
+          if (error instanceof ActionException) throw error;
+          const message = error instanceof Error ? error.message : "No se pudo ajustar el stock.";
+          throw new ActionException(
+            message,
+            message.includes("no encontrado") ? "NOT_FOUND" : "BAD_REQUEST",
+          );
+        }
       },
     })(input);
   };

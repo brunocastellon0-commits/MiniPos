@@ -4,6 +4,7 @@ import { MemoryStore } from "@/lib/repos/memory/memory-store";
 import { MemoryProductsRepo } from "@/lib/repos/memory/products";
 import type { InventoryRepo, ProductsRepo, UserContext } from "@/lib/repos/types";
 import {
+  createAdjustStockAction,
   createListInventoryProductsAction,
   createListStockMovementsAction,
   type InventoryActionDeps,
@@ -70,7 +71,7 @@ async function setup() {
       new MemoryInventoryRepo(store, ctx),
   });
 
-  return { makeDeps, coca, galletas };
+  return { store, makeDeps, coca, galletas };
 }
 
 describe("Inventario - Server Actions (E6-01 / E6-03)", () => {
@@ -155,5 +156,147 @@ describe("Inventario - Server Actions (E6-01 / E6-03)", () => {
     const unknownKey = await list({ page: 2 } as never);
     expect(unknownKey.ok).toBe(false);
     if (!unknownKey.ok) expect(unknownKey.code).toBe("VALIDATION_ERROR");
+  });
+});
+
+describe("Ajustes y mermas (E6-02 · RPC adjust_stock)", () => {
+  it("el dueño ajusta el stock y queda movimiento con motivo, ref manual y usuario", async () => {
+    const { makeDeps, coca } = await setup();
+    const adjust = createAdjustStockAction(makeDeps(owner));
+
+    // stock tras la siembra: 3 - 2 = 1
+    const result = await adjust({
+      productId: coca.id,
+      delta: 3,
+      kind: "adjustment",
+      reason: "  Conteo de almacén  ",
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data).toBe(4);
+
+    const products = await createListInventoryProductsAction(makeDeps(owner))();
+    expect(products.ok).toBe(true);
+    if (products.ok) {
+      const updated = products.data.find((product) => product.id === coca.id);
+      expect(updated?.stock_qty).toBe(4);
+    }
+
+    const movements = await createListStockMovementsAction(makeDeps(owner))({
+      productId: coca.id,
+    });
+    expect(movements.ok).toBe(true);
+    if (movements.ok) {
+      const manual = movements.data.find((movement) => movement.kind === "adjustment");
+      expect(manual?.delta).toBe(3);
+      expect(manual?.reason).toBe("Conteo de almacén");
+      expect(manual?.ref_type).toBe("manual");
+      expect(manual?.user_id).toBe(owner.id);
+    }
+  });
+
+  it("una merma reduce el stock", async () => {
+    const { makeDeps, coca } = await setup();
+    const adjust = createAdjustStockAction(makeDeps(owner));
+
+    const result = await adjust({
+      productId: coca.id,
+      delta: -1,
+      kind: "waste",
+      reason: "Paquete dañado",
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data).toBe(0);
+  });
+
+  it("valida delta ≠ 0, motivo obligatorio y tipo de movimiento", async () => {
+    const { makeDeps, coca } = await setup();
+    const adjust = createAdjustStockAction(makeDeps(owner));
+
+    const zeroDelta = await adjust({
+      productId: coca.id,
+      delta: 0,
+      kind: "adjustment",
+      reason: "Motivo",
+    });
+    expect(zeroDelta.ok).toBe(false);
+    if (!zeroDelta.ok) expect(zeroDelta.code).toBe("VALIDATION_ERROR");
+
+    const emptyReason = await adjust({
+      productId: coca.id,
+      delta: 2,
+      kind: "adjustment",
+      reason: "   ",
+    });
+    expect(emptyReason.ok).toBe(false);
+    if (!emptyReason.ok) expect(emptyReason.code).toBe("VALIDATION_ERROR");
+
+    const badKind = await adjust({
+      productId: coca.id,
+      delta: 2,
+      kind: "sale" as "adjustment",
+      reason: "Motivo",
+    });
+    expect(badKind.ok).toBe(false);
+    if (!badKind.ok) expect(badKind.code).toBe("VALIDATION_ERROR");
+
+    const unknownKey = await adjust({
+      productId: coca.id,
+      delta: 2,
+      kind: "adjustment",
+      reason: "Motivo",
+      extra: true,
+    } as never);
+    expect(unknownKey.ok).toBe(false);
+    if (!unknownKey.ok) expect(unknownKey.code).toBe("VALIDATION_ERROR");
+  });
+
+  it("bloquea dejar el stock en negativo (BAD_REQUEST) y producto inexistente (NOT_FOUND)", async () => {
+    const { makeDeps, coca } = await setup();
+    const adjust = createAdjustStockAction(makeDeps(owner));
+
+    const negative = await adjust({
+      productId: coca.id,
+      delta: -99,
+      kind: "waste",
+      reason: "Merma grande",
+    });
+    expect(negative.ok).toBe(false);
+    if (!negative.ok) {
+      expect(negative.code).toBe("BAD_REQUEST");
+      expect(negative.message).toContain("negativo");
+    }
+
+    const missing = await adjust({
+      productId: "no-existe",
+      delta: 1,
+      kind: "adjustment",
+      reason: "Motivo",
+    });
+    expect(missing.ok).toBe(false);
+    if (!missing.ok) expect(missing.code).toBe("NOT_FOUND");
+  });
+
+  it("solo el dueño ajusta; cajero y anónimo no", async () => {
+    const { makeDeps, coca } = await setup();
+
+    const byCashier = await createAdjustStockAction(makeDeps(cashier))({
+      productId: coca.id,
+      delta: 1,
+      kind: "adjustment",
+      reason: "Intento",
+    });
+    expect(byCashier.ok).toBe(false);
+    if (!byCashier.ok) expect(byCashier.code).toBe("FORBIDDEN");
+
+    const anon = await createAdjustStockAction(makeDeps(null))({
+      productId: coca.id,
+      delta: 1,
+      kind: "adjustment",
+      reason: "Intento",
+    });
+    expect(anon.ok).toBe(false);
+    if (!anon.ok) expect(anon.code).toBe("UNAUTHENTICATED");
   });
 });

@@ -97,7 +97,7 @@
 | ID | Tarea | Deps | BD | Estado |
 |---|---|---|---|---|
 | E6-01 | Vista de inventario | E2-02 |  | DONE |
-| E6-02 | Ajustes y mermas | E6-01 | 🚨 | TODO |
+| E6-02 | Ajustes y mermas | E6-01 | 🚨 | DONE |
 | E6-03 | Historial de movimientos | E6-01 |  | DONE |
 | E6-04 | Alertas de stock bajo (dominio + UI) | E6-01 |  | DONE |
 
@@ -105,10 +105,10 @@
 
 | ID | Tarea | Deps | BD | Estado |
 |---|---|---|---|---|
-| E7-01 | Proveedores (CRUD) | E1-03 |  | TODO |
-| E7-02 | Registrar compra/pedido | E7-01, E2-02 |  | TODO |
-| E7-03 | Recepción (total/parcial) | E7-02 | 🚨 | TODO |
-| E7-04 | Historial de compras y atajo desde stock bajo | E7-03, E6-04 |  | TODO |
+| E7-01 | Proveedores (CRUD) | E1-03 |  | DONE |
+| E7-02 | Registrar compra/pedido | E7-01, E2-02 |  | DONE |
+| E7-03 | Recepción (total/parcial) | E7-02 | 🚨 | DONE |
+| E7-04 | Historial de compras y atajo desde stock bajo | E7-03, E6-04 |  | DONE |
 
 ## E8 — Panel del dueño  ·  [backlog/E8-panel-del-dueno.md](backlog/E8-panel-del-dueno.md)
 

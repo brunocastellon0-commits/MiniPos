@@ -46,6 +46,7 @@ describe("Navegación y Layout por Rol (E1-03)", () => {
       expect(screen.queryByRole("link", { name: /productos/i })).not.toBeInTheDocument();
       expect(screen.queryByRole("link", { name: /inventario/i })).not.toBeInTheDocument();
       expect(screen.queryByRole("link", { name: /compras/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("link", { name: /proveedores/i })).not.toBeInTheDocument();
       expect(screen.queryByRole("link", { name: /panel/i })).not.toBeInTheDocument();
       expect(screen.queryByRole("link", { name: /reportes/i })).not.toBeInTheDocument();
       expect(screen.queryByRole("link", { name: /configuración/i })).not.toBeInTheDocument();
@@ -65,6 +66,7 @@ describe("Navegación y Layout por Rol (E1-03)", () => {
       expect(screen.getByRole("link", { name: /productos/i })).toBeInTheDocument();
       expect(screen.getByRole("link", { name: /inventario/i })).toBeInTheDocument();
       expect(screen.getByRole("link", { name: /compras/i })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /proveedores/i })).toBeInTheDocument();
       expect(screen.getByRole("link", { name: /panel/i })).toBeInTheDocument();
       expect(screen.getByRole("link", { name: /reportes/i })).toBeInTheDocument();
       expect(screen.getByRole("link", { name: /configuración/i })).toBeInTheDocument();
@@ -129,6 +131,7 @@ describe("Navegación y Layout por Rol (E1-03)", () => {
       expect(isPathAllowedForRole("/productos", "cashier")).toBe(false);
       expect(isPathAllowedForRole("/inventario", "cashier")).toBe(false);
       expect(isPathAllowedForRole("/compras", "cashier")).toBe(false);
+      expect(isPathAllowedForRole("/proveedores", "cashier")).toBe(false);
       expect(isPathAllowedForRole("/panel", "cashier")).toBe(false);
       expect(isPathAllowedForRole("/reportes", "cashier")).toBe(false);
       expect(isPathAllowedForRole("/configuracion", "cashier")).toBe(false);
@@ -137,6 +140,7 @@ describe("Navegación y Layout por Rol (E1-03)", () => {
       // El dueño tiene acceso a todo
       expect(isPathAllowedForRole("/caja", "owner")).toBe(true);
       expect(isPathAllowedForRole("/productos", "owner")).toBe(true);
+      expect(isPathAllowedForRole("/proveedores", "owner")).toBe(true);
       expect(isPathAllowedForRole("/panel", "owner")).toBe(true);
       expect(isPathAllowedForRole("/usuarios", "owner")).toBe(true);
     });

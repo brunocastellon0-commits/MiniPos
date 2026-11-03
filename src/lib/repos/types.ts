@@ -133,16 +133,27 @@ export interface SalesRepo {
 export interface InventoryRepo {
   listMovements(filter?: { productId?: string; limit?: number }): Promise<StockMovement[]>;
   addMovement(movement: StockMovementInsert): Promise<StockMovement>;
+  adjustStock(input: {
+    productId: string;
+    delta: number;
+    kind: "adjustment" | "waste";
+    reason: string;
+  }): Promise<number>;
 }
 
 export interface PurchasesRepo {
   createPurchase(
-    purchase: Omit<PurchaseInsert, "id" | "created_at" | "updated_at">,
+    purchase: Omit<PurchaseInsert, "id" | "created_at" | "updated_at" | "created_by">,
     items: Omit<PurchaseItemInsert, "id" | "purchase_id">[],
   ): Promise<{ purchase: Purchase; items: PurchaseItem[] }>;
   getById(id: string): Promise<{ purchase: Purchase; items: PurchaseItem[] } | null>;
   list(filter?: { status?: Purchase["status"]; supplierId?: string }): Promise<Purchase[]>;
   updateStatus(id: string, status: Purchase["status"]): Promise<Purchase>;
+  receivePurchase(
+    purchaseId: string,
+    items: { productId: string; qtyReceived: number }[],
+    updateCost: boolean,
+  ): Promise<void>;
 }
 
 export interface SuppliersRepo {

@@ -2,6 +2,7 @@ import type { ElementType } from "react";
 import {
   BarChart3,
   Boxes,
+  Building2,
   Clock,
   LayoutDashboard,
   Package,
@@ -68,6 +69,12 @@ export const ALL_NAV_GROUPS: NavGroup[] = [
         title: "Compras",
         href: "/compras",
         icon: Truck,
+        roles: ["owner"],
+      },
+      {
+        title: "Proveedores",
+        href: "/proveedores",
+        icon: Building2,
         roles: ["owner"],
       },
     ],

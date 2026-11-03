@@ -750,6 +750,23 @@ export interface Database {
         };
         Returns: string;
       };
+      adjust_stock: {
+        Args: {
+          p_product_id: string;
+          p_delta: number;
+          p_kind: string;
+          p_reason: string;
+        };
+        Returns: number;
+      };
+      receive_purchase: {
+        Args: {
+          p_purchase_id: string;
+          p_items: Json;
+          p_update_cost?: boolean;
+        };
+        Returns: string;
+      };
     };
     Enums: {
       user_role: "owner" | "cashier";

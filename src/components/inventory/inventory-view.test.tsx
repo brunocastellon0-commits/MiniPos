@@ -1,7 +1,21 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { adjustStockAction } from "@/lib/actions/inventory";
 import { buildProduct, buildStockMovement } from "@/test/factories";
 import { InventoryView } from "./inventory-view";
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
+  usePathname: () => "/inventario",
+}));
+
+vi.mock("@/lib/actions/inventory", () => ({
+  adjustStockAction: vi.fn(),
+}));
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
 
 const coca = buildProduct({
   id: "prod-coca",
@@ -166,5 +180,73 @@ describe("InventoryView (E6-01 / E6-03 / E6-04)", () => {
 
     const alert = screen.getByRole("alert");
     expect(alert).toHaveTextContent("No se pudo cargar el inventario.");
+  });
+});
+
+describe("InventoryView - Ajustes y mermas (E6-02)", () => {
+  it("abre el diálogo y envía el ajuste al servidor", async () => {
+    vi.mocked(adjustStockAction).mockResolvedValue({ ok: true, data: 9 });
+    renderView();
+
+    fireEvent.click(screen.getByRole("button", { name: "Ajustar stock de Coca-Cola 2L" }));
+    fireEvent.change(screen.getByLabelText(/cantidad/i), { target: { value: "5" } });
+    fireEvent.change(screen.getByLabelText(/motivo/i), { target: { value: "Conteo de almacén" } });
+    fireEvent.click(screen.getByRole("button", { name: "Guardar ajuste" }));
+
+    await waitFor(() =>
+      expect(adjustStockAction).toHaveBeenCalledWith({
+        productId: "prod-coca",
+        delta: 5,
+        kind: "adjustment",
+        reason: "Conteo de almacén",
+      }),
+    );
+  });
+
+  it("valida cantidad y motivo en el cliente sin llamar al servidor", () => {
+    renderView();
+
+    fireEvent.click(screen.getByRole("button", { name: "Ajustar stock de Coca-Cola 2L" }));
+    fireEvent.change(screen.getByLabelText(/cantidad/i), { target: { value: "0" } });
+    fireEvent.change(screen.getByLabelText(/motivo/i), { target: { value: "X" } });
+    fireEvent.click(screen.getByRole("button", { name: "Guardar ajuste" }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent(/cantidad entera distinta de cero/i);
+    expect(adjustStockAction).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByLabelText(/cantidad/i), { target: { value: "-3" } });
+    fireEvent.change(screen.getByLabelText(/motivo/i), { target: { value: "  " } });
+    fireEvent.click(screen.getByRole("button", { name: "Guardar ajuste" }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent(/motivo es obligatorio/i);
+    expect(adjustStockAction).not.toHaveBeenCalled();
+  });
+
+  it("muestra el error del servidor sin cerrar el diálogo", async () => {
+    vi.mocked(adjustStockAction).mockResolvedValue({
+      ok: false,
+      code: "BAD_REQUEST",
+      message: "El stock no puede quedar negativo.",
+    });
+    renderView();
+
+    fireEvent.click(screen.getByRole("button", { name: "Ajustar stock de Coca-Cola 2L" }));
+    fireEvent.change(screen.getByLabelText(/cantidad/i), { target: { value: "-99" } });
+    fireEvent.change(screen.getByLabelText(/motivo/i), { target: { value: "Merma grave" } });
+    fireEvent.click(screen.getByRole("button", { name: "Guardar ajuste" }));
+
+    await waitFor(() =>
+      expect(screen.getByRole("alert")).toHaveTextContent("El stock no puede quedar negativo."),
+    );
+    expect(screen.getByLabelText(/cantidad/i)).toBeInTheDocument();
+  });
+
+  it("ofrece el atajo para crear compra desde la alerta de stock bajo (E7-04)", () => {
+    renderView();
+
+    expect(screen.getByRole("link", { name: "Crear compra" })).toHaveAttribute(
+      "href",
+      "/compras/nueva?low=1",
+    );
   });
 });
