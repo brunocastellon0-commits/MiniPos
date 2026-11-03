@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { InactivityWatcher } from "@/components/auth/inactivity-watcher";
 import type { AuthenticatedUser } from "@/lib/auth";
+import type { DashboardNotification } from "@/lib/domain/dashboard";
 import type { OpenCashSessionPublic } from "@/lib/repos/types";
 import { AppHeader } from "./app-header";
 import { AppSidebar } from "./app-sidebar";
@@ -13,6 +14,7 @@ export interface AppLayoutClientProps {
   logoUrl?: string | null;
   cashSession?: OpenCashSessionPublic | null;
   lowStockCount?: number;
+  notifications?: DashboardNotification[] | null;
   children: React.ReactNode;
 }
 
@@ -22,6 +24,7 @@ export function AppLayoutClient({
   logoUrl,
   cashSession,
   lowStockCount,
+  notifications = null,
   children,
 }: AppLayoutClientProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -33,6 +36,7 @@ export function AppLayoutClient({
         businessName={businessName}
         logoUrl={logoUrl}
         cashSession={cashSession}
+        notifications={notifications}
         onToggleMobileNav={() => setMobileNavOpen((prev) => !prev)}
         mobileNavOpen={mobileNavOpen}
       />

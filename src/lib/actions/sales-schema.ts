@@ -80,7 +80,7 @@ export const listSalesSchema = z
       .optional(),
     status: z.enum(["paid", "voided"], { message: "Estado inválido." }).optional(),
     cashierId: z.string().min(1, { message: "Cajero requerido." }).optional(),
-    limit: z.number().int().min(1).max(200).optional(),
+    limit: z.number().int().min(1).max(1000).optional(),
   })
   .strict()
   .superRefine((value, ctx) => {

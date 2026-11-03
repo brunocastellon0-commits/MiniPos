@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { AppLayoutClient } from "@/components/layout/app-layout-client";
-import { getOpenCashSessionAction } from "@/lib/actions/cash";
+import { getOpenCashSessionAction, listCashSessionsAction } from "@/lib/actions/cash";
 import { listInventoryProductsAction } from "@/lib/actions/inventory";
 import { requireUser } from "@/lib/auth";
+import { buildDashboardNotifications, type DashboardNotification } from "@/lib/domain/dashboard";
 import { countLowStock } from "@/lib/domain/inventory";
 import type { OpenCashSessionPublic } from "@/lib/repos/types";
 import { createClient } from "@/lib/supabase/server";
@@ -22,6 +23,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   let logoUrl: string | null = null;
   let cashSession: OpenCashSessionPublic | null = null;
   let lowStockCount = 0;
+  let notifications: DashboardNotification[] | null = null;
 
   try {
     const supabase = await createClient();
@@ -45,10 +47,22 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     }
 
     if (user.role === "owner") {
-      const inventoryResult = await listInventoryProductsAction();
+      const [inventoryResult, sessionsResult] = await Promise.all([
+        listInventoryProductsAction(),
+        listCashSessionsAction({ limit: 20 }),
+      ]);
       if (inventoryResult.ok) {
         lowStockCount = countLowStock(inventoryResult.data.filter((product) => product.active));
       }
+      const sessions = sessionsResult.ok ? sessionsResult.data : [];
+      const openFromSessions = sessions.find((session) => session.status === "open");
+      const lastClosed = sessions.find((session) => session.status === "closed");
+      notifications = buildDashboardNotifications({
+        lowStockCount,
+        openSessionOpenedAt: cashSession?.opened_at ?? openFromSessions?.opened_at ?? null,
+        lastClosedSession: lastClosed,
+        now: new Date(),
+      });
     }
   } catch {
     // Si falla o estamos en entorno sin BD activa, usamos valores por defecto seguros
@@ -61,6 +75,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       logoUrl={logoUrl}
       cashSession={cashSession}
       lowStockCount={lowStockCount}
+      notifications={notifications}
     >
       {children}
     </AppLayoutClient>

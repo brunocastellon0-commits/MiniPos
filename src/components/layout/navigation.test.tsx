@@ -1,6 +1,7 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { AuthenticatedUser } from "@/lib/auth";
+import type { DashboardNotification } from "@/lib/domain/dashboard";
 import { AppHeader } from "./app-header";
 import { AppSidebar } from "./app-sidebar";
 import { isPathAllowedForRole } from "./nav-items";
@@ -117,6 +118,57 @@ describe("Navegación y Layout por Rol (E1-03)", () => {
 
       expect(screen.getByText("Caja cerrada")).toBeInTheDocument();
       expect(screen.getByText("Dueño")).toBeInTheDocument();
+    });
+  });
+
+  describe("Campana de notificaciones (E8-03)", () => {
+    const notifications: DashboardNotification[] = [
+      {
+        kind: "low_stock",
+        title: "Stock bajo",
+        description: "3 productos requieren reposición",
+        href: "/inventario",
+      },
+      {
+        kind: "cash_difference",
+        title: "Diferencia de caja",
+        description: "La última caja cerrada quedó en -Bs 1,50",
+        href: "/turno",
+      },
+    ];
+
+    it("muestra la campana con contador y despliega las notificaciones", () => {
+      render(<AppHeader user={ownerUser} businessName="LILA MARKET" notifications={notifications} />);
+
+      const bell = screen.getByRole("button", { name: "Notificaciones (2)" });
+      expect(bell).toHaveAttribute("aria-expanded", "false");
+
+      fireEvent.click(bell);
+
+      expect(bell).toHaveAttribute("aria-expanded", "true");
+      expect(screen.getByRole("link", { name: /Stock bajo/ })).toHaveAttribute(
+        "href",
+        "/inventario",
+      );
+      expect(screen.getByRole("link", { name: /Diferencia de caja/ })).toHaveAttribute(
+        "href",
+        "/turno",
+      );
+    });
+
+    it("muestra el estado vacío de la campana", () => {
+      render(<AppHeader user={ownerUser} businessName="LILA MARKET" notifications={[]} />);
+
+      const bell = screen.getByRole("button", { name: "Notificaciones" });
+      fireEvent.click(bell);
+
+      expect(screen.getByText("Sin notificaciones.")).toBeInTheDocument();
+    });
+
+    it("no muestra la campana cuando no hay notificaciones (cajero)", () => {
+      render(<AppHeader user={cashierUser} businessName="LILA MARKET" />);
+
+      expect(screen.queryByRole("button", { name: /Notificaciones/ })).not.toBeInTheDocument();
     });
   });
 

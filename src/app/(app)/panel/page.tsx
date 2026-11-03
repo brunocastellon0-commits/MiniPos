@@ -1,17 +1,122 @@
 import type { Metadata } from "next";
+import { PanelView } from "@/components/dashboard/panel-view";
+import { listCashSessionsAction, getOpenCashSessionAction } from "@/lib/actions/cash";
+import { listInventoryProductsAction } from "@/lib/actions/inventory";
+import { listSalesAction } from "@/lib/actions/sales";
 import { requireRole } from "@/lib/auth";
+import { formatDateLong, laPazDayKey } from "@/lib/dates";
+import {
+  compareSalesDays,
+  lastDayKeys,
+  summarizeSalesByDay,
+} from "@/lib/domain/dashboard";
+import { isLowStock } from "@/lib/domain/inventory";
+import type { CashSession, Product, Sale } from "@/lib/repos/types";
 
 export const metadata: Metadata = {
   title: "Panel del Dueño",
+  description: "Resumen operativo y comercial del minimarket.",
 };
 
+const SERIES_DAYS = 30;
+const PREVIOUS_WEEK_OFFSET = 7;
+
 export default async function PanelPage() {
-  await requireRole("owner");
+  const user = await requireRole("owner", "/caja");
+
+  const now = new Date();
+  const todayKey = laPazDayKey(now);
+  const dayKeys = lastDayKeys(now, SERIES_DAYS);
+  const previousWeekKey = dayKeys[dayKeys.length - 1 - PREVIOUS_WEEK_OFFSET];
+
+  let sales: Sale[] = [];
+  let sessions: CashSession[] = [];
+  let products: Product[] = [];
+  let openSessionName: string | null = null;
+  let initialError: string | null = null;
+
+  try {
+    const [salesResult, sessionsResult, productsResult, openResult] = await Promise.all([
+      listSalesAction({ dateFrom: dayKeys[0], dateTo: todayKey, limit: 1000 }),
+      listCashSessionsAction({ limit: 20 }),
+      listInventoryProductsAction(),
+      getOpenCashSessionAction(),
+    ]);
+
+    if (salesResult.ok) {
+      sales = salesResult.data.sales;
+    } else {
+      initialError = salesResult.message;
+    }
+    if (sessionsResult.ok) {
+      sessions = sessionsResult.data;
+    } else {
+      initialError = initialError ?? sessionsResult.message;
+    }
+    if (productsResult.ok) {
+      products = productsResult.data;
+    } else {
+      initialError = initialError ?? productsResult.message;
+    }
+    if (openResult.ok && openResult.data) {
+      openSessionName = openResult.data.opened_by_name;
+    }
+  } catch {
+    initialError = "No se pudo cargar el panel.";
+  }
+
+  const saleDayKey = (sale: Sale): string => laPazDayKey(new Date(sale.created_at));
+  const todaySales = sales.filter((sale) => saleDayKey(sale) === todayKey);
+  const previousSales = sales.filter((sale) => saleDayKey(sale) === previousWeekKey);
+  const comparison = compareSalesDays(todaySales, previousSales);
+  const series = summarizeSalesByDay(sales, dayKeys);
+
+  const openSession = sessions.find((session) => session.status === "open");
+  const lastClosed = sessions.find((session) => session.status === "closed");
+  const cash = openSession
+    ? {
+        status: "open" as const,
+        openedAt: openSession.opened_at,
+        openedByName: openSessionName,
+      }
+    : lastClosed
+      ? {
+          status: "closed" as const,
+          closedAt: lastClosed.closed_at,
+          differenceCents: lastClosed.difference_cents,
+        }
+      : { status: "none" as const };
+
+  const lowStock = products
+    .filter((product) => product.active && isLowStock(product))
+    .sort((a, b) => a.stock_qty - b.stock_qty)
+    .slice(0, 5)
+    .map((product) => ({
+      id: product.id,
+      name: product.name,
+      stock_qty: product.stock_qty,
+      min_stock: product.min_stock,
+    }));
+
+  const recentSales = todaySales.slice(0, 6).map((sale) => ({
+    id: sale.id,
+    created_at: sale.created_at,
+    total_cents: sale.total_cents,
+    payment_method: sale.payment_method,
+  }));
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold tracking-tight text-foreground">Panel de Control</h1>
-      <p className="text-sm text-muted">Resumen operativo y comercial del minimarket.</p>
-    </div>
+    <PanelView
+      userName={user.name}
+      greetingDate={formatDateLong(now)}
+      todayStats={comparison.current}
+      comparison={comparison}
+      dayKeys={dayKeys}
+      series={series}
+      cash={cash}
+      lowStock={lowStock}
+      recentSales={recentSales}
+      initialError={initialError}
+    />
   );
 }
