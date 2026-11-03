@@ -12,6 +12,19 @@ export class SupabaseProductsRepo implements ProductsRepo {
     return this.user.role === "cashier" ? { ...product, cost_cents: null } : product;
   }
 
+  // `cost_cents` no tiene GRANT de SELECT en la tabla products (solo el dueño lo
+  // obtiene vía products_with_cost), por lo que las filas de escritura se piden
+  // con las columnas permitidas y el costo se completa aparte.
+  private static readonly SAFE_COLUMNS =
+    "id, name, barcode, internal_code, category_id, unit_label, price_cents, stock_qty, min_stock, active, created_at, updated_at";
+
+  private async fetchCostById(id: string): Promise<number | null> {
+    const { data, error } = await this.supabase.rpc("products_with_cost");
+    if (error) throw new Error(`Error al consultar el producto: ${error.message}`);
+    const rows = (data ?? []) as Product[];
+    return rows.find((row) => row.id === id)?.cost_cents ?? null;
+  }
+
   async list(filter?: {
     activeOnly?: boolean;
     categoryId?: string;
@@ -79,14 +92,11 @@ export class SupabaseProductsRepo implements ProductsRepo {
       };
     }
 
-    const { data, error } = await this.supabase
-      .from("products")
-      .select("*")
-      .eq("id", id)
-      .maybeSingle();
-
-    if (error) throw new Error(error.message);
-    return data;
+    // Rol owner: la columna cost_cents no tiene GRANT de SELECT, se lee por RPC
+    const { data, error } = await this.supabase.rpc("products_with_cost");
+    if (error) throw new Error(`Error al consultar el producto: ${error.message}`);
+    const rows = (data ?? []) as Product[];
+    return rows.find((row) => row.id === id) ?? null;
   }
 
   async getByBarcode(barcode: string): Promise<Product | null> {
@@ -108,21 +118,18 @@ export class SupabaseProductsRepo implements ProductsRepo {
       };
     }
 
-    const { data, error } = await this.supabase
-      .from("products")
-      .select("*")
-      .eq("barcode", barcode)
-      .maybeSingle();
-
-    if (error) throw new Error(error.message);
-    return data;
+    // Rol owner: la columna cost_cents no tiene GRANT de SELECT, se lee por RPC
+    const { data, error } = await this.supabase.rpc("products_with_cost");
+    if (error) throw new Error(`Error al consultar el producto: ${error.message}`);
+    const rows = (data ?? []) as Product[];
+    return rows.find((row) => row.barcode === barcode) ?? null;
   }
 
   async create(data: ProductInsert): Promise<Product> {
     const { data: created, error } = await this.supabase
       .from("products")
       .insert(data)
-      .select()
+      .select(SupabaseProductsRepo.SAFE_COLUMNS)
       .single();
 
     if (error) {
@@ -132,13 +139,16 @@ export class SupabaseProductsRepo implements ProductsRepo {
       throw new Error(`Error al crear producto: ${error.message}`);
     }
 
-    return created;
+    return { ...created, cost_cents: data.cost_cents ?? null };
   }
 
   async createMany(items: ProductInsert[]): Promise<Product[]> {
     if (items.length === 0) return [];
 
-    const { data, error } = await this.supabase.from("products").insert(items).select();
+    const { data, error } = await this.supabase
+      .from("products")
+      .insert(items)
+      .select(SupabaseProductsRepo.SAFE_COLUMNS);
 
     if (error) {
       if (error.code === "23505") {
@@ -147,7 +157,15 @@ export class SupabaseProductsRepo implements ProductsRepo {
       throw new Error(`Error al importar productos: ${error.message}`);
     }
 
-    return (data || []).map((product) => this.sanitizeForRole(product));
+    const rows = data || [];
+    const { data: withCost, error: costError } = await this.supabase.rpc("products_with_cost");
+    if (costError) throw new Error(`Error al importar productos: ${costError.message}`);
+    const costById = new Map(
+      ((withCost ?? []) as Product[]).map((product) => [product.id, product.cost_cents]),
+    );
+    return rows.map((product) =>
+      this.sanitizeForRole({ ...product, cost_cents: costById.get(product.id) ?? null }),
+    );
   }
 
   async update(id: string, data: ProductUpdate): Promise<Product> {
@@ -155,7 +173,7 @@ export class SupabaseProductsRepo implements ProductsRepo {
       .from("products")
       .update(data)
       .eq("id", id)
-      .select()
+      .select(SupabaseProductsRepo.SAFE_COLUMNS)
       .single();
 
     if (error) {
@@ -165,7 +183,8 @@ export class SupabaseProductsRepo implements ProductsRepo {
       throw new Error(`Error al actualizar producto: ${error.message}`);
     }
 
-    return updated;
+    const cost = data.cost_cents !== undefined ? data.cost_cents : await this.fetchCostById(id);
+    return { ...updated, cost_cents: cost };
   }
 
   async delete(id: string): Promise<void> {

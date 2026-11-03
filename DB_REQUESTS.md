@@ -46,3 +46,4 @@ Este archivo debe mantenerse **corto**: el agente lo lee en cada sesión.
 | DB-005 | 0012_cashier_discount.sql | Columna `business_settings.cashier_can_discount` + `get_business_public()` expone el permiso + `confirm_sale` exige rol owner o casilla habilitada (42501) | 2026-11-02 |
 | DB-006 | 0013_void_sale.sql | RPC `void_sale` (solo dueño, motivo, status→voided, reversa de stock `void_return`, auditoría) | 2026-11-03 |
 | DB-007 | 0014_adjust_stock_receive.sql | RPCs `adjust_stock` y `receive_purchase` (ajustes/mermas y recepción parcial idempotente atómicos con auditoría) | 2026-11-03 |
+| DB-008 | 0015_auth_grants_fix.sql | Grants a `authenticated` (esquema `private` + `is_owner`/`is_active_staff`), `products` sin `cost_cents` a nivel de columna, `anon` sin tablas de negocio | 2026-11-03 |
