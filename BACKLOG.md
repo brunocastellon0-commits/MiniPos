@@ -140,17 +140,18 @@
 
 | ID | Tarea | Deps | BD | Estado |
 |---|---|---|---|---|
-| E11-01 | Revisión de RLS y permisos | E0-05..E7 |  | TODO |
-| E11-08 | Auditoría y anti-fraude | E4..E7 |  | TODO |
-| E11-09 | Seguridad de importación/exportación | E2-03, E9-05 |  | TODO |
-| E11-10 | Revisión final de seguridad contra `docs/SECURITY.md` y OWASP ASVS (nivel 1 aplicable) | todas |  | TODO |
-| E11-11 | Plan de incidentes y respaldos | E12-03 |  | TODO |
+| E11-01 | Revisión de RLS y permisos | E0-05..E7 | 🚨 | DONE-PENDING-HUMAN-VERIFY |
+| E11-08 | Auditoría y anti-fraude | E4..E7 |  | DONE |
+| E11-09 | Seguridad de importación/exportación | E2-03, E9-05 |  | DONE |
+| E11-10 | Revisión final de seguridad contra `docs/SECURITY.md` y OWASP ASVS (nivel 1 aplicable) | todas |  | DONE-PENDING-HUMAN-VERIFY |
+| SEC-01 | Actualizar runtime Node.js con el release de seguridad del 11-nov-2026 (ALTO) y reverificar `pnpm audit` | — |  | TODO |
+| E11-11 | Plan de incidentes y respaldos | E12-03 | 🚨 | DONE-PENDING-HUMAN-VERIFY |
 | E11-02 | E2E Playwright completos | E4..E7 |  | TODO |
-| E11-03 | Estados y mensajes del plan §11 | E4..E8 |  | TODO |
-| E11-04 | Accesibilidad y teclado | E4-02 |  | TODO |
-| E11-05 | Rendimiento | E2-04 |  | TODO |
-| E11-06 | Diseño adaptable (preparación futura) | E4-02 |  | TODO |
-| E11-07 | Manejo de errores global | — |  | TODO |
+| E11-03 | Estados y mensajes del plan §11 | E4..E8 |  | DONE |
+| E11-04 | Accesibilidad y teclado | E4-02 |  | DONE |
+| E11-05 | Rendimiento | E2-04 |  | DONE |
+| E11-06 | Diseño adaptable (preparación futura) | E4-02 |  | DONE |
+| E11-07 | Manejo de errores global | — |  | DONE |
 
 ## E12 — Entrega y reventa  ·  [backlog/E12-entrega-y-reventa.md](backlog/E12-entrega-y-reventa.md)
 
