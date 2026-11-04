@@ -1,5 +1,6 @@
 "use client";
 
+import { Table, Td, Th } from "@/components/ui/table";
 import { AlertTriangle, Check, PackageX, Search } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -166,24 +167,24 @@ export function InventoryView({
             />
           ) : (
             <div className="overflow-x-auto rounded-card border border-border bg-surface">
-              <table className="min-w-full text-sm">
-                <thead className="border-b border-border bg-surface-muted/60 text-left text-xs uppercase tracking-wide text-muted">
+              <Table className="min-w-full text-sm">
+                <thead className="border-b border-border text-left text-xs uppercase tracking-wide text-muted">
                   <tr>
-                    <th scope="col" className="px-4 py-3 font-medium">
+                    <Th scope="col">
                       Producto
-                    </th>
-                    <th scope="col" className="px-4 py-3 text-right font-medium">
+                    </Th>
+                    <Th scope="col" className="text-right">
                       Mínimo
-                    </th>
-                    <th scope="col" className="px-4 py-3 text-right font-medium">
+                    </Th>
+                    <Th scope="col" className="text-right">
                       Existencias
-                    </th>
-                    <th scope="col" className="px-4 py-3 font-medium">
+                    </Th>
+                    <Th scope="col">
                       Estado
-                    </th>
-                    <th scope="col" className="px-4 py-3 font-medium">
+                    </Th>
+                    <Th scope="col">
                       Acción
-                    </th>
+                    </Th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -192,7 +193,7 @@ export function InventoryView({
                     const meta = STATE_META[state];
                     return (
                       <tr key={product.id}>
-                        <td className="px-4 py-3">
+                        <Td>
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="font-medium text-foreground">{product.name}</span>
                             {!product.active ? <Badge tone="neutral">Inactivo</Badge> : null}
@@ -202,31 +203,31 @@ export function InventoryView({
                               {product.barcode || product.internal_code}
                             </span>
                           ) : null}
-                        </td>
-                        <td className="px-4 py-3 text-right text-foreground-muted">
+                        </Td>
+                        <Td className="text-right text-foreground-muted">
                           {product.min_stock}
-                        </td>
-                        <td className="px-4 py-3 text-right font-medium text-foreground">
+                        </Td>
+                        <Td className="text-right font-medium text-foreground">
                           {product.stock_qty}
-                        </td>
-                        <td className="px-4 py-3">
+                        </Td>
+                        <Td>
                           <Badge tone={meta.tone}>
                             <meta.Icon className="size-3" aria-hidden="true" />
                             {meta.label}
                           </Badge>
-                        </td>
-                        <td className="px-4 py-3">
+                        </Td>
+                        <Td>
                           <AdjustStockButton
                             productId={product.id}
                             productName={product.name}
                             currentStock={product.stock_qty}
                           />
-                        </td>
+                        </Td>
                       </tr>
                     );
                   })}
                 </tbody>
-              </table>
+              </Table>
             </div>
           )}
         </div>
@@ -237,39 +238,39 @@ export function InventoryView({
         />
       ) : (
         <div className="overflow-x-auto rounded-card border border-border bg-surface">
-          <table className="min-w-full text-sm">
-            <thead className="border-b border-border bg-surface-muted/60 text-left text-xs uppercase tracking-wide text-muted">
+          <Table className="min-w-full text-sm">
+            <thead className="border-b border-border text-left text-xs uppercase tracking-wide text-muted">
               <tr>
-                <th scope="col" className="px-4 py-3 font-medium">
+                <Th scope="col">
                   Fecha
-                </th>
-                <th scope="col" className="px-4 py-3 font-medium">
+                </Th>
+                <Th scope="col">
                   Producto
-                </th>
-                <th scope="col" className="px-4 py-3 font-medium">
+                </Th>
+                <Th scope="col">
                   Origen
-                </th>
-                <th scope="col" className="px-4 py-3 text-right font-medium">
+                </Th>
+                <Th scope="col" className="text-right">
                   Cantidad
-                </th>
-                <th scope="col" className="px-4 py-3 font-medium">
+                </Th>
+                <Th scope="col">
                   Motivo
-                </th>
-                <th scope="col" className="px-4 py-3 font-medium">
+                </Th>
+                <Th scope="col">
                   Usuario
-                </th>
+                </Th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {initialMovements.map((movement) => (
                 <tr key={movement.id}>
-                  <td className="whitespace-nowrap px-4 py-3 text-foreground-muted">
+                  <Td className="whitespace-nowrap text-foreground-muted">
                     {formatDateTime(new Date(movement.created_at))}
-                  </td>
-                  <td className="px-4 py-3 text-foreground">
+                  </Td>
+                  <Td className="text-foreground">
                     {productNames.get(movement.product_id) ?? "—"}
-                  </td>
-                  <td className="px-4 py-3">
+                  </Td>
+                  <Td>
                     <div className="flex items-center gap-2">
                       <Badge tone={KIND_TONES[movement.kind] ?? "neutral"}>
                         {KIND_LABELS[movement.kind] ?? movement.kind}
@@ -291,22 +292,22 @@ export function InventoryView({
                         </Link>
                       ) : null}
                     </div>
-                  </td>
-                  <td
+                  </Td>
+                  <Td
                     className={`px-4 py-3 text-right font-medium ${
                       movement.delta > 0 ? "text-success" : "text-danger"
                     }`}
                   >
                     {movement.delta > 0 ? `+${movement.delta}` : movement.delta}
-                  </td>
-                  <td className="px-4 py-3 text-foreground-muted">{movement.reason ?? "—"}</td>
-                  <td className="px-4 py-3 text-foreground">
+                  </Td>
+                  <Td className="text-foreground-muted">{movement.reason ?? "—"}</Td>
+                  <Td className="text-foreground">
                     {userNames[movement.user_id] ?? "—"}
-                  </td>
+                  </Td>
                 </tr>
               ))}
             </tbody>
-          </table>
+          </Table>
         </div>
       )}
     </div>

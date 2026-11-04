@@ -1,3 +1,4 @@
+import { Table, Td, Th } from "@/components/ui/table";
 import { AlertTriangle, ScrollText, ShieldCheck } from "lucide-react";
 import type { AuditAlert } from "@/lib/domain/audit-alerts";
 import { formatDateTime } from "@/lib/dates";
@@ -100,41 +101,41 @@ export function AuditView({ entries, alerts }: AuditViewProps) {
           />
         ) : (
           <div className="mt-3 overflow-x-auto rounded-card border border-border bg-surface">
-            <table className="min-w-full text-sm">
+            <Table className="min-w-full text-sm">
               <caption className="sr-only">Registro de acciones sensibles del sistema</caption>
-              <thead className="border-b border-border bg-surface-muted/60 text-left text-xs uppercase tracking-wide text-muted">
+              <thead className="border-b border-border text-left text-xs uppercase tracking-wide text-muted">
                 <tr>
-                  <th scope="col" className="px-4 py-3 font-medium">
+                  <Th scope="col">
                     Fecha
-                  </th>
-                  <th scope="col" className="px-4 py-3 font-medium">
+                  </Th>
+                  <Th scope="col">
                     Usuario
-                  </th>
-                  <th scope="col" className="px-4 py-3 font-medium">
+                  </Th>
+                  <Th scope="col">
                     Acción
-                  </th>
-                  <th scope="col" className="px-4 py-3 font-medium">
+                  </Th>
+                  <Th scope="col">
                     Detalle
-                  </th>
+                  </Th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {entries.map((entry) => (
                   <tr key={entry.id}>
-                    <td className="whitespace-nowrap px-4 py-3 text-foreground">
+                    <Td className="whitespace-nowrap text-foreground">
                       {formatDateTime(new Date(entry.at))}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-foreground">
+                    </Td>
+                    <Td className="whitespace-nowrap text-foreground">
                       {entry.userName ?? "—"}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-foreground">
+                    </Td>
+                    <Td className="whitespace-nowrap text-foreground">
                       {actionLabel(entry.action)}
-                    </td>
-                    <td className="px-4 py-3 text-foreground-muted">{describeSummary(entry)}</td>
+                    </Td>
+                    <Td className="text-foreground-muted">{describeSummary(entry)}</Td>
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </Table>
           </div>
         )}
       </section>

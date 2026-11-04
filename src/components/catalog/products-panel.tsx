@@ -1,5 +1,6 @@
 "use client";
 
+import { Table, Td, Th } from "@/components/ui/table";
 import { useState } from "react";
 import Link from "next/link";
 import {
@@ -280,27 +281,27 @@ export function ProductsPanel({
         )
       ) : (
         <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-border bg-surface-muted/50 text-xs font-medium text-foreground-muted">
+          <Table className="w-full text-left text-sm">
+            <thead className="border-b border-border text-xs font-medium text-foreground-muted">
               <tr>
-                <th scope="col" className="px-4 py-3">
+                <Th scope="col">
                   Producto
-                </th>
-                <th scope="col" className="px-4 py-3">
+                </Th>
+                <Th scope="col">
                   Categoría
-                </th>
-                <th scope="col" className="px-4 py-3 text-right">
+                </Th>
+                <Th scope="col" className="text-right">
                   Precio
-                </th>
-                <th scope="col" className="px-4 py-3">
+                </Th>
+                <Th scope="col">
                   Stock
-                </th>
-                <th scope="col" className="px-4 py-3">
+                </Th>
+                <Th scope="col">
                   Estado
-                </th>
-                <th scope="col" className="px-4 py-3 text-right">
+                </Th>
+                <Th scope="col" className="text-right">
                   Acciones
-                </th>
+                </Th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -310,7 +311,7 @@ export function ProductsPanel({
                 const isLow = !isOut && product.stock_qty <= product.min_stock;
                 return (
                   <tr key={product.id} className="hover:bg-surface-muted/30">
-                    <td className="px-4 py-3">
+                    <Td>
                       <div className="font-medium text-foreground">{product.name}</div>
                       <div className="text-xs text-foreground-muted">
                         {product.barcode
@@ -319,16 +320,16 @@ export function ProductsPanel({
                             ? `Interno: ${product.internal_code}`
                             : "Sin código"}
                       </div>
-                    </td>
-                    <td className="px-4 py-3 text-foreground-muted">
+                    </Td>
+                    <Td className="text-foreground-muted">
                       {product.category_id
                         ? (categoryNames.get(product.category_id) ?? "Categoría eliminada")
                         : "Sin categoría"}
-                    </td>
-                    <td className="px-4 py-3 text-right font-medium tabular-nums text-foreground">
+                    </Td>
+                    <Td className="text-right font-medium tabular-nums text-foreground">
                       {formatBs(product.price_cents)}
-                    </td>
-                    <td className="px-4 py-3">
+                    </Td>
+                    <Td>
                       <div className="flex items-center gap-2">
                         <span className="tabular-nums text-foreground">{product.stock_qty}</span>
                         {isOut ? (
@@ -340,13 +341,13 @@ export function ProductsPanel({
                       <div className="text-xs text-foreground-muted">
                         Mínimo: {product.min_stock}
                       </div>
-                    </td>
-                    <td className="px-4 py-3">
+                    </Td>
+                    <Td>
                       <Badge tone={product.active ? "success" : "neutral"}>
                         {product.active ? "Activo" : "Inactivo"}
                       </Badge>
-                    </td>
-                    <td className="px-4 py-3">
+                    </Td>
+                    <Td>
                       <div className="flex items-center justify-end gap-1">
                         <IconButton
                           aria-label={`Editar ${product.name}`}
@@ -367,12 +368,12 @@ export function ProductsPanel({
                           <Power className="h-4 w-4" aria-hidden="true" />
                         </IconButton>
                       </div>
-                    </td>
+                    </Td>
                   </tr>
                 );
               })}
             </tbody>
-          </table>
+          </Table>
         </div>
       )}
 

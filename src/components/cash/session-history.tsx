@@ -1,5 +1,6 @@
 "use client";
 
+import { Table, Td, Th } from "@/components/ui/table";
 import { AlertTriangle, CheckCircle2, TrendingUp } from "lucide-react";
 import { classifyCashDifference } from "@/lib/domain/cash";
 import { formatDateTime } from "@/lib/dates";
@@ -45,64 +46,64 @@ export function SessionHistory({ sessions }: SessionHistoryProps) {
 
   return (
     <div className="overflow-x-auto rounded-card border border-border bg-surface">
-      <table className="min-w-full text-sm">
-        <thead className="border-b border-border bg-surface-muted/60 text-left text-xs uppercase tracking-wide text-muted">
+      <Table className="min-w-full text-sm">
+        <thead className="border-b border-border text-left text-xs uppercase tracking-wide text-muted">
           <tr>
-            <th scope="col" className="px-4 py-3 font-medium">
+            <Th scope="col">
               Apertura
-            </th>
-            <th scope="col" className="px-4 py-3 font-medium">
+            </Th>
+            <Th scope="col">
               Cierre
-            </th>
-            <th scope="col" className="px-4 py-3 text-right font-medium">
+            </Th>
+            <Th scope="col" className="text-right">
               Inicial
-            </th>
-            <th scope="col" className="px-4 py-3 text-right font-medium">
+            </Th>
+            <Th scope="col" className="text-right">
               Esperado
-            </th>
-            <th scope="col" className="px-4 py-3 text-right font-medium">
+            </Th>
+            <Th scope="col" className="text-right">
               Contado
-            </th>
-            <th scope="col" className="px-4 py-3 font-medium">
+            </Th>
+            <Th scope="col">
               Diferencia
-            </th>
-            <th scope="col" className="px-4 py-3 font-medium">
+            </Th>
+            <Th scope="col">
               Estado
-            </th>
+            </Th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
           {sessions.map((session) => (
             <tr key={session.id}>
-              <td className="whitespace-nowrap px-4 py-3 text-foreground">
+              <Td className="whitespace-nowrap text-foreground">
                 {formatDateTime(new Date(session.opened_at))}
-              </td>
-              <td className="whitespace-nowrap px-4 py-3 text-foreground-muted">
+              </Td>
+              <Td className="whitespace-nowrap text-foreground-muted">
                 {session.closed_at ? formatDateTime(new Date(session.closed_at)) : "—"}
-              </td>
-              <td className="whitespace-nowrap px-4 py-3 text-right text-foreground">
+              </Td>
+              <Td className="whitespace-nowrap text-right text-foreground">
                 {formatBs(session.opening_cents)}
-              </td>
-              <td className="whitespace-nowrap px-4 py-3 text-right text-foreground">
+              </Td>
+              <Td className="whitespace-nowrap text-right text-foreground">
                 {session.expected_cash_cents === null
                   ? "—"
                   : formatBs(session.expected_cash_cents)}
-              </td>
-              <td className="whitespace-nowrap px-4 py-3 text-right text-foreground">
+              </Td>
+              <Td className="whitespace-nowrap text-right text-foreground">
                 {session.counted_cash_cents === null
                   ? "—"
                   : formatBs(session.counted_cash_cents)}
-              </td>
-              <td className="whitespace-nowrap px-4 py-3">{differenceLabel(session)}</td>
-              <td className="whitespace-nowrap px-4 py-3">
+              </Td>
+              <Td className="whitespace-nowrap">{differenceLabel(session)}</Td>
+              <Td className="whitespace-nowrap">
                 <Badge tone={session.status === "open" ? "success" : "neutral"}>
                   {session.status === "open" ? "Abierta" : "Cerrada"}
                 </Badge>
-              </td>
+              </Td>
             </tr>
           ))}
         </tbody>
-      </table>
+      </Table>
     </div>
   );
 }

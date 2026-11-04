@@ -1,5 +1,6 @@
 "use client";
 
+import { Table, Td, Th } from "@/components/ui/table";
 import { useState } from "react";
 import {
   AlertCircle,
@@ -148,21 +149,21 @@ export function CategoriesPanel({ initialCategories, onCategoriesChange }: Categ
         />
       ) : (
         <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-border bg-surface-muted/50 text-xs font-medium text-foreground-muted">
+          <Table className="w-full text-left text-sm">
+            <thead className="border-b border-border text-xs font-medium text-foreground-muted">
               <tr>
-                <th scope="col" className="w-24 px-4 py-3">
+                <Th scope="col" className="w-24">
                   Orden
-                </th>
-                <th scope="col" className="px-4 py-3">
+                </Th>
+                <Th scope="col">
                   Nombre
-                </th>
-                <th scope="col" className="px-4 py-3">
+                </Th>
+                <Th scope="col">
                   Estado
-                </th>
-                <th scope="col" className="px-4 py-3 text-right">
+                </Th>
+                <Th scope="col" className="text-right">
                   Acciones
-                </th>
+                </Th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -170,7 +171,7 @@ export function CategoriesPanel({ initialCategories, onCategoriesChange }: Categ
                 const isPending = pendingId === category.id;
                 return (
                   <tr key={category.id} className="hover:bg-surface-muted/30">
-                    <td className="px-4 py-3">
+                    <Td>
                       <div className="flex items-center gap-1">
                         <IconButton
                           aria-label={`Subir ${category.name}`}
@@ -191,14 +192,14 @@ export function CategoriesPanel({ initialCategories, onCategoriesChange }: Categ
                           <ArrowDown className="h-4 w-4" aria-hidden="true" />
                         </IconButton>
                       </div>
-                    </td>
-                    <td className="px-4 py-3 font-medium text-foreground">{category.name}</td>
-                    <td className="px-4 py-3">
+                    </Td>
+                    <Td className="font-medium text-foreground">{category.name}</Td>
+                    <Td>
                       <Badge tone={category.active ? "success" : "neutral"}>
                         {category.active ? "Activa" : "Inactiva"}
                       </Badge>
-                    </td>
-                    <td className="px-4 py-3">
+                    </Td>
+                    <Td>
                       <div className="flex items-center justify-end gap-1">
                         <IconButton
                           aria-label={`Editar ${category.name}`}
@@ -233,12 +234,12 @@ export function CategoriesPanel({ initialCategories, onCategoriesChange }: Categ
                           <Trash2 className="h-4 w-4" aria-hidden="true" />
                         </IconButton>
                       </div>
-                    </td>
+                    </Td>
                   </tr>
                 );
               })}
             </tbody>
-          </table>
+          </Table>
         </div>
       )}
 

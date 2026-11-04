@@ -1,5 +1,6 @@
 "use client";
 
+import { Table, Td, Th } from "@/components/ui/table";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { formatDateTime } from "@/lib/dates";
@@ -81,55 +82,55 @@ export function PurchasesView({ initialPurchases, supplierNames, initialError = 
         <EmptyState title="Sin resultados" description="No hay compras con ese estado." />
       ) : (
         <div className="overflow-x-auto rounded-card border border-border bg-surface">
-          <table className="min-w-full text-sm">
-            <thead className="border-b border-border bg-surface-muted/60 text-left text-xs uppercase tracking-wide text-muted">
+          <Table className="min-w-full text-sm">
+            <thead className="border-b border-border text-left text-xs uppercase tracking-wide text-muted">
               <tr>
-                <th scope="col" className="px-4 py-3 font-medium">
+                <Th scope="col">
                   Fecha
-                </th>
-                <th scope="col" className="px-4 py-3 font-medium">
+                </Th>
+                <Th scope="col">
                   Proveedor
-                </th>
-                <th scope="col" className="px-4 py-3 text-right font-medium">
+                </Th>
+                <Th scope="col" className="text-right">
                   Total
-                </th>
-                <th scope="col" className="px-4 py-3 font-medium">
+                </Th>
+                <Th scope="col">
                   Estado
-                </th>
-                <th scope="col" className="px-4 py-3 font-medium">
+                </Th>
+                <Th scope="col">
                   Detalle
-                </th>
+                </Th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {filtered.map((purchase) => (
                 <tr key={purchase.id}>
-                  <td className="whitespace-nowrap px-4 py-3 text-foreground-muted">
+                  <Td className="whitespace-nowrap text-foreground-muted">
                     {formatDateTime(new Date(purchase.created_at))}
-                  </td>
-                  <td className="px-4 py-3 text-foreground">
+                  </Td>
+                  <Td className="text-foreground">
                     {purchase.supplier_id ? (supplierNames[purchase.supplier_id] ?? "—") : "—"}
-                  </td>
-                  <td className="px-4 py-3 text-right font-medium text-foreground">
+                  </Td>
+                  <Td className="text-right font-medium text-foreground">
                     {formatBs(purchase.total_cents)}
-                  </td>
-                  <td className="px-4 py-3">
+                  </Td>
+                  <Td>
                     <Badge tone={STATUS_META[purchase.status].tone}>
                       {STATUS_META[purchase.status].label}
                     </Badge>
-                  </td>
-                  <td className="px-4 py-3">
+                  </Td>
+                  <Td>
                     <Link
                       href={`/compras/${purchase.id}`}
                       className="text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       Ver compra
                     </Link>
-                  </td>
+                  </Td>
                 </tr>
               ))}
             </tbody>
-          </table>
+          </Table>
         </div>
       )}
     </div>

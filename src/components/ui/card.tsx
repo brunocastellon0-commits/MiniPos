@@ -1,10 +1,20 @@
 import type { HTMLAttributes } from "react";
 import { cn } from "@/lib/utils/cn";
 
-export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+export interface CardProps extends HTMLAttributes<HTMLDivElement> {
+  /** "metric": tarjeta de métrica sin borde (agrupación por proximidad, sin cajas). */
+  variant?: "default" | "metric";
+}
+
+export function Card({ className, variant = "default", ...props }: CardProps) {
   return (
     <div
-      className={cn("rounded-card border border-border bg-surface shadow-card", className)}
+      className={cn(
+        variant === "metric"
+          ? "rounded-card bg-surface-muted/40"
+          : "rounded-card border border-border bg-surface shadow-card",
+        className,
+      )}
       {...props}
     />
   );

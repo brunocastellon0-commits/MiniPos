@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ProgressBar } from "@/components/ui/progress-bar";
 
 const METHOD_LABELS: Record<string, string> = { cash: "Efectivo", qr: "QR", card: "Tarjeta" };
 
@@ -100,7 +101,7 @@ export function PanelView({
       </header>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-primary/40">
+        <Card variant="metric" className="border-l-2 border-primary">
           <CardHeader>
             <CardTitle>Ventas de hoy</CardTitle>
           </CardHeader>
@@ -122,7 +123,7 @@ export function PanelView({
           </CardContent>
         </Card>
 
-        <Card>
+        <Card variant="metric">
           <CardHeader>
             <CardTitle>Transacciones</CardTitle>
           </CardHeader>
@@ -146,7 +147,7 @@ export function PanelView({
           </CardContent>
         </Card>
 
-        <Card>
+        <Card variant="metric">
           <CardHeader>
             <CardTitle>Estado de caja</CardTitle>
           </CardHeader>
@@ -187,7 +188,7 @@ export function PanelView({
           </CardContent>
         </Card>
 
-        <Card>
+        <Card variant="metric">
           <CardHeader>
             <CardTitle>Stock bajo</CardTitle>
           </CardHeader>
@@ -196,13 +197,20 @@ export function PanelView({
               {lowStock.length}
             </p>
             {lowStock.length > 0 ? (
-              <ul className="space-y-1 text-sm text-foreground-muted">
+              <ul className="space-y-2 text-sm text-foreground-muted">
                 {lowStock.slice(0, 4).map((product) => (
-                  <li key={product.id} className="flex items-center justify-between gap-2">
-                    <span className="truncate">{product.name}</span>
-                    <Badge tone="warning">
-                      {product.stock_qty} / mín {product.min_stock}
-                    </Badge>
+                  <li key={product.id} className="space-y-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate">{product.name}</span>
+                      <Badge tone="warning">
+                        {product.stock_qty} / mín {product.min_stock}
+                      </Badge>
+                    </div>
+                    <ProgressBar
+                      value={product.stock_qty}
+                      max={product.min_stock}
+                      label={`Existencias de ${product.name}: ${product.stock_qty} de mínimo ${product.min_stock}`}
+                    />
                   </li>
                 ))}
               </ul>

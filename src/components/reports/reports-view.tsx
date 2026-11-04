@@ -1,8 +1,10 @@
 "use client";
 
+import { Table, Td, Th } from "@/components/ui/table";
 import { Download } from "lucide-react";
 import { useState } from "react";
 import { exportSalesReportCsvAction, getReportsDataAction } from "@/lib/actions/reports";
+import { ProgressBar } from "@/components/ui/progress-bar";
 import type { ReportsData } from "@/lib/actions/reports-core";
 import type { ReportsRangeInput } from "@/lib/actions/reports-schema";
 import { formatDateShort } from "@/lib/dates";
@@ -56,9 +58,6 @@ function downloadCsv(csv: string, filename: string): void {
   URL.revokeObjectURL(url);
 }
 
-const TH = "border-b border-border bg-surface-muted/60 px-3 py-2 text-left text-xs uppercase tracking-wide text-muted";
-const TD = "border-b border-border px-3 py-2 text-foreground";
-
 export interface ReportsViewProps {
   initialRange: ReportsRangeInput;
   initialData: ReportsData | null;
@@ -73,6 +72,7 @@ export function ReportsView({ initialRange, initialData, initialError = null }: 
   const [error, setError] = useState<string | null>(initialError);
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const topMaxUnits = data ? Math.max(...data.topProducts.map((row) => row.units), 1) : 1;
 
   async function handleLoad(event: React.FormEvent) {
     event.preventDefault();
@@ -199,7 +199,7 @@ export function ReportsView({ initialRange, initialData, initialError = null }: 
           {tab === "ventas" ? (
             <div className="space-y-4">
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-                <Card>
+                <Card variant="metric">
                   <CardHeader>
                     <CardTitle>Cobrado</CardTitle>
                   </CardHeader>
@@ -212,7 +212,7 @@ export function ReportsView({ initialRange, initialData, initialError = null }: 
                     </p>
                   </CardContent>
                 </Card>
-                <Card>
+                <Card variant="metric">
                   <CardHeader>
                     <CardTitle>Ventas brutas</CardTitle>
                   </CardHeader>
@@ -222,7 +222,7 @@ export function ReportsView({ initialRange, initialData, initialError = null }: 
                     </p>
                   </CardContent>
                 </Card>
-                <Card>
+                <Card variant="metric">
                   <CardHeader>
                     <CardTitle>Descuentos</CardTitle>
                   </CardHeader>
@@ -232,7 +232,7 @@ export function ReportsView({ initialRange, initialData, initialError = null }: 
                     </p>
                   </CardContent>
                 </Card>
-                <Card>
+                <Card variant="metric">
                   <CardHeader>
                     <CardTitle>Transacciones</CardTitle>
                   </CardHeader>
@@ -247,7 +247,7 @@ export function ReportsView({ initialRange, initialData, initialError = null }: 
                     </p>
                   </CardContent>
                 </Card>
-                <Card>
+                <Card variant="metric">
                   <CardHeader>
                     <CardTitle>Ventas anuladas</CardTitle>
                   </CardHeader>
@@ -274,44 +274,44 @@ export function ReportsView({ initialRange, initialData, initialError = null }: 
                     />
                   ) : (
                     <div className="overflow-x-auto">
-                      <table className="min-w-full text-sm" data-testid="daily-table">
-                        <thead>
+                      <Table className="min-w-full text-sm" data-testid="daily-table">
+                        <thead className="border-b border-border text-left text-muted">
                           <tr>
-                            <th scope="col" className={TH}>Fecha</th>
-                            <th scope="col" className={TH}>Transacciones</th>
-                            <th scope="col" className={TH}>Bruto</th>
-                            <th scope="col" className={TH}>Descuento</th>
-                            <th scope="col" className={TH}>Cobrado</th>
-                            <th scope="col" className={TH}>Anuladas</th>
+                            <Th scope="col">Fecha</Th>
+                            <Th scope="col">Transacciones</Th>
+                            <Th scope="col">Bruto</Th>
+                            <Th scope="col">Descuento</Th>
+                            <Th scope="col">Cobrado</Th>
+                            <Th scope="col">Anuladas</Th>
                           </tr>
                         </thead>
                         <tbody>
                           {data.dailyRows.map((row) => (
                             <tr key={row.dayKey} data-testid="daily-row">
-                              <td className={TD}>{dayLabel(row.dayKey)}</td>
-                              <td className={TD}>{row.transactionCount}</td>
-                              <td className={TD}>{formatBs(row.grossCents)}</td>
-                              <td className={TD}>{formatBs(row.discountCents)}</td>
-                              <td className={TD}>{formatBs(row.collectedCents)}</td>
-                              <td className={TD}>
+                              <Td className="border-b border-border">{dayLabel(row.dayKey)}</Td>
+                              <Td className="border-b border-border">{row.transactionCount}</Td>
+                              <Td className="border-b border-border">{formatBs(row.grossCents)}</Td>
+                              <Td className="border-b border-border">{formatBs(row.discountCents)}</Td>
+                              <Td className="border-b border-border">{formatBs(row.collectedCents)}</Td>
+                              <Td className="border-b border-border">
                                 {row.voidedCount > 0
                                   ? `${row.voidedCount} (${formatBs(row.voidedCents)})`
                                   : "0"}
-                              </td>
+                              </Td>
                             </tr>
                           ))}
                         </tbody>
                         <tfoot>
                           <tr className="bg-surface-muted/60 font-semibold">
-                            <td className={TD}>Total</td>
-                            <td className={TD}>{data.stats.transactionCount}</td>
-                            <td className={TD}>{formatBs(data.stats.grossCents)}</td>
-                            <td className={TD}>{formatBs(data.stats.discountCents)}</td>
-                            <td className={TD}>{formatBs(data.stats.totalCents)}</td>
-                            <td className={TD}>{data.stats.voidedCount}</td>
+                            <Td className="border-b border-border">Total</Td>
+                            <Td className="border-b border-border">{data.stats.transactionCount}</Td>
+                            <Td className="border-b border-border">{formatBs(data.stats.grossCents)}</Td>
+                            <Td className="border-b border-border">{formatBs(data.stats.discountCents)}</Td>
+                            <Td className="border-b border-border">{formatBs(data.stats.totalCents)}</Td>
+                            <Td className="border-b border-border">{data.stats.voidedCount}</Td>
                           </tr>
                         </tfoot>
-                      </table>
+                      </Table>
                     </div>
                   )}
                 </CardContent>
@@ -332,24 +332,32 @@ export function ReportsView({ initialRange, initialData, initialError = null }: 
                       description="No hay productos vendidos en el periodo."
                     />
                   ) : (
-                    <table className="min-w-full text-sm">
-                      <thead>
+                    <Table className="min-w-full text-sm">
+                      <thead className="border-b border-border text-left text-muted">
                         <tr>
-                          <th scope="col" className={TH}>Producto</th>
-                          <th scope="col" className={TH}>Unidades</th>
-                          <th scope="col" className={TH}>Cobrado</th>
+                          <Th scope="col">Producto</Th>
+                          <Th scope="col">Unidades</Th>
+                          <Th scope="col">Cobrado</Th>
                         </tr>
                       </thead>
                       <tbody>
                         {data.topProducts.map((row) => (
                           <tr key={`top-${row.productId ?? row.name}`} data-testid="top-product-row">
-                            <td className={TD}>{row.name}</td>
-                            <td className={TD}>{row.units}</td>
-                            <td className={TD}>{formatBs(row.totalCents)}</td>
+                            <Td className="border-b border-border">
+                              <span className="block">{row.name}</span>
+                              <ProgressBar
+                                value={row.units}
+                                max={topMaxUnits}
+                                label={`${row.name}: ${row.units} de ${topMaxUnits} unidades (máximo del periodo)`}
+                                className="mt-1 max-w-32"
+                              />
+                            </Td>
+                            <Td className="border-b border-border">{row.units}</Td>
+                            <Td className="border-b border-border">{formatBs(row.totalCents)}</Td>
                           </tr>
                         ))}
                       </tbody>
-                    </table>
+                    </Table>
                   )}
                 </CardContent>
               </Card>
@@ -364,24 +372,24 @@ export function ReportsView({ initialRange, initialData, initialError = null }: 
                       description="No hay productos registrados."
                     />
                   ) : (
-                    <table className="min-w-full text-sm">
-                      <thead>
+                    <Table className="min-w-full text-sm">
+                      <thead className="border-b border-border text-left text-muted">
                         <tr>
-                          <th scope="col" className={TH}>Producto</th>
-                          <th scope="col" className={TH}>Unidades</th>
-                          <th scope="col" className={TH}>Cobrado</th>
+                          <Th scope="col">Producto</Th>
+                          <Th scope="col">Unidades</Th>
+                          <Th scope="col">Cobrado</Th>
                         </tr>
                       </thead>
                       <tbody>
                         {data.leastProducts.map((row) => (
                           <tr key={`least-${row.productId ?? row.name}`} data-testid="least-product-row">
-                            <td className={TD}>{row.name}</td>
-                            <td className={TD}>{row.units}</td>
-                            <td className={TD}>{formatBs(row.totalCents)}</td>
+                            <Td className="border-b border-border">{row.name}</Td>
+                            <Td className="border-b border-border">{row.units}</Td>
+                            <Td className="border-b border-border">{formatBs(row.totalCents)}</Td>
                           </tr>
                         ))}
                       </tbody>
-                    </table>
+                    </Table>
                   )}
                 </CardContent>
               </Card>
@@ -451,31 +459,31 @@ export function ReportsView({ initialRange, initialData, initialError = null }: 
                       description="No se registraron compras entre las fechas seleccionadas."
                     />
                   ) : (
-                    <table className="min-w-full text-sm">
-                      <thead>
+                    <Table className="min-w-full text-sm">
+                      <thead className="border-b border-border text-left text-muted">
                         <tr>
-                          <th scope="col" className={TH}>Estado</th>
-                          <th scope="col" className={TH}>Cantidad</th>
-                          <th scope="col" className={TH}>Total</th>
+                          <Th scope="col">Estado</Th>
+                          <Th scope="col">Cantidad</Th>
+                          <Th scope="col">Total</Th>
                         </tr>
                       </thead>
                       <tbody>
                         {data.purchasesSummary.byStatus.map((row) => (
                           <tr key={row.status} data-testid="purchase-status-row">
-                            <td className={TD}>{PURCHASE_STATUS_LABELS[row.status]}</td>
-                            <td className={TD}>{row.count}</td>
-                            <td className={TD}>{formatBs(row.totalCents)}</td>
+                            <Td className="border-b border-border">{PURCHASE_STATUS_LABELS[row.status]}</Td>
+                            <Td className="border-b border-border">{row.count}</Td>
+                            <Td className="border-b border-border">{formatBs(row.totalCents)}</Td>
                           </tr>
                         ))}
                       </tbody>
                       <tfoot>
                         <tr className="bg-surface-muted/60 font-semibold">
-                          <td className={TD}>Total</td>
-                          <td className={TD}>{data.purchasesSummary.totalCount}</td>
-                          <td className={TD}>{formatBs(data.purchasesSummary.totalCents)}</td>
+                          <Td className="border-b border-border">Total</Td>
+                          <Td className="border-b border-border">{data.purchasesSummary.totalCount}</Td>
+                          <Td className="border-b border-border">{formatBs(data.purchasesSummary.totalCents)}</Td>
                         </tr>
                       </tfoot>
-                    </table>
+                    </Table>
                   )}
                 </CardContent>
               </Card>

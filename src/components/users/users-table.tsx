@@ -1,5 +1,6 @@
 "use client";
 
+import { Table, Td, Th } from "@/components/ui/table";
 import { Edit2, Shield, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,24 +26,24 @@ export function UsersTable({ users, onEditUser }: UsersTableProps) {
 
   return (
     <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-      <table className="w-full text-left text-sm">
-        <thead className="border-b border-border bg-surface-muted/50 text-xs text-foreground-muted font-medium">
+      <Table className="w-full text-left text-sm">
+        <thead className="border-b border-border text-xs text-foreground-muted font-medium">
           <tr>
-            <th scope="col" className="px-4 py-3">
+            <Th scope="col">
               Nombre
-            </th>
-            <th scope="col" className="px-4 py-3">
+            </Th>
+            <Th scope="col">
               Rol
-            </th>
-            <th scope="col" className="px-4 py-3">
+            </Th>
+            <Th scope="col">
               Estado
-            </th>
-            <th scope="col" className="px-4 py-3 hidden sm:table-cell">
+            </Th>
+            <Th scope="col" className="hidden sm:table-cell">
               Fecha de Registro
-            </th>
-            <th scope="col" className="px-4 py-3 text-right">
+            </Th>
+            <Th scope="col" className="text-right">
               Acciones
-            </th>
+            </Th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
@@ -56,12 +57,12 @@ export function UsersTable({ users, onEditUser }: UsersTableProps) {
                 className="hover:bg-surface-muted/30 transition-colors"
                 data-testid={`user-row-${user.id}`}
               >
-                <td className="px-4 py-3.5">
+                <Td>
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-foreground">{user.full_name}</span>
                   </div>
-                </td>
-                <td className="px-4 py-3.5">
+                </Td>
+                <Td>
                   <Badge tone={isOwner ? "accent" : "neutral"} className="gap-1">
                     {isOwner ? (
                       <>
@@ -75,16 +76,16 @@ export function UsersTable({ users, onEditUser }: UsersTableProps) {
                       </>
                     )}
                   </Badge>
-                </td>
-                <td className="px-4 py-3.5">
+                </Td>
+                <Td>
                   <Badge tone={isActive ? "success" : "neutral"}>
                     {isActive ? "Activo" : "Inactivo"}
                   </Badge>
-                </td>
-                <td className="px-4 py-3.5 text-xs text-foreground-muted hidden sm:table-cell">
+                </Td>
+                <Td className="text-xs text-foreground-muted hidden sm:table-cell">
                   {formatDateShort(new Date(user.created_at))}
-                </td>
-                <td className="px-4 py-3.5 text-right">
+                </Td>
+                <Td className="text-right">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -95,12 +96,12 @@ export function UsersTable({ users, onEditUser }: UsersTableProps) {
                     <Edit2 className="h-3.5 w-3.5" />
                     Editar
                   </Button>
-                </td>
+                </Td>
               </tr>
             );
           })}
         </tbody>
-      </table>
+      </Table>
     </div>
   );
 }

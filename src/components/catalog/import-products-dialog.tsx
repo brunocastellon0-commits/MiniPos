@@ -1,5 +1,6 @@
 "use client";
 
+import { Table, Td, Th } from "@/components/ui/table";
 import { useState } from "react";
 import { AlertCircle, CheckCircle2, Download, FileUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -189,63 +190,63 @@ function ImportDialogContent({
 
           {preview.errors.length > 0 ? (
             <div className="max-h-48 overflow-y-auto rounded-lg border border-danger/30 bg-danger/5">
-              <table className="w-full text-left text-sm">
+              <Table className="w-full text-left text-sm">
                 <caption className="sr-only">Errores encontrados en el archivo CSV</caption>
                 <thead className="border-b border-danger/20 text-xs text-danger">
                   <tr>
-                    <th scope="col" className="px-3 py-2">
+                    <Th scope="col">
                       Fila
-                    </th>
-                    <th scope="col" className="px-3 py-2">
+                    </Th>
+                    <Th scope="col">
                       Problema
-                    </th>
+                    </Th>
                   </tr>
                 </thead>
                 <tbody>
                   {preview.errors.map((error) => (
                     <tr key={`${error.line}-${error.message}`} className="border-b border-danger/10">
-                      <td className="px-3 py-2 tabular-nums text-danger">{error.line || "—"}</td>
-                      <td className="px-3 py-2 text-foreground">{error.message}</td>
+                      <Td className="tabular-nums text-danger">{error.line || "—"}</Td>
+                      <Td className="text-foreground">{error.message}</Td>
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </Table>
             </div>
           ) : preview.preview.length > 0 ? (
             <div className="max-h-56 overflow-y-auto rounded-lg border border-border">
-              <table className="w-full text-left text-sm">
+              <Table className="w-full text-left text-sm">
                 <caption className="sr-only">Vista previa de productos a importar</caption>
-                <thead className="border-b border-border bg-surface-muted/50 text-xs text-foreground-muted">
+                <thead className="border-b border-border text-xs text-foreground-muted">
                   <tr>
-                    <th scope="col" className="px-3 py-2">
+                    <Th scope="col">
                       Producto
-                    </th>
-                    <th scope="col" className="px-3 py-2">
+                    </Th>
+                    <Th scope="col">
                       Categoría
-                    </th>
-                    <th scope="col" className="px-3 py-2 text-right">
+                    </Th>
+                    <Th scope="col" className="text-right">
                       Precio
-                    </th>
-                    <th scope="col" className="px-3 py-2 text-right">
+                    </Th>
+                    <Th scope="col" className="text-right">
                       Stock
-                    </th>
+                    </Th>
                   </tr>
                 </thead>
                 <tbody>
                   {preview.preview.map((row) => (
                     <tr key={`${row.line}-${row.name}`} className="border-b border-border">
-                      <td className="px-3 py-2 font-medium text-foreground">{row.name}</td>
-                      <td className="px-3 py-2 text-foreground-muted">
+                      <Td className="font-medium text-foreground">{row.name}</Td>
+                      <Td className="text-foreground-muted">
                         {row.categoryName ?? "Sin categoría"}
-                      </td>
-                      <td className="px-3 py-2 text-right tabular-nums">
+                      </Td>
+                      <Td className="text-right tabular-nums">
                         {formatBs(row.priceCents)}
-                      </td>
-                      <td className="px-3 py-2 text-right tabular-nums">{row.stockQty}</td>
+                      </Td>
+                      <Td className="text-right tabular-nums">{row.stockQty}</Td>
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </Table>
             </div>
           ) : null}
 

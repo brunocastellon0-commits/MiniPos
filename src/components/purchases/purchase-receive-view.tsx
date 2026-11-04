@@ -1,5 +1,6 @@
 "use client";
 
+import { Table, Td, Th } from "@/components/ui/table";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { receivePurchaseAction } from "@/lib/actions/purchases";
@@ -99,34 +100,34 @@ export function PurchaseReceiveView({ purchase, items, productNames }: PurchaseR
 
       <form id="receive-purchase-form" onSubmit={handleSubmit} className="space-y-4">
         <div className="overflow-x-auto rounded-card border border-border bg-surface">
-          <table className="min-w-full text-sm">
-            <thead className="border-b border-border bg-surface-muted/60 text-left text-xs uppercase tracking-wide text-muted">
+          <Table className="min-w-full text-sm">
+            <thead className="border-b border-border text-left text-xs uppercase tracking-wide text-muted">
               <tr>
-                <th scope="col" className="px-4 py-3 font-medium">
+                <Th scope="col">
                   Producto
-                </th>
-                <th scope="col" className="px-4 py-3 text-right font-medium">
+                </Th>
+                <Th scope="col" className="text-right">
                   Pedido
-                </th>
-                <th scope="col" className="px-4 py-3 text-right font-medium">
+                </Th>
+                <Th scope="col" className="text-right">
                   Costo unit.
-                </th>
-                <th scope="col" className="px-4 py-3 font-medium">
+                </Th>
+                <Th scope="col">
                   Recibido
-                </th>
+                </Th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {items.map((item) => (
                 <tr key={item.id}>
-                  <td className="px-4 py-3 font-medium text-foreground">
+                  <Td className="font-medium text-foreground">
                     {productNames[item.product_id] ?? "—"}
-                  </td>
-                  <td className="px-4 py-3 text-right text-foreground-muted">{item.qty_ordered}</td>
-                  <td className="px-4 py-3 text-right text-foreground-muted">
+                  </Td>
+                  <Td className="text-right text-foreground-muted">{item.qty_ordered}</Td>
+                  <Td className="text-right text-foreground-muted">
                     {formatBs(item.unit_cost_cents)}
-                  </td>
-                  <td className="px-4 py-3">
+                  </Td>
+                  <Td>
                     <input
                       type="number"
                       min={0}
@@ -143,11 +144,11 @@ export function PurchaseReceiveView({ purchase, items, productNames }: PurchaseR
                       aria-label={`Cantidad recibida de ${productNames[item.product_id] ?? "producto"}`}
                       className="h-9 w-24 rounded-md border border-border bg-surface px-2 text-right text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
                     />
-                  </td>
+                  </Td>
                 </tr>
               ))}
             </tbody>
-          </table>
+          </Table>
         </div>
 
         {!isClosed ? (

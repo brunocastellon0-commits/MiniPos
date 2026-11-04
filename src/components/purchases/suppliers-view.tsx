@@ -1,5 +1,6 @@
 "use client";
 
+import { Table, Td, Th } from "@/components/ui/table";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -144,40 +145,40 @@ export function SuppliersView({ initialSuppliers, initialError = null }: Supplie
         />
       ) : (
         <div className="overflow-x-auto rounded-card border border-border bg-surface">
-          <table className="min-w-full text-sm">
-            <thead className="border-b border-border bg-surface-muted/60 text-left text-xs uppercase tracking-wide text-muted">
+          <Table className="min-w-full text-sm">
+            <thead className="border-b border-border text-left text-xs uppercase tracking-wide text-muted">
               <tr>
-                <th scope="col" className="px-4 py-3 font-medium">
+                <Th scope="col">
                   Nombre
-                </th>
-                <th scope="col" className="px-4 py-3 font-medium">
+                </Th>
+                <Th scope="col">
                   Teléfono
-                </th>
-                <th scope="col" className="px-4 py-3 font-medium">
+                </Th>
+                <Th scope="col">
                   Notas
-                </th>
-                <th scope="col" className="px-4 py-3 font-medium">
+                </Th>
+                <Th scope="col">
                   Estado
-                </th>
-                <th scope="col" className="px-4 py-3 font-medium">
+                </Th>
+                <Th scope="col">
                   Acciones
-                </th>
+                </Th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {initialSuppliers.map((supplier) => (
                 <tr key={supplier.id}>
-                  <td className="px-4 py-3 font-medium text-foreground">{supplier.name}</td>
-                  <td className="px-4 py-3 text-foreground-muted">{supplier.phone ?? "—"}</td>
-                  <td className="max-w-56 truncate px-4 py-3 text-foreground-muted">
+                  <Td className="font-medium text-foreground">{supplier.name}</Td>
+                  <Td className="text-foreground-muted">{supplier.phone ?? "—"}</Td>
+                  <Td className="max-w-56 truncate text-foreground-muted">
                     {supplier.notes ?? "—"}
-                  </td>
-                  <td className="px-4 py-3">
+                  </Td>
+                  <Td>
                     <Badge tone={supplier.active ? "success" : "neutral"}>
                       {supplier.active ? "Activo" : "Inactivo"}
                     </Badge>
-                  </td>
-                  <td className="px-4 py-3">
+                  </Td>
+                  <Td>
                     <div className="flex items-center gap-1">
                       <Button
                         type="button"
@@ -199,11 +200,11 @@ export function SuppliersView({ initialSuppliers, initialError = null }: Supplie
                         <Trash2 className="size-4 text-danger" aria-hidden="true" />
                       </Button>
                     </div>
-                  </td>
+                  </Td>
                 </tr>
               ))}
             </tbody>
-          </table>
+          </Table>
         </div>
       )}
 

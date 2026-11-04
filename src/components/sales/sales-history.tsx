@@ -1,5 +1,6 @@
 "use client";
 
+import { Table, Td, Th } from "@/components/ui/table";
 import Link from "next/link";
 import { useState } from "react";
 import { listSalesAction } from "@/lib/actions/sales";
@@ -211,27 +212,27 @@ export function SalesHistory({
             className="overflow-x-auto rounded-card border border-border bg-surface"
             aria-busy={loading || undefined}
           >
-            <table className="min-w-full text-sm">
-              <thead className="border-b border-border bg-surface-muted/60 text-left text-xs uppercase tracking-wide text-muted">
+            <Table className="min-w-full text-sm">
+              <thead className="border-b border-border text-left text-xs uppercase tracking-wide text-muted">
                 <tr>
-                  <th scope="col" className="px-4 py-3 font-medium">
+                  <Th scope="col">
                     N.º
-                  </th>
-                  <th scope="col" className="px-4 py-3 font-medium">
+                  </Th>
+                  <Th scope="col">
                     Fecha
-                  </th>
-                  <th scope="col" className="px-4 py-3 font-medium">
+                  </Th>
+                  <Th scope="col">
                     Cajero
-                  </th>
-                  <th scope="col" className="px-4 py-3 font-medium">
+                  </Th>
+                  <Th scope="col">
                     Método
-                  </th>
-                  <th scope="col" className="px-4 py-3 font-medium">
+                  </Th>
+                  <Th scope="col">
                     Estado
-                  </th>
-                  <th scope="col" className="px-4 py-3 text-right font-medium">
+                  </Th>
+                  <Th scope="col" className="text-right">
                     Total
-                  </th>
+                  </Th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -239,43 +240,43 @@ export function SalesHistory({
                   ? Array.from({ length: SKELETON_ROWS }, (_, rowIndex) => (
                       <tr key={`skeleton-${rowIndex}`}>
                         {Array.from({ length: 6 }, (_, cellIndex) => (
-                          <td key={cellIndex} className="px-4 py-3">
+                          <Td key={cellIndex}>
                             <Skeleton className="h-4 w-full" />
-                          </td>
+                          </Td>
                         ))}
                       </tr>
                     ))
                   : sales.map((sale) => (
                       <tr key={sale.id}>
-                        <td className="whitespace-nowrap px-4 py-3">
+                        <Td className="whitespace-nowrap">
                           <Link
                             href={`/ventas/${sale.id}`}
                             className="rounded font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                           >
                             #{sale.number}
                           </Link>
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-foreground-muted">
+                        </Td>
+                        <Td className="whitespace-nowrap text-foreground-muted">
                           {formatDateTime(new Date(sale.created_at))}
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-foreground">
+                        </Td>
+                        <Td className="whitespace-nowrap text-foreground">
                           {cashierNames[sale.cashier_id] ?? "—"}
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-foreground">
+                        </Td>
+                        <Td className="whitespace-nowrap text-foreground">
                           {METHOD_LABELS[sale.payment_method] ?? sale.payment_method}
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-3">
+                        </Td>
+                        <Td className="whitespace-nowrap">
                           <Badge tone={sale.status === "voided" ? "danger" : "success"}>
                             {sale.status === "voided" ? "Anulada" : "Pagada"}
                           </Badge>
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-right font-medium text-foreground">
+                        </Td>
+                        <Td className="whitespace-nowrap text-right font-medium text-foreground">
                           {formatBs(sale.total_cents)}
-                        </td>
+                        </Td>
                       </tr>
                     ))}
               </tbody>
-            </table>
+            </Table>
           </div>
           {hasMore && !loading ? (
             <div className="flex justify-center">

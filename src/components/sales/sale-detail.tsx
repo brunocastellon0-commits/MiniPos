@@ -1,3 +1,4 @@
+import { Table, Td, Th } from "@/components/ui/table";
 import Link from "next/link";
 import { formatDateTime } from "@/lib/dates";
 import { formatBs } from "@/lib/money";
@@ -72,38 +73,38 @@ export function SaleDetail({ sale, items, cashierName, canVoid = false }: SaleDe
           ) : null}
 
           <div className="overflow-x-auto rounded-card border border-border">
-            <table className="min-w-full text-sm">
-              <thead className="border-b border-border bg-surface-muted/60 text-left text-xs uppercase tracking-wide text-muted">
+            <Table className="min-w-full text-sm">
+              <thead className="border-b border-border text-left text-xs uppercase tracking-wide text-muted">
                 <tr>
-                  <th scope="col" className="px-4 py-3 font-medium">
+                  <Th scope="col">
                     Producto
-                  </th>
-                  <th scope="col" className="px-4 py-3 text-right font-medium">
+                  </Th>
+                  <Th scope="col" className="text-right">
                     Precio unit.
-                  </th>
-                  <th scope="col" className="px-4 py-3 text-right font-medium">
+                  </Th>
+                  <Th scope="col" className="text-right">
                     Cantidad
-                  </th>
-                  <th scope="col" className="px-4 py-3 text-right font-medium">
+                  </Th>
+                  <Th scope="col" className="text-right">
                     Subtotal
-                  </th>
+                  </Th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {items.map((item) => (
                   <tr key={item.id}>
-                    <td className="px-4 py-3 text-foreground">{item.name_snapshot}</td>
-                    <td className="px-4 py-3 text-right text-foreground-muted">
+                    <Td className="text-foreground">{item.name_snapshot}</Td>
+                    <Td className="text-right text-foreground-muted">
                       {formatBs(item.unit_price_cents)}
-                    </td>
-                    <td className="px-4 py-3 text-right text-foreground">{item.quantity}</td>
-                    <td className="px-4 py-3 text-right font-medium text-foreground">
+                    </Td>
+                    <Td className="text-right text-foreground">{item.quantity}</Td>
+                    <Td className="text-right font-medium text-foreground">
                       {formatBs(item.line_total_cents)}
-                    </td>
+                    </Td>
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </Table>
           </div>
 
           <dl className="ml-auto w-full max-w-xs space-y-1 text-sm">
