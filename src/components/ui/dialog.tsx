@@ -33,6 +33,14 @@ export function Dialog({
   const panelRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
+  // El effect de foco depende SOLO de `open`: si dependiera de `onClose` (que suele ser
+  // una función inline del padre), cada tecla re-renderiza, cambia la identidad y el
+  // focus-trap se re-ejecuta robando el foco al input (bug: un solo carácter escrito).
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
   useEffect(() => {
     if (!open) return;
 
@@ -40,13 +48,17 @@ export function Dialog({
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
     const panel = panelRef.current;
-    const firstFocusable = panel?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
-    (firstFocusable ?? panel)?.focus();
+    const active = document.activeElement;
+    const focusAlreadyInside = panel !== null && active instanceof Node && panel.contains(active);
+    if (!focusAlreadyInside) {
+      const firstFocusable = panel?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
+      (firstFocusable ?? panel)?.focus();
+    }
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         event.preventDefault();
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (event.key !== "Tab" || !panel) return;
@@ -78,7 +90,7 @@ export function Dialog({
       document.body.style.overflow = previousOverflow;
       previousFocusRef.current?.focus();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 

@@ -163,3 +163,17 @@
 | E12-04 | Modo demostración | E0-08 |  | TODO |
 | E12-05 | Versionado y changelog | — |  | TODO |
 | E12-06 | Verificación final contra el plan §15 | — |  | TODO |
+
+## E13 — Usabilidad y pulido (tareas de mejora)  ·  [backlog/E13-usabilidad-y-rendimiento.md](backlog/E13-usabilidad-y-rendimiento.md)
+
+> Fuente: `tareasmejora.md`. Decisiones del humano (logo solo UI · sin desglosar apellidos · idempotencia solo UI) dentro de la épica.
+
+| ID | Tarea | Deps | BD | Estado |
+|---|---|---|---|---|
+| E13-01 | A1 · Inputs que pierden el foco (bug crítico) | — |  | DONE |
+| E13-02 | A2 · Rendimiento al cambiar de vista | — |  | TODO |
+| E13-03 | B4 · Skeletons y `loading.tsx` por ruta | E13-02 |  | TODO |
+| E13-04 | A3 · Logo estático desde `public/` (solo UI) | — |  | TODO |
+| E13-05 | B1 · FormField, etiquetas y errores por campo | — |  | TODO |
+| E13-06 | B2 · Candado y estados en botones de acción | — |  | TODO |
+| E13-07 | B3 · Tablas y barras de métricas | — |  | TODO |

@@ -25,6 +25,24 @@ function DialogHarness() {
   );
 }
 
+function TypingHarness() {
+  const [open, setOpen] = useState(false);
+  const [motivo, setMotivo] = useState("");
+
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)}>
+        Abrir
+      </button>
+      <Dialog open={open} onClose={() => setOpen(false)} title="Movimiento de caja">
+        <label htmlFor="motivo">Motivo</label>
+        <input id="motivo" value={motivo} onChange={(event) => setMotivo(event.target.value)} />
+        <button type="button">Guardar</button>
+      </Dialog>
+    </>
+  );
+}
+
 describe("Dialog", () => {
   it("no renderiza nada mientras está cerrado", () => {
     render(<DialogHarness />);
@@ -86,5 +104,18 @@ describe("Dialog", () => {
     first.focus();
     fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
     expect(document.activeElement).toBe(last);
+  });
+
+  it("permite escribir una palabra completa sin perder el foco (E13-01)", async () => {
+    const user = userEvent.setup();
+    render(<TypingHarness />);
+    await user.click(screen.getByRole("button", { name: "Abrir" }));
+
+    const input = screen.getByLabelText("Motivo");
+    await user.click(input);
+    await user.keyboard("arroz grano");
+
+    expect(input).toHaveFocus();
+    expect(input).toHaveValue("arroz grano");
   });
 });
