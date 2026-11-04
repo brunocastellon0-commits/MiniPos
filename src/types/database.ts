@@ -44,6 +44,7 @@ export interface Database {
           allow_negative_stock: boolean;
           low_stock_default: number;
           cashier_can_discount: boolean;
+          cashier_max_discount_cents: number;
           created_at: string;
           updated_at: string;
         };
@@ -57,6 +58,7 @@ export interface Database {
           allow_negative_stock?: boolean;
           low_stock_default?: number;
           cashier_can_discount?: boolean;
+          cashier_max_discount_cents?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -70,6 +72,7 @@ export interface Database {
           allow_negative_stock?: boolean;
           low_stock_default?: number;
           cashier_can_discount?: boolean;
+          cashier_max_discount_cents?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -669,6 +672,7 @@ export interface Database {
           allow_negative_stock: boolean;
           low_stock_default: number;
           cashier_can_discount: boolean;
+          cashier_max_discount_cents: number;
         }[];
       };
       products_with_cost: {
