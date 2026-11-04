@@ -176,4 +176,4 @@
 | E13-04 | A3 · Logo estático desde `public/` (solo UI) | — |  | DONE |
 | E13-05 | B1 · FormField, etiquetas y errores por campo | — |  | DONE |
 | E13-06 | B2 · Candado y estados en botones de acción | — |  | DONE |
-| E13-07 | B3 · Tablas y barras de métricas | — |  | TODO |
+| E13-07 | B3 · Tablas y barras de métricas | — |  | DONE |
