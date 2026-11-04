@@ -89,7 +89,6 @@ describe("Bitácora de auditoría (E11-08)", () => {
       legal_name: initial.legal_name,
       currency_code: "BOB",
       currency_symbol: "Bs",
-      logo_url: initial.logo_url,
       allow_negative_stock: initial.allow_negative_stock,
       cashier_can_discount: initial.cashier_can_discount,
       cashier_max_discount_cents: initial.cashier_max_discount_cents,

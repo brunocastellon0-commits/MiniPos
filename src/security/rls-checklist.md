@@ -10,7 +10,8 @@
 - [ ] **1. Tablas de `public` sin RLS activada** → esperado: 0 filas.
 - [ ] **2. Tablas con RLS pero sin ninguna política** → esperado: 0 filas.
 - [ ] **3. Privilegios concedidos a `anon` en `public`** → esperado: 0 filas
-      (excepción puntual: `select (name, logo_url)` de `business_settings` para el login, si DB-009 está aplicada).
+      (excepción puntual de DB-009, aplicada 2026-11-04: `select (name, logo_url)` de `business_settings`;
+      la app solo lee `name` y el logo es la imagen estática `public/logo.png`).
 - [ ] **4. Funciones `SECURITY DEFINER` en `public` sin `search_path` fijado** → esperado: 0 filas.
 - [ ] **5. Ejecución de funciones de `public`: quién tiene `execute`** → esperado: ninguna
       función sensible otorgada a `anon`/`PUBLIC`.

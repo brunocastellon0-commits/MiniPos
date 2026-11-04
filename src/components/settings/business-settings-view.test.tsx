@@ -12,24 +12,21 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-const settings = buildBusinessSettings({
-  logo_url: "https://ejemplo.com/logo.png",
-});
+const settings = buildBusinessSettings();
 
 function renderView(overrides: Partial<Parameters<typeof BusinessSettingsView>[0]> = {}) {
   return render(<BusinessSettingsView initialSettings={settings} {...overrides} />);
 }
 
 describe("BusinessSettingsView (E10-01)", () => {
-  it("muestra los datos actuales del negocio y la vista previa del logo", () => {
+  it("muestra los datos actuales del negocio sin formulario de logo", () => {
     renderView();
 
     expect(screen.getByLabelText("Nombre del negocio")).toHaveValue("Minimarket Los Pinos");
     expect(screen.getByLabelText("Razón social")).toHaveValue("Los Pinos S.R.L.");
     expect(screen.getByLabelText("Código de moneda")).toHaveValue("BOB");
     expect(screen.getByLabelText("Símbolo de moneda")).toHaveValue("Bs");
-    expect(screen.getByLabelText("URL del logo")).toHaveValue("https://ejemplo.com/logo.png");
-    expect(screen.getByAltText("Vista previa del logo")).toBeInTheDocument();
+    expect(screen.queryByLabelText("URL del logo")).not.toBeInTheDocument();
   });
 
   it("guarda los cambios y muestra confirmación", async () => {
@@ -48,7 +45,6 @@ describe("BusinessSettingsView (E10-01)", () => {
         legal_name: "Los Pinos S.R.L.",
         currency_code: "BOB",
         currency_symbol: "Bs",
-        logo_url: "https://ejemplo.com/logo.png",
         allow_negative_stock: false,
         cashier_can_discount: false,
         cashier_max_discount_cents: 0,

@@ -173,7 +173,7 @@
 | E13-01 | A1 · Inputs que pierden el foco (bug crítico) | — |  | DONE |
 | E13-02 | A2 · Rendimiento al cambiar de vista | — |  | DONE |
 | E13-03 | B4 · Skeletons y `loading.tsx` por ruta | E13-02 |  | DONE |
-| E13-04 | A3 · Logo estático desde `public/` (solo UI) | — |  | TODO |
+| E13-04 | A3 · Logo estático desde `public/` (solo UI) | — |  | DONE |
 | E13-05 | B1 · FormField, etiquetas y errores por campo | — |  | TODO |
 | E13-06 | B2 · Candado y estados en botones de acción | — |  | TODO |
 | E13-07 | B3 · Tablas y barras de métricas | — |  | TODO |

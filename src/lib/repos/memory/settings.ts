@@ -47,7 +47,6 @@ export class MemorySettingsRepo implements SettingsRepo {
       legal_name: s.legal_name,
       currency_code: s.currency_code,
       currency_symbol: s.currency_symbol,
-      logo_url: s.logo_url,
       allow_negative_stock: s.allow_negative_stock,
       low_stock_default: s.low_stock_default,
       cashier_can_discount: s.cashier_can_discount,

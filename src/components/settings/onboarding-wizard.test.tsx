@@ -85,7 +85,6 @@ describe("OnboardingWizard (E10-03)", () => {
         legal_name: "Los Pinos S.R.L.",
         currency_code: "BOB",
         currency_symbol: "Bs",
-        logo_url: "",
         allow_negative_stock: false,
         cashier_can_discount: true,
         cashier_max_discount_cents: 0,

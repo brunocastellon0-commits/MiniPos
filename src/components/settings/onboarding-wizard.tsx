@@ -31,7 +31,6 @@ export function OnboardingWizard({ initialSettings }: OnboardingWizardProps) {
   const [legalName, setLegalName] = useState(initialSettings.legal_name ?? "");
   const [currencyCode, setCurrencyCode] = useState(initialSettings.currency_code);
   const [currencySymbol, setCurrencySymbol] = useState(initialSettings.currency_symbol);
-  const [logoUrl, setLogoUrl] = useState(initialSettings.logo_url ?? "");
 
   const [categoryName, setCategoryName] = useState("");
   const [createdCategories, setCreatedCategories] = useState<string[]>([]);
@@ -62,7 +61,6 @@ export function OnboardingWizard({ initialSettings }: OnboardingWizardProps) {
         legal_name: legalName,
         currency_code: currencyCode,
         currency_symbol: currencySymbol,
-        logo_url: logoUrl,
         allow_negative_stock: initialSettings.allow_negative_stock,
         cashier_can_discount: initialSettings.cashier_can_discount,
         cashier_max_discount_cents: initialSettings.cashier_max_discount_cents,
@@ -270,19 +268,6 @@ export function OnboardingWizard({ initialSettings }: OnboardingWizardProps) {
                 maxLength={5}
                 required
                 onChange={(event) => setCurrencySymbol(event.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5 sm:col-span-2">
-              <label htmlFor="wiz-logo" className="block text-sm font-medium text-foreground">
-                URL del logo (opcional)
-              </label>
-              <Input
-                id="wiz-logo"
-                className={inputClass}
-                value={logoUrl}
-                maxLength={300}
-                placeholder="https://…  o  /logo.png"
-                onChange={(event) => setLogoUrl(event.target.value)}
               />
             </div>
             <div className="flex justify-end gap-2 sm:col-span-2">

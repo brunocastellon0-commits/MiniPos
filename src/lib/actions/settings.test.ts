@@ -90,7 +90,6 @@ describe("Configuración del negocio (E10-01/E10-02)", () => {
     legal_name: "Sol SRL",
     currency_code: "bob",
     currency_symbol: "Bs",
-    logo_url: "https://ejemplo.com/logo.png",
     allow_negative_stock: false,
     cashier_can_discount: true,
     cashier_max_discount_cents: 500,
@@ -120,7 +119,6 @@ describe("Configuración del negocio (E10-01/E10-02)", () => {
     expect(result.data.name).toBe("Minimarket Sol");
     expect(result.data.legal_name).toBe("Sol SRL");
     expect(result.data.currency_code).toBe("BOB");
-    expect(result.data.logo_url).toBe("https://ejemplo.com/logo.png");
     expect(result.data.cashier_can_discount).toBe(true);
     expect(result.data.cashier_max_discount_cents).toBe(500);
     expect(result.data.low_stock_default).toBe(3);
@@ -137,17 +135,15 @@ describe("Configuración del negocio (E10-01/E10-02)", () => {
     expect(summary.changed.allow_negative_stock).toBeUndefined();
   });
 
-  it("convierte logo y razón social vacíos en null", async () => {
+  it("convierte la razón social vacía en null", async () => {
     const result = await createUpdateBusinessSettingsAction(makeDeps(owner))({
       ...validUpdate,
       legal_name: "   ",
-      logo_url: "",
     });
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.legal_name).toBeNull();
-    expect(result.data.logo_url).toBeNull();
   });
 
   it("el cajero no puede modificar la configuración", async () => {
@@ -167,8 +163,8 @@ describe("Configuración del negocio (E10-01/E10-02)", () => {
     const badCurrency = await action({ ...validUpdate, currency_code: "BOBOL" });
     expect(badCurrency.ok).toBe(false);
 
-    const badLogo = await action({ ...validUpdate, logo_url: "javascript:alert(1)" });
-    expect(badLogo.ok).toBe(false);
+    const removedLogo = await action({ ...validUpdate, logo_url: "https://x/y.png" } as never);
+    expect(removedLogo.ok).toBe(false);
 
     const badThreshold = await action({ ...validUpdate, low_stock_default: -1 });
     expect(badThreshold.ok).toBe(false);

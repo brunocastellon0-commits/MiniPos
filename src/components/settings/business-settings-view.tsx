@@ -24,7 +24,6 @@ export function BusinessSettingsView({
   const [legalName, setLegalName] = useState(initialSettings.legal_name ?? "");
   const [currencyCode, setCurrencyCode] = useState(initialSettings.currency_code);
   const [currencySymbol, setCurrencySymbol] = useState(initialSettings.currency_symbol);
-  const [logoUrl, setLogoUrl] = useState(initialSettings.logo_url ?? "");
   const [allowNegative, setAllowNegative] = useState(initialSettings.allow_negative_stock);
   const [cashierCanDiscount, setCashierCanDiscount] = useState(
     initialSettings.cashier_can_discount,
@@ -62,7 +61,6 @@ export function BusinessSettingsView({
         legal_name: legalName,
         currency_code: currencyCode,
         currency_symbol: currencySymbol,
-        logo_url: logoUrl,
         allow_negative_stock: allowNegative,
         cashier_can_discount: cashierCanDiscount,
         low_stock_default: Number(lowStockDefault),
@@ -73,7 +71,6 @@ export function BusinessSettingsView({
         setLegalName(result.data.legal_name ?? "");
         setCurrencyCode(result.data.currency_code);
         setCurrencySymbol(result.data.currency_symbol);
-        setLogoUrl(result.data.logo_url ?? "");
         setAllowNegative(result.data.allow_negative_stock);
         setCashierCanDiscount(result.data.cashier_can_discount);
         setLowStockDefault(String(result.data.low_stock_default));
@@ -175,30 +172,6 @@ export function BusinessSettingsView({
                   handleChange();
                 }}
               />
-            </div>
-            <div className="space-y-1.5 sm:col-span-2">
-              <label htmlFor="business-logo-url" className="block text-sm font-medium text-foreground">
-                URL del logo
-              </label>
-              <Input
-                id="business-logo-url"
-                className={inputClass}
-                value={logoUrl}
-                maxLength={300}
-                placeholder="https://…  o  /logo.png"
-                onChange={(event) => {
-                  setLogoUrl(event.target.value);
-                  handleChange();
-                }}
-              />
-              {logoUrl.trim().length > 0 ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={logoUrl}
-                  alt="Vista previa del logo"
-                  className="mt-2 h-12 rounded border border-border bg-surface object-contain p-1"
-                />
-              ) : null}
             </div>
           </CardContent>
         </Card>

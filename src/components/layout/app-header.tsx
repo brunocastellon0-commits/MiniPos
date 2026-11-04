@@ -4,9 +4,10 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, LogOut, Menu, Store, X } from "lucide-react";
+import { Bell, LogOut, Menu, X } from "lucide-react";
 import { logoutAction } from "@/lib/actions/auth";
 import type { AuthenticatedUser } from "@/lib/auth";
+import { LOGO_SRC } from "@/lib/branding";
 import { formatTime } from "@/lib/dates";
 import type { DashboardNotification } from "@/lib/domain/dashboard";
 import type { OpenCashSessionPublic } from "@/lib/repos/types";
@@ -16,7 +17,6 @@ import { Button } from "@/components/ui/button";
 export interface AppHeaderProps {
   user: AuthenticatedUser;
   businessName?: string;
-  logoUrl?: string | null;
   cashSession?: OpenCashSessionPublic | null;
   notifications?: DashboardNotification[] | null;
   onToggleMobileNav?: () => void;
@@ -26,7 +26,6 @@ export interface AppHeaderProps {
 export function AppHeader({
   user,
   businessName = "LILA MARKET",
-  logoUrl,
   cashSession = null,
   notifications = null,
   onToggleMobileNav,
@@ -71,17 +70,13 @@ export function AppHeader({
 
         <div className="flex items-center gap-2.5">
           <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            {logoUrl ? (
-              <Image
-                src={logoUrl}
-                alt={businessName}
-                width={28}
-                height={28}
-                className="size-7 rounded-md object-contain"
-              />
-            ) : (
-              <Store className="size-5" />
-            )}
+            <Image
+              src={LOGO_SRC}
+              alt={businessName}
+              width={28}
+              height={28}
+              className="size-7 rounded-md object-contain"
+            />
           </div>
           <span className="font-bold text-foreground text-sm sm:text-base tracking-tight">
             {businessName}

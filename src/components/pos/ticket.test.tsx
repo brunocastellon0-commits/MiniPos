@@ -26,7 +26,6 @@ const ticket = {
     legal_name: "Demo SRL",
     currency_code: "BOB",
     currency_symbol: "Bs",
-    logo_url: null,
     allow_negative_stock: false,
     low_stock_default: 5,
     cashier_can_discount: false,

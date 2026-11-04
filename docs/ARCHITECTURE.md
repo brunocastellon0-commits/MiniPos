@@ -50,7 +50,7 @@ Dinero en **centavos enteros** (`*_cents bigint`). Timestamps `timestamptz` (UTC
 
 | Tabla | Campos clave |
 |---|---|
-| `business_settings` (1 fila) | name, legal_name, currency_code='BOB', currency_symbol='Bs', logo_url, allow_negative_stock=false, low_stock_default |
+| `business_settings` (1 fila) | name, legal_name, currency_code='BOB', currency_symbol='Bs', logo_url (columna sin uso en la app desde E13-04: el logo es `public/logo.png`), allow_negative_stock=false, low_stock_default |
 | `profiles` | id (= auth.users.id), full_name, role (`owner`\|`cashier`), active |
 | `categories` | id, name, sort_order, active |
 | `products` | id, name, barcode (unique, nullable), internal_code, category_id, unit_label, price_cents, cost_cents (nullable), stock_qty, min_stock, active |

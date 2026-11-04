@@ -7,7 +7,7 @@
 1. **Crear proyecto Supabase** del cliente (región más cercana disponible). Anotar URL y publishable key.
 2. **Aplicar el esquema:** SQL Editor → pegar `db/schema.sql` (consolidado) → ejecutar. Verificar que RLS esté activa en todas las tablas.
 3. **Crear usuarios** en Auth (dueño, y cajero si aplica) y asignar rol en `profiles` (script `db/create_first_owner.sql` con placeholders).
-4. **Configurar negocio:** nombre, logo, moneda en `business_settings`.
+4. **Configurar negocio:** nombre y moneda en `business_settings`; el logo es la imagen pública `public/logo.png` (reemplazarla por la del cliente).
 5. **Variables de entorno** en el hosting (ej. Vercel u otro): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
 6. **Desplegar** la misma versión etiquetada del código (`git tag vX.Y.Z`). No hacer forks por cliente.
 7. **Carga inicial:** importar productos (plantilla CSV `docs/plantilla_productos.csv` + pantalla de importación) o cargar a mano.

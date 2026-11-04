@@ -54,7 +54,7 @@ Referencias base: OWASP Top 10 (edición vigente) y OWASP ASVS como lista de ver
 8. Restricciones en BD como última línea: `check (price_cents >= 0)`, `check (quantity > 0)`, claves foráneas, únicos (`barcode`, `client_request_id`, una caja abierta).
 9. Tabla `audit_log` (quién, cuándo, acción, entidad, antes/después resumido, motivo): anulaciones, descuentos, ajustes de stock, cambios de precio/costo, aperturas/cierres de caja, cambios de usuarios/roles/configuración, inicios de sesión fallidos relevantes.
 10. Después de aplicar migraciones, el humano ejecuta el **Security Advisor** de Supabase y corrige hallazgos (RLS faltante, funciones expuestas, search_path). Resultado anotado en `DB_REQUESTS.md`.
-11. Storage (logo): bucket con política explícita; validar tipo/tamaño; nunca bucket público para datos sensibles.
+11. Storage: sin subida de archivos en v1 (CSV como texto); si se agrega, bucket con política explícita y validar tipo/tamaño.
 12. Realtime: si se usa, solo en tablas con RLS.
 
 ## 5. Aplicación Next.js (16.x)
@@ -65,7 +65,7 @@ Referencias base: OWASP Top 10 (edición vigente) y OWASP ASVS como lista de ver
 4. **Rate limiting** en login, importación CSV y acciones costosas.
 5. **Cabeceras de seguridad** (en `next.config.ts` y/o `proxy.ts`): `Content-Security-Policy` (con nonce según la guía oficial de CSP de Next.js; sin `unsafe-eval`; `frame-ancestors 'none'`), `Strict-Transport-Security`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy` mínimo, `X-Frame-Options: DENY`.
 6. **Secretos:** nada sensible en `NEXT_PUBLIC_*`. El repo no contiene claves. `service_role` no se usa en la app. Marcar módulos de acceso a datos con `import 'server-only'`.
-7. **XSS:** prohibido `dangerouslySetInnerHTML` con datos de usuario; los nombres de producto, notas y motivos se muestran siempre como texto. URLs (logo) validadas (`https:` o ruta propia).
+7. **XSS:** prohibido `dangerouslySetInnerHTML` con datos de usuario; los nombres de producto, notas y motivos se muestran siempre como texto. El logo es un archivo estático de `public/` (`LOGO_SRC`), sin URLs de usuario.
 8. **Exportaciones CSV/Excel:** neutralizar inyección de fórmulas (prefijar con `'` celdas que empiecen por `=`, `+`, `-`, `@`, tab o CR).
 9. **Importación CSV:** límite de tamaño y filas, validación estricta fila por fila, sin ejecutar nada del contenido, codificación UTF-8, informe de errores sin volcar datos sensibles.
 10. **Errores:** mensajes genéricos al usuario; detalles solo en logs de servidor; nunca stack traces ni errores crudos de Postgres en la UI.
@@ -196,8 +196,8 @@ registro público desactivado · política de contraseñas · MFA del dueño · 
 
 ### 12.6 Hallazgos de la revisión y verificación pendiente
 
-1. **DB-010 (brecha corregida con SQL propuesto):** `profiles` tenía `grant update` de todas las columnas y política de fila propia; un cajero podía autoascenderse (`update profiles set role='owner' where id=auth.uid()`) porque el trigger 0009 solo protege al último dueño. Solución: `db/migrations/0017_profile_role_guard.sql` (trigger que exige sesión `owner` para cambiar `role`/`active`). Registrado en `DB_REQUESTS.md` como `PENDIENTE`.
-2. **DB-009 (PENDIENTE):** marca en la pantalla de login (`name,logo_url` a `anon`, fila 1).
+1. **DB-010 (aplicada 2026-11-04):** `profiles` tenía `grant update` de todas las columnas y política de fila propia; un cajero podía autoascenderse (`update profiles set role='owner' where id=auth.uid()`) porque el trigger 0009 solo protege al último dueño. Solución: `db/migrations/0017_profile_role_guard.sql` (trigger que exige sesión `owner` para cambiar `role`/`active`). Verificado en `DB_REQUESTS.md` como `APLICADA`.
+2. **DB-009 (aplicada 2026-11-04):** marca en la pantalla de login (`name,logo_url` a `anon`, fila 1). Desde E13-04 la app solo lee `name` en el login: el logo es la imagen estática `public/logo.png` (`LOGO_SRC`), así que `logo_url` queda como columna sin uso en la app.
 3. **Observaciones aceptadas (sin corrección):** el personal activo ve la sesión abierta (única del negocio); `full_name` editable por cada usuario; el borrado físico de categorías/productos/proveedores solo ocurre desde la app dueño (la RLS lo permite, no hay caso de uso de borrado contable).
 4. **Verificación humana pendiente (E11-01):** ejecutar `docs/RLS_VERIFICATION.sql`, revisar Security Advisor y, tras aplicar DB-010, las 3 comprobaciones de `0017_profile_role_guard.sql` (cajero no puede autoascenderse; puede editar su nombre; dueño puede cambiar roles).
 
@@ -216,7 +216,7 @@ Contra §§1–12 de este documento y OWASP ASVS 4.0.3 (nivel 1: verificable con
 | §5 Next.js (1) versiones | **16.4.5** y `eslint-config-next` 16.4.5 (03-nov-2026, November 2026 Security Release); `pnpm audit` **sin vulnerabilidades** (override `minimatch ^11.0.1` por GHSA-g3hv-75wg-m249); **SEC-01:** Node release ALTO del 11-nov-2026 | OK + SEC-01 |
 | §5 (2–4) CSRF/validación/rate limit | Mutaciones solo vía Server Actions; Zod `.strict()` en toda frontera (`security/validation.unit.test.ts`); rate limit en login/importación (`rate-limiter.ts`, `session-hardening.test.ts`) | OK |
 | §5 (5) Cabeceras | `security/headers.test.ts` (CSP, HSTS, nosniff, frame-ancestors) en `next.config.ts` + proxy | OK |
-| §5 (6–7) Secretos y XSS | `security/no-secrets.test.ts`; `server-only` en `supabase/server.ts`; `security/no-dangerous-html.test.ts` (sin `eval`/`dangerouslySetInnerHTML`); URLs de logo validadas por esquema (https) | OK |
+| §5 (6–7) Secretos y XSS | `security/no-secrets.test.ts`; `server-only` en `supabase/server.ts`; `security/no-dangerous-html.test.ts` (sin `eval`/`dangerouslySetInnerHTML`); sin URLs de logo en la app (E13-04) | OK |
 | §5 (8–9) CSV | `security/csv-injection.unit.test.ts` (neutraliza `=+-@\t\r`); límites de bytes/filas y cabeceras exigidas (E11-09) | OK |
 | §5 (10–11) Errores y logs | `error.tsx`/`not-found.tsx`/`global-error.tsx` sin filtrar errores (E11-07); `secure-action.test.ts` (códigos internos → mensaje genérico); auditoría sin secretos | OK |
 | §5 (12–13) Imágenes/redirecciones y dependencias | Sin proxies abiertos; `pnpm audit` en `pnpm check:security`; lockfile versionado | OK |
@@ -242,7 +242,7 @@ Contra §§1–12 de este documento y OWASP ASVS 4.0.3 (nivel 1: verificable con
 | V9 Comunicación | HSTS + HTTPS en despliegue (§8); cabeceras en `next.config.ts` |
 | V10 Código malicioso | Sin `eval`/`new Function`/`dangerouslySetInnerHTML` (`no-dangerous-html.test.ts`); `pnpm audit` limpio |
 | V11 Lógica de negocio | Invariantes de `AGENTS.md` §7 con tests (`sales.test`, `void-sale.int.test`, caja); umbral de descuento |
-| V12 Archivos y recursos | Sin subida de archivos en v1 (CSV como texto); logo limitado a https/ruta propia; sin SSRF |
+| V12 Archivos y recursos | Sin subida de archivos en v1 (CSV como texto); logo estático en `public/`; sin SSRF |
 | V13 API | Server Actions autenticadas+autorizadas+Zod; sin GraphQL/SOAP; rate limit en acciones costosas |
 | V14 Configuración | Cabeceras (`headers.test.ts`), secretos fuera del repo (`no-secrets.test.ts`), `.env.example` |
 | Nivel 1 como conjunto | Cubierto por tests automatizados + esta revisión; **quedan verificaciones humanas:** E2E (E11-02), `RLS_VERIFICATION.sql`, Security Advisor, actualización de Node (SEC-01) |

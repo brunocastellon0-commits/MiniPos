@@ -54,7 +54,6 @@ export interface BusinessPublicSettings {
   legal_name: string | null;
   currency_code: string;
   currency_symbol: string;
-  logo_url: string | null;
   allow_negative_stock: boolean;
   low_stock_default: number;
   cashier_can_discount: boolean;

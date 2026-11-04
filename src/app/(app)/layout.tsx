@@ -20,7 +20,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const user = await requireUser("/login");
 
   let businessName = "LILA MARKET";
-  let logoUrl: string | null = null;
   let cashSession: OpenCashSessionPublic | null = null;
   let lowStockCount = 0;
   let notifications: DashboardNotification[] | null = null;
@@ -32,7 +31,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     ]);
     if (publicSettingsResult.ok) {
       businessName = publicSettingsResult.data.name;
-      logoUrl = publicSettingsResult.data.logo_url;
     }
     if (openSessionResult.ok) {
       cashSession = openSessionResult.data;
@@ -64,7 +62,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <AppLayoutClient
       user={user}
       businessName={businessName}
-      logoUrl={logoUrl}
       cashSession={cashSession}
       lowStockCount={lowStockCount}
       notifications={notifications}

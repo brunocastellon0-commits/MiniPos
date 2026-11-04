@@ -11,7 +11,6 @@ import { AppSidebar } from "./app-sidebar";
 export interface AppLayoutClientProps {
   user: AuthenticatedUser;
   businessName?: string;
-  logoUrl?: string | null;
   cashSession?: OpenCashSessionPublic | null;
   lowStockCount?: number;
   notifications?: DashboardNotification[] | null;
@@ -21,7 +20,6 @@ export interface AppLayoutClientProps {
 export function AppLayoutClient({
   user,
   businessName,
-  logoUrl,
   cashSession,
   lowStockCount,
   notifications = null,
@@ -34,7 +32,6 @@ export function AppLayoutClient({
       <AppHeader
         user={user}
         businessName={businessName}
-        logoUrl={logoUrl}
         cashSession={cashSession}
         notifications={notifications}
         onToggleMobileNav={() => setMobileNavOpen((prev) => !prev)}

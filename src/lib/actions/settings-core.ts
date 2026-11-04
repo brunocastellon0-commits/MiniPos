@@ -62,7 +62,6 @@ const EDITABLE_KEYS = [
   "legal_name",
   "currency_code",
   "currency_symbol",
-  "logo_url",
   "allow_negative_stock",
   "cashier_can_discount",
   "low_stock_default",

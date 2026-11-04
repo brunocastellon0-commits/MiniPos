@@ -1,21 +1,5 @@
 import { z } from "zod";
 
-const logoUrlSchema = z
-  .string()
-  .trim()
-  .max(300, { message: "La URL del logo no puede superar 300 caracteres." })
-  .nullable()
-  .refine(
-    (value) =>
-      value === null ||
-      value === "" ||
-      value.startsWith("https://") ||
-      value.startsWith("http://") ||
-      value.startsWith("/"),
-    { message: "La URL del logo debe ser https://, http:// o una ruta /ruta/." },
-  )
-  .transform((value) => (value === "" ? null : value));
-
 const legalNameSchema = z
   .string()
   .trim()
@@ -41,7 +25,6 @@ export const updateBusinessSettingsSchema = z
       .trim()
       .min(1, { message: "El símbolo de moneda es obligatorio." })
       .max(5, { message: "El símbolo de moneda no puede superar 5 caracteres." }),
-    logo_url: logoUrlSchema,
     allow_negative_stock: z.boolean(),
     cashier_can_discount: z.boolean(),
     cashier_max_discount_cents: z

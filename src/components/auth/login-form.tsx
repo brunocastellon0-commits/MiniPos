@@ -3,10 +3,11 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { AlertCircle, ArrowRight, Lock, Mail, Store } from "lucide-react";
+import { AlertCircle, ArrowRight, Lock, Mail } from "lucide-react";
 import { loginAction } from "@/lib/actions/auth";
 import { type LoginInput, loginSchema } from "@/lib/actions/auth-schema";
 import type { ActionResult } from "@/lib/actions/secure-action";
+import { LOGO_SRC } from "@/lib/branding";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,14 +21,12 @@ import { Input } from "@/components/ui/input";
 
 export interface LoginFormProps {
   businessName?: string;
-  logoUrl?: string | null;
   onSuccess?: (redirectUrl: string) => void;
   loginFn?: (input: LoginInput) => Promise<ActionResult<{ redirectUrl: string }>>;
 }
 
 export function LoginForm({
   businessName = "LILA MARKET",
-  logoUrl,
   onSuccess,
   loginFn = loginAction,
 }: LoginFormProps) {
@@ -86,17 +85,13 @@ export function LoginForm({
       <Card className="w-full max-w-md border-border bg-surface shadow-card">
         <CardHeader className="text-center">
           <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            {logoUrl ? (
-              <Image
-                src={logoUrl}
-                alt={businessName}
-                width={36}
-                height={36}
-                className="size-9 rounded-lg object-contain"
-              />
-            ) : (
-              <Store className="size-6" />
-            )}
+            <Image
+              src={LOGO_SRC}
+              alt={businessName}
+              width={36}
+              height={36}
+              className="size-9 rounded-lg object-contain"
+            />
           </div>
           <CardTitle className="text-xl font-bold tracking-tight text-foreground">
             {businessName}
