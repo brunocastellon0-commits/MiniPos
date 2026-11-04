@@ -16,12 +16,14 @@ export default async function VentasPage() {
   let initialSales: Sale[] = [];
   let initialCashierNames: Record<string, string> = {};
   let initialError: string | null = null;
+  let initialHasMore = false;
 
   try {
     const result = await listSalesAction({});
     if (result.ok) {
       initialSales = result.data.sales;
       initialCashierNames = result.data.cashierNames;
+      initialHasMore = result.data.hasMore;
     } else {
       initialError = result.message;
     }
@@ -45,6 +47,7 @@ export default async function VentasPage() {
         initialCashierNames={initialCashierNames}
         isOwner={user.role === "owner"}
         initialError={initialError}
+        initialHasMore={initialHasMore}
       />
     </div>
   );

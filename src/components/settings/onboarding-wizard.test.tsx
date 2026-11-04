@@ -205,8 +205,9 @@ describe("OnboardingWizard (E10-03)", () => {
     expect(
       await screen.findByRole("heading", { name: "Configuración inicial lista" }),
     ).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Ir a la caja" }));
-    expect(pushMock).toHaveBeenCalledWith("/caja");
+    expect(screen.getByRole("link", { name: "Ir a la caja" })).toHaveAttribute("href", "/caja");
+    expect(screen.getByRole("link", { name: "Ir al panel" })).toHaveAttribute("href", "/panel");
+    expect(pushMock).not.toHaveBeenCalled();
   });
 
   it("permite omitir el saldo inicial y terminar", async () => {

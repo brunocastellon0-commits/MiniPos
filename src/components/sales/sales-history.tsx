@@ -11,11 +11,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type MethodFilter = "" | "cash" | "qr" | "card";
 type StatusFilter = "" | "paid" | "voided";
 
 const METHOD_LABELS: Record<string, string> = { cash: "Efectivo", qr: "QR", card: "Tarjeta" };
+
+const PAGE_SIZE = 100;
+const SKELETON_ROWS = 5;
 
 const selectClasses =
   "h-10 rounded-md border border-border bg-surface px-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
@@ -25,6 +29,7 @@ export interface SalesHistoryProps {
   initialCashierNames: Record<string, string>;
   isOwner: boolean;
   initialError?: string | null;
+  initialHasMore?: boolean;
 }
 
 export function SalesHistory({
@@ -32,18 +37,32 @@ export function SalesHistory({
   initialCashierNames,
   isOwner,
   initialError = null,
+  initialHasMore = false,
 }: SalesHistoryProps) {
   const [sales, setSales] = useState(initialSales);
   const [cashierNames, setCashierNames] = useState(initialCashierNames);
+  const [hasMore, setHasMore] = useState(initialHasMore);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [method, setMethod] = useState<MethodFilter>("");
   const [status, setStatus] = useState<StatusFilter>("");
   const [cashierId, setCashierId] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(initialError);
 
   const hasFilters = Boolean(dateFrom || dateTo || method || status || cashierId);
+
+  function currentPayload(limit?: number): ListSalesInput {
+    const payload: ListSalesInput = {};
+    if (limit) payload.limit = limit;
+    if (dateFrom) payload.dateFrom = dateFrom;
+    if (dateTo) payload.dateTo = dateTo;
+    if (method) payload.paymentMethod = method;
+    if (status) payload.status = status;
+    if (isOwner && cashierId) payload.cashierId = cashierId;
+    return payload;
+  }
 
   async function runSearch(payload: ListSalesInput) {
     setLoading(true);
@@ -56,6 +75,7 @@ export function SalesHistory({
       }
       setSales(result.data.sales);
       setCashierNames(result.data.cashierNames);
+      setHasMore(result.data.hasMore);
     } catch {
       setError("No se pudieron cargar las ventas.");
     } finally {
@@ -63,15 +83,28 @@ export function SalesHistory({
     }
   }
 
+  async function handleLoadMore() {
+    setLoadingMore(true);
+    setError(null);
+    try {
+      const result = await listSalesAction(currentPayload(Math.min(sales.length + PAGE_SIZE, 1000)));
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
+      setSales(result.data.sales);
+      setCashierNames(result.data.cashierNames);
+      setHasMore(result.data.hasMore);
+    } catch {
+      setError("No se pudieron cargar más ventas.");
+    } finally {
+      setLoadingMore(false);
+    }
+  }
+
   function handleSearch(event: React.FormEvent) {
     event.preventDefault();
-    const payload: ListSalesInput = {};
-    if (dateFrom) payload.dateFrom = dateFrom;
-    if (dateTo) payload.dateTo = dateTo;
-    if (method) payload.paymentMethod = method;
-    if (status) payload.status = status;
-    if (isOwner && cashierId) payload.cashierId = cashierId;
-    void runSearch(payload);
+    void runSearch(currentPayload());
   }
 
   function handleClear() {
@@ -158,11 +191,7 @@ export function SalesHistory({
         </div>
       ) : null}
 
-      {loading ? (
-        <p role="status" className="text-sm text-muted">
-          Cargando ventas…
-        </p>
-      ) : sales.length === 0 ? (
+      {!loading && sales.length === 0 ? (
         <EmptyState
           title={hasFilters ? "Sin resultados" : "Sin ventas registradas"}
           description={
@@ -172,63 +201,95 @@ export function SalesHistory({
           }
         />
       ) : (
-        <div className="overflow-x-auto rounded-card border border-border bg-surface">
-          <table className="min-w-full text-sm">
-            <thead className="border-b border-border bg-surface-muted/60 text-left text-xs uppercase tracking-wide text-muted">
-              <tr>
-                <th scope="col" className="px-4 py-3 font-medium">
-                  N.º
-                </th>
-                <th scope="col" className="px-4 py-3 font-medium">
-                  Fecha
-                </th>
-                <th scope="col" className="px-4 py-3 font-medium">
-                  Cajero
-                </th>
-                <th scope="col" className="px-4 py-3 font-medium">
-                  Método
-                </th>
-                <th scope="col" className="px-4 py-3 font-medium">
-                  Estado
-                </th>
-                <th scope="col" className="px-4 py-3 text-right font-medium">
-                  Total
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {sales.map((sale) => (
-                <tr key={sale.id}>
-                  <td className="whitespace-nowrap px-4 py-3">
-                    <Link
-                      href={`/ventas/${sale.id}`}
-                      className="rounded font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      #{sale.number}
-                    </Link>
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-foreground-muted">
-                    {formatDateTime(new Date(sale.created_at))}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-foreground">
-                    {cashierNames[sale.cashier_id] ?? "—"}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-foreground">
-                    {METHOD_LABELS[sale.payment_method] ?? sale.payment_method}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3">
-                    <Badge tone={sale.status === "voided" ? "danger" : "success"}>
-                      {sale.status === "voided" ? "Anulada" : "Pagada"}
-                    </Badge>
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right font-medium text-foreground">
-                    {formatBs(sale.total_cents)}
-                  </td>
+        <>
+          {loading ? (
+            <span role="status" className="sr-only">
+              Cargando ventas…
+            </span>
+          ) : null}
+          <div
+            className="overflow-x-auto rounded-card border border-border bg-surface"
+            aria-busy={loading || undefined}
+          >
+            <table className="min-w-full text-sm">
+              <thead className="border-b border-border bg-surface-muted/60 text-left text-xs uppercase tracking-wide text-muted">
+                <tr>
+                  <th scope="col" className="px-4 py-3 font-medium">
+                    N.º
+                  </th>
+                  <th scope="col" className="px-4 py-3 font-medium">
+                    Fecha
+                  </th>
+                  <th scope="col" className="px-4 py-3 font-medium">
+                    Cajero
+                  </th>
+                  <th scope="col" className="px-4 py-3 font-medium">
+                    Método
+                  </th>
+                  <th scope="col" className="px-4 py-3 font-medium">
+                    Estado
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-right font-medium">
+                    Total
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {loading
+                  ? Array.from({ length: SKELETON_ROWS }, (_, rowIndex) => (
+                      <tr key={`skeleton-${rowIndex}`}>
+                        {Array.from({ length: 6 }, (_, cellIndex) => (
+                          <td key={cellIndex} className="px-4 py-3">
+                            <Skeleton className="h-4 w-full" />
+                          </td>
+                        ))}
+                      </tr>
+                    ))
+                  : sales.map((sale) => (
+                      <tr key={sale.id}>
+                        <td className="whitespace-nowrap px-4 py-3">
+                          <Link
+                            href={`/ventas/${sale.id}`}
+                            className="rounded font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          >
+                            #{sale.number}
+                          </Link>
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 text-foreground-muted">
+                          {formatDateTime(new Date(sale.created_at))}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 text-foreground">
+                          {cashierNames[sale.cashier_id] ?? "—"}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 text-foreground">
+                          {METHOD_LABELS[sale.payment_method] ?? sale.payment_method}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3">
+                          <Badge tone={sale.status === "voided" ? "danger" : "success"}>
+                            {sale.status === "voided" ? "Anulada" : "Pagada"}
+                          </Badge>
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 text-right font-medium text-foreground">
+                          {formatBs(sale.total_cents)}
+                        </td>
+                      </tr>
+                    ))}
+              </tbody>
+            </table>
+          </div>
+          {hasMore && !loading ? (
+            <div className="flex justify-center">
+              <Button
+                type="button"
+                variant="secondary"
+                loading={loadingMore}
+                onClick={() => void handleLoadMore()}
+              >
+                Cargar más
+              </Button>
+            </div>
+          ) : null}
+        </>
       )}
     </div>
   );

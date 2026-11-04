@@ -80,14 +80,18 @@ describe("PurchasesView (E7-02)", () => {
     expect(screen.getByText("Sin resultados")).toBeInTheDocument();
   });
 
-  it("navega a nueva compra y a proveedores", () => {
+  it("enlaza a nueva compra y a proveedores", () => {
     renderView();
 
-    fireEvent.click(screen.getByRole("button", { name: "Nueva compra" }));
-    expect(pushMock).toHaveBeenCalledWith("/compras/nueva");
-
-    fireEvent.click(screen.getByRole("button", { name: "Proveedores" }));
-    expect(pushMock).toHaveBeenCalledWith("/proveedores");
+    expect(screen.getByRole("link", { name: "Nueva compra" })).toHaveAttribute(
+      "href",
+      "/compras/nueva",
+    );
+    expect(screen.getByRole("link", { name: "Proveedores" })).toHaveAttribute(
+      "href",
+      "/proveedores",
+    );
+    expect(pushMock).not.toHaveBeenCalled();
   });
 
   it("muestra estados vacío y de error", () => {

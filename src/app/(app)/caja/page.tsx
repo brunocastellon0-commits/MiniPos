@@ -46,15 +46,20 @@ export default async function CajaPage() {
 
   let initialProducts: Awaited<ReturnType<typeof listPosProductsAction>>;
   let categories: Awaited<ReturnType<typeof listCategoriesAction>>;
+  let publicSettings: Awaited<ReturnType<typeof getBusinessPublicAction>> | null;
 
   try {
-    [initialProducts, categories] = await Promise.all([
+    [initialProducts, categories, publicSettings] = await Promise.all([
       listPosProductsAction(),
       listCategoriesAction(),
+      user.role === "owner"
+        ? (Promise.resolve(null) as Promise<null>)
+        : getBusinessPublicAction(),
     ]);
   } catch {
     initialProducts = { ok: false, code: "INTERNAL_ERROR", message: "No se pudo cargar el catálogo." };
     categories = { ok: false, code: "INTERNAL_ERROR", message: "No se pudieron cargar las categorías." };
+    publicSettings = null;
   }
 
   const products = initialProducts.ok ? initialProducts.data : [];
@@ -64,12 +69,8 @@ export default async function CajaPage() {
 
   let canDiscount = true;
   if (user.role !== "owner") {
-    try {
-      const publicSettings = await getBusinessPublicAction();
-      canDiscount = publicSettings.ok && publicSettings.data.cashier_can_discount;
-    } catch {
-      canDiscount = false;
-    }
+    canDiscount =
+      publicSettings !== null && publicSettings.ok && publicSettings.data.cashier_can_discount;
   }
 
   if (!initialProducts.ok) {

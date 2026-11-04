@@ -16,21 +16,19 @@ export default async function AuditoriaPage() {
   let entries: AuditEntryView[] = [];
   let alerts: AuditAlert[] = [];
   try {
-    const entriesResult = await listAuditLogAction();
+    const [entriesResult, alertsResult] = await Promise.all([
+      listAuditLogAction(),
+      getAuditAlertsAction(),
+    ]);
     if (entriesResult.ok) {
       entries = entriesResult.data;
     }
-  } catch {
-    // Si falla la consulta inicial, inicializa vacío
-    entries = [];
-  }
-  try {
-    const alertsResult = await getAuditAlertsAction();
     if (alertsResult.ok) {
       alerts = alertsResult.data;
     }
   } catch {
     // Si falla la consulta inicial, inicializa vacío
+    entries = [];
     alerts = [];
   }
 

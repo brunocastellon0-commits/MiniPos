@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Check } from "lucide-react";
 import { openCashSessionAction } from "@/lib/actions/cash";
 import { createCategoryAction } from "@/lib/actions/categories";
 import { importProductsCsvAction } from "@/lib/actions/products-csv";
 import { updateBusinessSettingsAction } from "@/lib/actions/settings";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClasses } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import type { BusinessSettings } from "@/lib/repos/types";
@@ -22,7 +22,6 @@ const STEPS = ["Negocio", "Categorías", "Productos", "Caja"] as const;
 const inputClass = "h-10 w-full";
 
 export function OnboardingWizard({ initialSettings }: OnboardingWizardProps) {
-  const router = useRouter();
   const [step, setStep] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -170,12 +169,12 @@ export function OnboardingWizard({ initialSettings }: OnboardingWizardProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">
-          <Button variant="primary" onClick={() => router.push("/caja")}>
+          <Link href="/caja" className={buttonClasses({ variant: "primary" })}>
             Ir a la caja
-          </Button>
-          <Button variant="secondary" onClick={() => router.push("/panel")}>
+          </Link>
+          <Link href="/panel" className={buttonClasses({ variant: "secondary" })}>
             Ir al panel
-          </Button>
+          </Link>
         </CardContent>
       </Card>
     );

@@ -1,12 +1,8 @@
-"use client";
-
+import Link from "next/link";
 import { FileQuestion } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import { buttonClasses } from "@/components/ui/button-classes";
 
 export default function NotFound() {
-  const router = useRouter();
-
   return (
     <div className="flex min-h-dvh items-center justify-center bg-background p-4">
       <div className="flex w-full max-w-md flex-col items-center gap-3 rounded-card border border-border bg-surface p-8 text-center">
@@ -18,7 +14,9 @@ export default function NotFound() {
             La página que buscas no existe o fue movida de lugar.
           </p>
         </div>
-        <Button onClick={() => router.push("/panel")}>Volver al panel</Button>
+        <Link href="/panel" className={buttonClasses({ variant: "primary" })}>
+          Volver al panel
+        </Link>
       </div>
     </div>
   );

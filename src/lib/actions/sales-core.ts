@@ -50,6 +50,7 @@ export interface SaleTicket {
 export interface ListSalesResult {
   sales: Sale[];
   cashierNames: Record<string, string>;
+  hasMore: boolean;
 }
 
 export interface SaleDetail {
@@ -289,23 +290,32 @@ export function createListSalesAction(deps: SalesActionDeps = {}) {
         }
         if (validatedInput.paymentMethod) filter.paymentMethod = validatedInput.paymentMethod;
         if (validatedInput.status) filter.status = validatedInput.status;
-        if (validatedInput.limit) filter.limit = validatedInput.limit;
+        // Página por defecto de 100; pedimos una fila extra para saber si hay más.
+        const pageLimit = validatedInput.limit ?? 100;
+        filter.limit = pageLimit + 1;
         // El cajero siempre lista solo las suyas, aunque envíe otro cashierId.
         filter.cashierId =
           ctx.user.role === "cashier" ? ctx.user.id : validatedInput.cashierId;
 
-        const sales = await salesRepo.list(filter);
+        const isOwner = ctx.user.role === "owner";
+        const profilesPromise = isOwner
+          ? usersRepoFactory(userContext).then((usersRepo) => usersRepo.listProfiles())
+          : Promise.resolve(null);
 
-        let cashierNames: Record<string, string>;
-        if (ctx.user.role === "owner") {
-          const usersRepo = await usersRepoFactory(userContext);
-          const profiles = await usersRepo.listProfiles();
-          cashierNames = Object.fromEntries(profiles.map((profile) => [profile.id, profile.full_name]));
-        } else {
-          cashierNames = { [ctx.user.id]: ctx.user.name };
-        }
+        const [rows, profiles] = await Promise.all([
+          salesRepo.list(filter),
+          profilesPromise,
+        ]);
 
-        return { sales, cashierNames };
+        const hasMore = rows.length > pageLimit;
+        const sales = hasMore ? rows.slice(0, pageLimit) : rows;
+        const cashierNames: Record<string, string> = isOwner
+          ? Object.fromEntries(
+              (profiles ?? []).map((profile) => [profile.id, profile.full_name]),
+            )
+          : { [ctx.user.id]: ctx.user.name };
+
+        return { sales, cashierNames, hasMore };
       },
     })(input);
   };

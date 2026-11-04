@@ -26,13 +26,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   let notifications: DashboardNotification[] | null = null;
 
   try {
-    const publicSettingsResult = await getBusinessPublicAction();
+    const [publicSettingsResult, openSessionResult] = await Promise.all([
+      getBusinessPublicAction(),
+      getOpenCashSessionAction(),
+    ]);
     if (publicSettingsResult.ok) {
       businessName = publicSettingsResult.data.name;
       logoUrl = publicSettingsResult.data.logo_url;
     }
-
-    const openSessionResult = await getOpenCashSessionAction();
     if (openSessionResult.ok) {
       cashSession = openSessionResult.data;
     }

@@ -1,13 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { formatDateTime } from "@/lib/dates";
 import { formatBs } from "@/lib/money";
 import type { Purchase } from "@/lib/repos/types";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { buttonClasses } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 
 const STATUS_META: Record<Purchase["status"], { label: string; tone: BadgeTone }> = {
@@ -34,7 +33,6 @@ export interface PurchasesViewProps {
 }
 
 export function PurchasesView({ initialPurchases, supplierNames, initialError = null }: PurchasesViewProps) {
-  const router = useRouter();
   const [status, setStatus] = useState<Purchase["status"] | "all">("all");
 
   const filtered = useMemo(
@@ -54,12 +52,12 @@ export function PurchasesView({ initialPurchases, supplierNames, initialError = 
       ) : null}
 
       <div className="flex flex-wrap items-center gap-3">
-        <Button type="button" variant="primary" onClick={() => router.push("/compras/nueva")}>
+        <Link href="/compras/nueva" className={buttonClasses({ variant: "primary" })}>
           Nueva compra
-        </Button>
-        <Button type="button" variant="secondary" onClick={() => router.push("/proveedores")}>
+        </Link>
+        <Link href="/proveedores" className={buttonClasses({ variant: "secondary" })}>
           Proveedores
-        </Button>
+        </Link>
         <select
           value={status}
           onChange={(event) => setStatus(event.target.value as Purchase["status"] | "all")}

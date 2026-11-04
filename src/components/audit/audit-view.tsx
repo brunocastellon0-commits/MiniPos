@@ -1,5 +1,3 @@
-"use client";
-
 import { AlertTriangle, ScrollText, ShieldCheck } from "lucide-react";
 import type { AuditAlert } from "@/lib/domain/audit-alerts";
 import { formatDateTime } from "@/lib/dates";

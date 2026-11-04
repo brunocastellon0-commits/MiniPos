@@ -33,16 +33,21 @@ const cashierNames = { "cashier-1": "Carlos Mamani", "owner-1": "Ana Quispe" };
 
 type ListResult = Awaited<ReturnType<typeof listSalesAction>>;
 
-function ok(sales: Sale[]): ListResult {
-  return { ok: true, data: { sales, cashierNames } };
+function ok(sales: Sale[], hasMore = false): ListResult {
+  return { ok: true, data: { sales, cashierNames, hasMore } };
 }
 
-function renderHistory(isOwner = true, initialSales: Sale[] = [saleCash, saleQr]) {
+function renderHistory(
+  isOwner = true,
+  initialSales: Sale[] = [saleCash, saleQr],
+  initialHasMore = false,
+) {
   return render(
     <SalesHistory
       initialSales={initialSales}
       initialCashierNames={cashierNames}
       isOwner={isOwner}
+      initialHasMore={initialHasMore}
     />,
   );
 }
@@ -169,5 +174,19 @@ describe("SalesHistory (E5-01)", () => {
 
     await waitFor(() => expect(listSalesAction).toHaveBeenCalledWith({}));
     expect(screen.getByLabelText("Filtrar por estado")).toHaveValue("");
+  });
+
+  it("«Cargar más» pide la siguiente página y oculta el botón al agotar", async () => {
+    renderHistory(true, [saleCash], true);
+
+    const loadMore = screen.getByRole("button", { name: "Cargar más" });
+    vi.mocked(listSalesAction).mockResolvedValue(ok([saleCash, saleQr], false));
+    fireEvent.click(loadMore);
+
+    await waitFor(() => expect(listSalesAction).toHaveBeenCalledWith({ limit: 101 }));
+    await waitFor(() =>
+      expect(screen.queryByRole("button", { name: "Cargar más" })).not.toBeInTheDocument(),
+    );
+    expect(screen.getByRole("link", { name: "#102" })).toBeInTheDocument();
   });
 });

@@ -1,13 +1,12 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
 import { formatTime } from "@/lib/dates";
 import type { DailySalesStats, SalesComparison } from "@/lib/domain/dashboard";
 import { formatBs } from "@/lib/money";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClasses } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 
@@ -72,7 +71,6 @@ export function PanelView({
   recentSales,
   initialError = null,
 }: PanelViewProps) {
-  const router = useRouter();
   const [range, setRange] = useState<number>(7);
 
   const visibleKeys = dayKeys.slice(-range);
@@ -312,15 +310,15 @@ export function PanelView({
             <CardTitle>Accesos directos</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2">
-            <Button type="button" variant="primary" onClick={() => router.push("/caja")}>
+            <Link href="/caja" className={buttonClasses({ variant: "primary" })}>
               Abrir punto de venta
-            </Button>
-            <Button type="button" variant="secondary" onClick={() => router.push("/compras/nueva")}>
+            </Link>
+            <Link href="/compras/nueva" className={buttonClasses({ variant: "secondary" })}>
               Registrar compra
-            </Button>
-            <Button type="button" variant="ghost" onClick={() => router.push("/turno")}>
+            </Link>
+            <Link href="/turno" className={buttonClasses({ variant: "ghost" })}>
               Ver turno de caja
-            </Button>
+            </Link>
           </CardContent>
         </Card>
       </div>

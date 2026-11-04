@@ -107,8 +107,19 @@ describe("PanelView (E8-02)", () => {
     expect(screen.getByRole("heading", { name: "Hola, Doña Elena" })).toBeInTheDocument();
     expect(screen.getByText(/lunes, 3 de noviembre/)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Abrir punto de venta" }));
-    expect(pushMock).toHaveBeenCalledWith("/caja");
+    expect(screen.getByRole("link", { name: "Abrir punto de venta" })).toHaveAttribute(
+      "href",
+      "/caja",
+    );
+    expect(screen.getByRole("link", { name: "Registrar compra" })).toHaveAttribute(
+      "href",
+      "/compras/nueva",
+    );
+    expect(screen.getByRole("link", { name: "Ver turno de caja" })).toHaveAttribute(
+      "href",
+      "/turno",
+    );
+    expect(pushMock).not.toHaveBeenCalled();
   });
 
   it("las cifras del panel coinciden con la suma de las ventas de la prueba", () => {

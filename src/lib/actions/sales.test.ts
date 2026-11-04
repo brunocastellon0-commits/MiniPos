@@ -565,6 +565,25 @@ describe("listSalesAction (E5-01)", () => {
     expect(result.data.cashierNames).toEqual({ "cashier-1": "Carlos Mamani" });
   });
 
+  it("pagina por defecto en 100 filas y avisa cuando hay más", async () => {
+    for (let index = 0; index < 105; index += 1) {
+      const id = `sale-extra-${index}`;
+      store.sales.set(id, buildSale({ id, number: 200 + index, cashier_id: "owner-1" }));
+    }
+
+    const page = await makeListAction(store, ownerUser)({});
+    expect(page.ok).toBe(true);
+    if (!page.ok) return;
+    expect(page.data.sales).toHaveLength(100);
+    expect(page.data.hasMore).toBe(true);
+
+    const all = await makeListAction(store, ownerUser)({ limit: 1000 });
+    expect(all.ok).toBe(true);
+    if (!all.ok) return;
+    expect(all.data.sales).toHaveLength(107);
+    expect(all.data.hasMore).toBe(false);
+  });
+
   it("exige usuario autenticado", async () => {
     const anon = await makeListAction(store, null)({});
     expect(anon.ok).toBe(false);
