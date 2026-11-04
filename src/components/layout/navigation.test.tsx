@@ -50,6 +50,7 @@ describe("Navegación y Layout por Rol (E1-03)", () => {
       expect(screen.queryByRole("link", { name: /proveedores/i })).not.toBeInTheDocument();
       expect(screen.queryByRole("link", { name: /panel/i })).not.toBeInTheDocument();
       expect(screen.queryByRole("link", { name: /reportes/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("link", { name: /auditoría/i })).not.toBeInTheDocument();
       expect(screen.queryByRole("link", { name: /configuración/i })).not.toBeInTheDocument();
       expect(screen.queryByRole("link", { name: /usuarios/i })).not.toBeInTheDocument();
     });
@@ -70,6 +71,7 @@ describe("Navegación y Layout por Rol (E1-03)", () => {
       expect(screen.getByRole("link", { name: /proveedores/i })).toBeInTheDocument();
       expect(screen.getByRole("link", { name: /panel/i })).toBeInTheDocument();
       expect(screen.getByRole("link", { name: /reportes/i })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /auditoría/i })).toBeInTheDocument();
       expect(screen.getByRole("link", { name: /configuración/i })).toBeInTheDocument();
       expect(screen.getByRole("link", { name: /usuarios/i })).toBeInTheDocument();
     });
@@ -186,6 +188,7 @@ describe("Navegación y Layout por Rol (E1-03)", () => {
       expect(isPathAllowedForRole("/proveedores", "cashier")).toBe(false);
       expect(isPathAllowedForRole("/panel", "cashier")).toBe(false);
       expect(isPathAllowedForRole("/reportes", "cashier")).toBe(false);
+      expect(isPathAllowedForRole("/auditoria", "cashier")).toBe(false);
       expect(isPathAllowedForRole("/configuracion", "cashier")).toBe(false);
       expect(isPathAllowedForRole("/usuarios", "cashier")).toBe(false);
 
@@ -195,6 +198,7 @@ describe("Navegación y Layout por Rol (E1-03)", () => {
       expect(isPathAllowedForRole("/proveedores", "owner")).toBe(true);
       expect(isPathAllowedForRole("/panel", "owner")).toBe(true);
       expect(isPathAllowedForRole("/usuarios", "owner")).toBe(true);
+      expect(isPathAllowedForRole("/auditoria", "owner")).toBe(true);
     });
   });
 });
