@@ -53,6 +53,17 @@ export class MemoryProductsRepo implements ProductsRepo {
     return this.sanitizeForRole(product);
   }
 
+  async getByIds(ids: string[]): Promise<Product[]> {
+    const products: Product[] = [];
+    for (const id of new Set(ids)) {
+      const product = this.store.products.get(id);
+      if (!product) continue;
+      if (this.user.role === "cashier" && !product.active) continue;
+      products.push(this.sanitizeForRole(product));
+    }
+    return products;
+  }
+
   async getByBarcode(barcode: string): Promise<Product | null> {
     const product = Array.from(this.store.products.values()).find((p) => p.barcode === barcode);
     if (!product) return null;

@@ -51,6 +51,7 @@ export class MemorySettingsRepo implements SettingsRepo {
       allow_negative_stock: s.allow_negative_stock,
       low_stock_default: s.low_stock_default,
       cashier_can_discount: s.cashier_can_discount,
+      cashier_max_discount_cents: s.cashier_max_discount_cents,
     };
   }
 }

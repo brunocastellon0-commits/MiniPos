@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createMemoryRepositories, MemoryStore, type UserContext } from "@/lib/repos";
+import { MemoryProductsRepo } from "@/lib/repos/memory/products";
 import type { Product, ProductsRepo, SalesRepo } from "@/lib/repos/types";
 import { buildProfile, buildSale, buildSaleItem } from "@/test/factories";
 import {
@@ -87,6 +88,39 @@ describe("confirmSaleAction (E4-02/E4-04)", () => {
     expect(updated?.stock_qty).toBe(8);
   });
 
+  it("valida los items en una sola consulta de productos (sin N+1, E11-05)", async () => {
+    const ownerRepos = createMemoryRepositories(store, {
+      id: "owner-1",
+      role: "owner",
+      active: true,
+    });
+    const second = await ownerRepos.products.create({
+      name: "Azucar 1kg",
+      price_cents: 800,
+      stock_qty: 5,
+    });
+
+    const getByIdsSpy = vi.spyOn(MemoryProductsRepo.prototype, "getByIds");
+    const getByIdSpy = vi.spyOn(MemoryProductsRepo.prototype, "getById");
+    try {
+      const result = await makeAction()({
+        ...baseInput(),
+        items: [
+          { productId: product.id, quantity: 2 },
+          { productId: second.id, quantity: 1 },
+        ],
+        cashReceivedCents: 4000,
+      });
+
+      expect(result.ok).toBe(true);
+      expect(getByIdsSpy).toHaveBeenCalledTimes(1);
+      expect(getByIdSpy).not.toHaveBeenCalled();
+    } finally {
+      getByIdsSpy.mockRestore();
+      getByIdSpy.mockRestore();
+    }
+  });
+
   it("rechaza el cobro si el efectivo recibido no cubre el total", async () => {
     const result = await makeAction()({ ...baseInput(), cashReceivedCents: 1000 });
 
@@ -127,6 +161,89 @@ describe("confirmSaleAction (E4-02/E4-04)", () => {
     const result = await makeAction()({
       ...baseInput(),
       clientRequestId: "req-desc-ok",
+      discountCents: 500,
+      cashReceivedCents: 3000,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.sale.discount_cents).toBe(500);
+    expect(result.data.sale.total_cents).toBe(2500);
+  });
+
+  it("el cajero no puede superar el máximo de descuento configurado (umbral)", async () => {
+    const ownerRepos = createMemoryRepositories(store, {
+      id: "owner-1",
+      role: "owner",
+      active: true,
+    });
+    await ownerRepos.settings.updateSettings({
+      cashier_can_discount: true,
+      cashier_max_discount_cents: 200,
+    });
+
+    const result = await makeAction()({
+      ...baseInput(),
+      clientRequestId: "req-umbral-excedido",
+      discountCents: 500,
+      cashReceivedCents: 3000,
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.code).toBe("FORBIDDEN");
+      expect(result.message).toContain("Bs 2,00");
+    }
+
+    const updated = await productsRepo.getById(product.id);
+    expect(updated?.stock_qty).toBe(10);
+    const sales = await salesRepo.list({ sessionId });
+    expect(sales).toHaveLength(0);
+  });
+
+  it("el cajero puede aplicar el descuento justo en su máximo", async () => {
+    const ownerRepos = createMemoryRepositories(store, {
+      id: "owner-1",
+      role: "owner",
+      active: true,
+    });
+    await ownerRepos.settings.updateSettings({
+      cashier_can_discount: true,
+      cashier_max_discount_cents: 500,
+    });
+
+    const result = await makeAction()({
+      ...baseInput(),
+      clientRequestId: "req-umbral-justo",
+      discountCents: 500,
+      cashReceivedCents: 3000,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.sale.discount_cents).toBe(500);
+    expect(result.data.sale.total_cents).toBe(2500);
+  });
+
+  it("el dueño no tiene límite de descuento aunque el umbral sea menor", async () => {
+    const ownerRepos = createMemoryRepositories(store, {
+      id: "owner-1",
+      role: "owner",
+      active: true,
+    });
+    await ownerRepos.settings.updateSettings({
+      cashier_can_discount: true,
+      cashier_max_discount_cents: 100,
+    });
+
+    const result = await makeAction({
+      id: "owner-1",
+      name: "Ana Quispe",
+      role: "owner",
+      isActive: true,
+    })({
+      ...baseInput(),
+      clientRequestId: "req-umbral-dueno",
       discountCents: 500,
       cashReceivedCents: 3000,
     });

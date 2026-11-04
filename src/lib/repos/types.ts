@@ -58,6 +58,7 @@ export interface BusinessPublicSettings {
   allow_negative_stock: boolean;
   low_stock_default: number;
   cashier_can_discount: boolean;
+  cashier_max_discount_cents: number;
 }
 
 export type AuditLog = Tables<"audit_log">;
@@ -67,6 +68,7 @@ export type AuditLog = Tables<"audit_log">;
 export interface ProductsRepo {
   list(filter?: { activeOnly?: boolean; categoryId?: string; search?: string }): Promise<Product[]>;
   getById(id: string): Promise<Product | null>;
+  getByIds(ids: string[]): Promise<Product[]>;
   getByBarcode(barcode: string): Promise<Product | null>;
   create(data: ProductInsert): Promise<Product>;
   createMany(items: ProductInsert[]): Promise<Product[]>;

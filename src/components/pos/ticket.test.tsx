@@ -30,6 +30,7 @@ const ticket = {
     allow_negative_stock: false,
     low_stock_default: 5,
     cashier_can_discount: false,
+    cashier_max_discount_cents: 0,
   },
 };
 

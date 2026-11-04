@@ -3,6 +3,7 @@ import { SupabaseSalesRepo } from "@/lib/repos/supabase/sales";
 import { SupabaseSettingsRepo } from "@/lib/repos/supabase/settings";
 import { SupabaseUsersRepo } from "@/lib/repos/supabase/users";
 import { laPazDayBoundsIso } from "@/lib/dates";
+import { formatBs } from "@/lib/money";
 import type {
   BusinessPublicSettings,
   Product,
@@ -137,8 +138,11 @@ export function createConfirmSaleAction(deps: SalesActionDeps = {}) {
           line_total_cents: number;
         }> = [];
 
+        const fetchedProducts = await productsRepo.getByIds([...quantities.keys()]);
+        const productsById = new Map(fetchedProducts.map((product) => [product.id, product]));
+
         for (const [productId, quantity] of quantities) {
-          const product: Product | null = await productsRepo.getById(productId);
+          const product: Product | null = productsById.get(productId) ?? null;
           if (!product) {
             throw new ActionException("Producto no encontrado.", "NOT_FOUND");
           }
@@ -170,15 +174,25 @@ export function createConfirmSaleAction(deps: SalesActionDeps = {}) {
         // D-008: el dueño siempre; el cajero solo si cashier_can_discount está habilitado.
         if (discountCents > 0 && ctx.user.role !== "owner") {
           let cashierCanDiscount = false;
+          let maxCashierDiscountCents = 0;
           try {
             const settingsRepo = await settingsRepoFactory(userContext);
-            cashierCanDiscount = (await settingsRepo.getPublicSettings()).cashier_can_discount;
+            const publicSettings = await settingsRepo.getPublicSettings();
+            cashierCanDiscount = publicSettings.cashier_can_discount;
+            maxCashierDiscountCents = publicSettings.cashier_max_discount_cents;
           } catch {
             cashierCanDiscount = false;
           }
           if (!cashierCanDiscount) {
             throw new ActionException(
               "Tu rol no tiene permiso para aplicar descuentos.",
+              "FORBIDDEN",
+            );
+          }
+          // Umbral de descuento del cajero: 0 = sin límite; el dueño nunca tiene límite.
+          if (maxCashierDiscountCents > 0 && discountCents > maxCashierDiscountCents) {
+            throw new ActionException(
+              `El descuento supera el máximo permitido de ${formatBs(maxCashierDiscountCents)} para cajeros.`,
               "FORBIDDEN",
             );
           }

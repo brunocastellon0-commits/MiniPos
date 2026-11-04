@@ -99,6 +99,33 @@ export class SupabaseProductsRepo implements ProductsRepo {
     return rows.find((row) => row.id === id) ?? null;
   }
 
+  async getByIds(ids: string[]): Promise<Product[]> {
+    const uniqueIds = [...new Set(ids)];
+    if (uniqueIds.length === 0) return [];
+
+    if (this.user.role === "cashier") {
+      const { data, error } = await this.supabase
+        .from("products_pos")
+        .select("*")
+        .in("id", uniqueIds);
+
+      if (error) throw new Error(error.message);
+      const now = new Date().toISOString();
+      return (data ?? []).map((row) => ({
+        ...row,
+        cost_cents: null,
+        created_at: now,
+        updated_at: now,
+      }));
+    }
+
+    // Rol owner: una sola llamada a la RPC en lugar de N consultas por id
+    const { data, error } = await this.supabase.rpc("products_with_cost");
+    if (error) throw new Error(`Error al consultar los productos: ${error.message}`);
+    const wanted = new Set(uniqueIds);
+    return ((data ?? []) as Product[]).filter((row) => wanted.has(row.id));
+  }
+
   async getByBarcode(barcode: string): Promise<Product | null> {
     if (this.user.role === "cashier") {
       const { data, error } = await this.supabase

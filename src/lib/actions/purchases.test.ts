@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { MemoryProductsRepo } from "@/lib/repos/memory/products";
 import { MemoryPurchasesRepo } from "@/lib/repos/memory/purchases";
 import { MemoryStore } from "@/lib/repos/memory/memory-store";
@@ -97,6 +97,29 @@ describe("Compras - Server Actions (E7-02)", () => {
       expect(result.data.purchase.supplier_id).toBe(supplier.id);
       expect(result.data.items).toHaveLength(2);
       expect(result.data.items.every((item) => item.qty_received === 0)).toBe(true);
+    }
+  });
+
+  it("valida los items de la compra en una sola consulta (sin N+1, E11-05)", async () => {
+    const { makeDeps, supplier, arroz, leche } = await setup();
+
+    const getByIdsSpy = vi.spyOn(MemoryProductsRepo.prototype, "getByIds");
+    const getByIdSpy = vi.spyOn(MemoryProductsRepo.prototype, "getById");
+    try {
+      const result = await createCreatePurchaseAction(makeDeps(owner))({
+        supplierId: supplier.id,
+        items: [
+          { productId: arroz.id, quantity: 10, unitCostCents: 900 },
+          { productId: leche.id, quantity: 6, unitCostCents: 500 },
+        ],
+      });
+
+      expect(result.ok).toBe(true);
+      expect(getByIdsSpy).toHaveBeenCalledTimes(1);
+      expect(getByIdSpy).not.toHaveBeenCalled();
+    } finally {
+      getByIdsSpy.mockRestore();
+      getByIdSpy.mockRestore();
     }
   });
 

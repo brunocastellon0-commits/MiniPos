@@ -1,8 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { MemoryStore } from "@/lib/repos/memory/memory-store";
 import { MemoryProductsRepo } from "@/lib/repos/memory/products";
 import type { ProductsRepo, UserContext } from "@/lib/repos/types";
-import { createListPosProductsAction, createSearchPosProductsAction } from "./products-search-core";
+import {
+  createGetProductsByIdsAction,
+  createListPosProductsAction,
+  createSearchPosProductsAction,
+} from "./products-search-core";
 import type { AuthenticatedUser } from "./secure-action";
 
 const owner: AuthenticatedUser = {
@@ -53,7 +57,7 @@ async function setup() {
       new MemoryProductsRepo(store, ctx),
   });
 
-  return { makeDeps };
+  return { makeDeps, store };
 }
 
 describe("Búsqueda POS - Server Action (E2-04)", () => {
@@ -128,5 +132,30 @@ describe("Búsqueda POS - Server Action (E2-04)", () => {
     const anon = await createSearchPosProductsAction(makeDeps(null))({ query: "cafe" });
     expect(anon.ok).toBe(false);
     if (!anon.ok) expect(anon.code).toBe("UNAUTHENTICATED");
+  });
+
+  it("carga los productos por ids en una sola consulta (sin N+1, E11-05)", async () => {
+    const { makeDeps, store } = await setup();
+    const ownerContext: UserContext = { id: owner.id, role: "owner", active: true };
+    const products = await new MemoryProductsRepo(store, ownerContext).list();
+    const ids = products.map((product) => product.id);
+
+    const getByIdsSpy = vi.spyOn(MemoryProductsRepo.prototype, "getByIds");
+    const getByIdSpy = vi.spyOn(MemoryProductsRepo.prototype, "getById");
+    try {
+      const result = await createGetProductsByIdsAction(makeDeps(owner))({ ids });
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        const activeIds = products.filter((product) => product.active).map((product) => product.id);
+        expect(result.data.map((product) => product.id).sort()).toEqual([...activeIds].sort());
+        expect(result.data.every((product) => product.cost_cents !== null)).toBe(true);
+      }
+      expect(getByIdsSpy).toHaveBeenCalledTimes(1);
+      expect(getByIdSpy).not.toHaveBeenCalled();
+    } finally {
+      getByIdsSpy.mockRestore();
+      getByIdSpy.mockRestore();
+    }
   });
 });

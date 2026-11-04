@@ -97,9 +97,11 @@ export function createGetProductsByIdsAction(deps: ProductsSearchActionDeps = {}
       handler: async (validatedInput, ctx) => {
         const repo = await productsRepoFactory(toUserContext(ctx.user));
         const uniqueIds = [...new Set(validatedInput.ids)];
+        const fetched = await repo.getByIds(uniqueIds);
+        const byId = new Map(fetched.map((product) => [product.id, product]));
         const products: Product[] = [];
         for (const id of uniqueIds) {
-          const product = await repo.getById(id);
+          const product = byId.get(id);
           if (product && product.active) products.push(product);
         }
         return products;

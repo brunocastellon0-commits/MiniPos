@@ -94,9 +94,12 @@ export function createCreatePurchaseAction(deps: PurchasesActionDeps = {}) {
         }
 
         const productsRepo = await productsRepoFactory(userContext);
+        const uniqueIds = [...new Set(validatedInput.items.map((item) => item.productId))];
+        const fetched = await productsRepo.getByIds(uniqueIds);
+        const byId = new Map(fetched.map((product) => [product.id, product]));
         let totalCents = 0;
         for (const item of validatedInput.items) {
-          const product: Product | null = await productsRepo.getById(item.productId);
+          const product: Product | null = byId.get(item.productId) ?? null;
           if (!product) {
             throw new ActionException("Producto no encontrado.", "NOT_FOUND");
           }
