@@ -61,3 +61,4 @@
 | 2026-11-03 | E11-11 | DONE-PENDING-HUMAN-VERIFY | docs/INCIDENTES.md creado (severidad, respuesta, restauracion, plantilla INC, contactos); seccion de respaldos para CONDICIONES_COMERCIALES pendiente de decision humana (E12-03 cancelada por el humano) |
 | 2026-11-03 | E11-10 | DONE-PENDING-HUMAN-VERIFY | Checklist con evidencia en SECURITY.md §13 (ASVS 4.0.3 L1); next 16.4.5 + eslint-config-next 16.4.5 (release 03-nov), minimatch override → pnpm audit limpio; creados no-client-trust.int.test.ts x4 y rls-checklist.md (referenciados en §9 y inexistentes) |
 | 2026-11-04 | E13-01 | DONE | Focus-trap del Dialog ya no depende de onClose (solo open) y no roba foco si esta dentro del panel; test dialog.test.tsx escribe una palabra completa y falla sin el fix |
+| 2026-11-04 | DB-009..012 | APLICADA | El humano ejecuto 0016-0019 en Supabase (0018 con la correccion full_name); DB_REQUESTS.md sin pendientes y E10-01 desbloqueada |

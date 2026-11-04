@@ -132,7 +132,7 @@
 
 | ID | Tarea | Deps | BD | Estado |
 |---|---|---|---|---|
-| E10-01 | Datos del negocio y marca | E1-03 | 🚨 | BLOCKED-DB |
+| E10-01 | Datos del negocio y marca | E1-03 | 🚨 | DONE |
 | E10-02 | Preferencias de operación | E10-01 |  | DONE |
 | E10-03 | Asistente de configuración inicial (onboarding) | E10-01, E2-03 |  | DONE |
 
