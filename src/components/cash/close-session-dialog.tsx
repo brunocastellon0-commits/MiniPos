@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { AlertTriangle, CheckCircle2, TrendingUp, XCircle } from "lucide-react";
 import { closeCashSessionAction } from "@/lib/actions/cash";
 import {
@@ -39,6 +39,7 @@ export function CloseSessionDialog({
   const [confirmed, setConfirmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
 
   function parsedCounted(): number | null {
     try {
@@ -62,6 +63,7 @@ export function CloseSessionDialog({
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    if (savingRef.current) return;
     setError(null);
 
     if (countedCents === null || countedCents < 0) {
@@ -74,6 +76,7 @@ export function CloseSessionDialog({
       return;
     }
 
+    savingRef.current = true;
     setSaving(true);
     try {
       const result = await closeCashSessionAction({
@@ -93,6 +96,7 @@ export function CloseSessionDialog({
     } catch {
       setError("No se pudo cerrar el turno. Intenta de nuevo.");
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   }

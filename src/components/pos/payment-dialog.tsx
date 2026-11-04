@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { CheckCircle2 } from "lucide-react";
 import { confirmSaleAction } from "@/lib/actions/sales";
 import { formatBs, toCents } from "@/lib/money";
 import type { CashOverview } from "@/lib/actions/cash-core";
@@ -22,6 +23,8 @@ export interface PaymentDialogProps {
 
 type PaymentMethod = "cash" | "qr" | "card";
 
+type PaymentStatus = "idle" | "loading" | "success" | "error";
+
 const METHOD_LABELS: Record<PaymentMethod, string> = {
   cash: "Efectivo",
   qr: "QR",
@@ -40,8 +43,21 @@ export function PaymentDialog({
   const [method, setMethod] = useState<PaymentMethod>("cash");
   const [received, setReceived] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [sending, setSending] = useState(false);
+  const [status, setStatus] = useState<PaymentStatus>("idle");
   const requestIdRef = useRef<string | null>(null);
+  // Candado síncrono: el estado React tarda en reflejarse, el ref evita el doble clic/Enter.
+  const sendingRef = useRef(false);
+  const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (successTimerRef.current) clearTimeout(successTimerRef.current);
+    },
+    [],
+  );
+
+  const sending = status === "loading";
+  const locked = status === "loading" || status === "success";
 
   function parsedReceived(): number | null {
     try {
@@ -58,17 +74,20 @@ export function PaymentDialog({
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    if (sendingRef.current || status === "success") return;
     setError(null);
 
     if (!canSubmit) {
       setError("El efectivo recibido debe cubrir el total de la venta.");
+      setStatus("error");
       return;
     }
 
     requestIdRef.current ??= crypto.randomUUID();
     const clientRequestId = requestIdRef.current;
 
-    setSending(true);
+    sendingRef.current = true;
+    setStatus("loading");
     try {
       const result = await confirmSaleAction({
         sessionId: overview.session.id,
@@ -84,18 +103,24 @@ export function PaymentDialog({
 
       if (!result.ok) {
         setError(result.message);
+        setStatus("error");
         return;
       }
 
-      onConfirmed({
-        sale: result.data.sale,
-        items: result.data.items,
-        changeCents: method === "cash" ? changeCents : 0,
-      });
+      setStatus("success");
+      successTimerRef.current = setTimeout(() => {
+        successTimerRef.current = null;
+        onConfirmed({
+          sale: result.data.sale,
+          items: result.data.items,
+          changeCents: method === "cash" ? changeCents : 0,
+        });
+      }, 400);
     } catch {
       setError("No se pudo confirmar la venta. El carrito se conserva.");
+      setStatus("error");
     } finally {
-      setSending(false);
+      sendingRef.current = false;
     }
   }
 
@@ -103,27 +128,40 @@ export function PaymentDialog({
     <Dialog
       open={open}
       onClose={() => {
-        if (!sending) onClose();
+        if (!locked) onClose();
       }}
       title="Cobrar venta"
       description={`Total a pagar: ${formatBs(totalCents)}`}
       footer={
         <>
-          <Button type="button" variant="secondary" onClick={onClose} disabled={sending}>
+          <Button type="button" variant="secondary" onClick={onClose} disabled={locked}>
             Cancelar
           </Button>
           <Button
             type="submit"
             form="payment-form"
-            disabled={sending || !canSubmit}
+            disabled={locked || !canSubmit}
             loading={sending}
           >
-            Confirmar cobro
+            {status === "success"
+              ? "Pago completado"
+              : sending
+                ? "Procesando pago…"
+                : "Confirmar cobro"}
           </Button>
         </>
       }
     >
       <form id="payment-form" className="space-y-4" onSubmit={handleSubmit}>
+        {status === "success" ? (
+          <p
+            role="status"
+            className="flex items-center gap-2 rounded-md border border-success/30 bg-success/10 p-3 text-sm font-semibold text-foreground"
+          >
+            <CheckCircle2 className="size-4 text-success" aria-hidden="true" />
+            Pago completado
+          </p>
+        ) : null}
         <div className="flex gap-2" role="group" aria-label="Método de pago">
           {(Object.keys(METHOD_LABELS) as PaymentMethod[]).map((value) => (
             <Button
@@ -131,7 +169,7 @@ export function PaymentDialog({
               type="button"
               variant={method === value ? "primary" : "secondary"}
               onClick={() => setMethod(value)}
-              disabled={sending}
+              disabled={locked}
             >
               {METHOD_LABELS[value]}
             </Button>
@@ -150,7 +188,7 @@ export function PaymentDialog({
               value={received}
               invalid={Boolean(error)}
               onChange={(event) => setReceived(event.target.value)}
-              disabled={sending}
+              disabled={locked}
             />
             <p className="text-sm text-muted">
               Vuelto: <span className="font-semibold text-foreground">{formatBs(changeCents)}</span>
@@ -162,7 +200,7 @@ export function PaymentDialog({
           </p>
         )}
 
-        {error ? (
+        {error && status !== "success" ? (
           <p role="alert" className="text-sm text-danger">
             {error}
           </p>

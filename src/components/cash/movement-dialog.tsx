@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { addCashMovementAction } from "@/lib/actions/cash";
 import { toCents } from "@/lib/money";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ export function MovementDialog({ open, sessionId, onClose, onCreated }: Movement
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
 
   function reset() {
     setKind("in");
@@ -30,6 +31,7 @@ export function MovementDialog({ open, sessionId, onClose, onCreated }: Movement
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    if (savingRef.current) return;
     setError(null);
 
     let amountCents: number;
@@ -50,6 +52,7 @@ export function MovementDialog({ open, sessionId, onClose, onCreated }: Movement
       return;
     }
 
+    savingRef.current = true;
     setSaving(true);
     try {
       const result = await addCashMovementAction({
@@ -70,6 +73,7 @@ export function MovementDialog({ open, sessionId, onClose, onCreated }: Movement
     } catch {
       setError("No se pudo registrar el movimiento. Intenta de nuevo.");
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   }

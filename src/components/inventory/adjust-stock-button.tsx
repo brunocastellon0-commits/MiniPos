@@ -2,7 +2,7 @@
 
 import { SlidersHorizontal } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { adjustStockAction } from "@/lib/actions/inventory";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
@@ -23,6 +23,7 @@ export function AdjustStockButton({ productId, productName, currentStock }: Adju
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
 
   function handleClose() {
     if (submitting) return;
@@ -35,6 +36,7 @@ export function AdjustStockButton({ productId, productName, currentStock }: Adju
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    if (submittingRef.current) return;
 
     const parsed = Number(delta);
     if (!Number.isInteger(parsed) || parsed === 0) {
@@ -47,6 +49,7 @@ export function AdjustStockButton({ productId, productName, currentStock }: Adju
       return;
     }
 
+    submittingRef.current = true;
     setSubmitting(true);
     setError(null);
     try {
@@ -66,6 +69,7 @@ export function AdjustStockButton({ productId, productName, currentStock }: Adju
     } catch {
       setError("No se pudo ajustar el stock.");
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   }

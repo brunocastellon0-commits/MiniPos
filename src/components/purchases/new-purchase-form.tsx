@@ -49,6 +49,7 @@ export function NewPurchaseForm({ suppliers, products, initialItems = [] }: NewP
   const [error, setError] = useState<string | null>(null);
   const [supplierError, setSupplierError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
 
   function addRow() {
     nextKey.current += 1;
@@ -89,6 +90,7 @@ export function NewPurchaseForm({ suppliers, products, initialItems = [] }: NewP
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    if (submittingRef.current) return;
     setError(null);
     setSupplierError(null);
 
@@ -126,6 +128,7 @@ export function NewPurchaseForm({ suppliers, products, initialItems = [] }: NewP
       items.push({ productId: row.productId, quantity, unitCostCents });
     }
 
+    submittingRef.current = true;
     setSubmitting(true);
     try {
       const result = await createPurchaseAction({
@@ -141,6 +144,7 @@ export function NewPurchaseForm({ suppliers, products, initialItems = [] }: NewP
     } catch {
       setError("No se pudo registrar la compra.");
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { receivePurchaseAction } from "@/lib/actions/purchases";
 import { formatBs } from "@/lib/money";
 import type { Purchase, PurchaseItem } from "@/lib/repos/types";
@@ -34,9 +34,11 @@ export function PurchaseReceiveView({ purchase, items, productNames }: PurchaseR
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    if (submittingRef.current) return;
 
     const receiveItems: { productId: string; qtyReceived: number }[] = [];
     for (const item of items) {
@@ -55,6 +57,7 @@ export function PurchaseReceiveView({ purchase, items, productNames }: PurchaseR
       receiveItems.push({ productId: item.product_id, qtyReceived });
     }
 
+    submittingRef.current = true;
     setSubmitting(true);
     setError(null);
     try {
@@ -72,6 +75,7 @@ export function PurchaseReceiveView({ purchase, items, productNames }: PurchaseR
     } catch {
       setError("No se pudo registrar la recepción.");
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   }

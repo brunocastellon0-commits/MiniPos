@@ -175,5 +175,5 @@
 | E13-03 | B4 · Skeletons y `loading.tsx` por ruta | E13-02 |  | DONE |
 | E13-04 | A3 · Logo estático desde `public/` (solo UI) | — |  | DONE |
 | E13-05 | B1 · FormField, etiquetas y errores por campo | — |  | DONE |
-| E13-06 | B2 · Candado y estados en botones de acción | — |  | TODO |
+| E13-06 | B2 · Candado y estados en botones de acción | — |  | DONE |
 | E13-07 | B3 · Tablas y barras de métricas | — |  | TODO |

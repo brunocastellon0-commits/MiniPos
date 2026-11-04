@@ -2,7 +2,7 @@
 
 import { Ban } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { voidSaleAction } from "@/lib/actions/sales";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
@@ -19,6 +19,7 @@ export function VoidSaleButton({ saleId }: VoidSaleButtonProps) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
 
   function handleClose() {
     if (submitting) return;
@@ -29,12 +30,14 @@ export function VoidSaleButton({ saleId }: VoidSaleButtonProps) {
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    if (submittingRef.current) return;
     const trimmed = reason.trim();
     if (!trimmed) {
       setError("El motivo de anulación es obligatorio.");
       return;
     }
 
+    submittingRef.current = true;
     setSubmitting(true);
     setError(null);
     try {
@@ -49,6 +52,7 @@ export function VoidSaleButton({ saleId }: VoidSaleButtonProps) {
     } catch {
       setError("No se pudo anular la venta.");
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   }
