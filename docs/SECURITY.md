@@ -59,7 +59,7 @@ Referencias base: OWASP Top 10 (edición vigente) y OWASP ASVS como lista de ver
 
 ## 5. Aplicación Next.js (16.x)
 
-1. **Versiones parcheadas obligatorias.** Verificación realizada el **28-oct-2026**: Next.js fijado en **16.4.3** (parcheado contra avisos de seguridad de App Router y Server Actions); Node.js fijado en `>=20.9.0` (LTS verificado en nodejs.org). Fuentes: GitHub Security Advisory Database (GHSA) y https://nodejs.org. Next.js ha tenido en 2025-2026 fallos críticos (RCE, bypass de middleware/proxy, CSRF de Server Actions, DoS), mitigados con la versión 16.4.3 instalada.
+1. **Versiones parcheadas obligatorias.** Verificación realizada el **03-nov-2026**: Next.js fijado en **16.4.5** (incluye el *November 2026 Security Release* publicado el mismo día: 7 fallos medios, GHSA-mfr8-8qww-v76h y otros; `eslint-config-next` también en 16.4.5); Node.js fijado en `>=20.9.0` (LTS). Fuentes: GitHub Security Advisory Database (GHSA), https://nextjs.org/blog y https://nodejs.org. **Aviso para el humano:** Node.js publicará release de seguridad (severidad ALTA) el **11-nov-2026** — actualizar el runtime de cada despliegue cuando salga (ver `SEC-01` en `BACKLOG.md`).
 2. **Server Actions:** tienen comprobación Origin/Host contra CSRF, pero **eso no sustituye la autorización**. No exponer mutaciones en `GET`. Los Route Handlers de mutación (POST/PUT/DELETE) **no** tienen esa protección automática: evitarlos o validar Origin y sesión.
 3. Validar **todos** los argumentos de cada Server Action con Zod; limitar tamaños (cuerpos, CSV, longitudes de texto).
 4. **Rate limiting** en login, importación CSV y acciones costosas.
@@ -124,3 +124,132 @@ registro público desactivado · política de contraseñas · MFA del dueño · 
 - Suscribirse a: avisos de seguridad de Next.js (GitHub/blog), Node.js security releases, changelog de Supabase.
 - Revisión trimestral de esta lista contra OWASP ASVS. El agente propone tareas `SEC-xx`; el humano decide.
 - Plan de incidentes mínimo: (1) revocar sesiones y rotar claves, (2) aislar el proyecto afectado, (3) revisar `audit_log`, (4) comunicar al cliente, (5) post-mortem en `docs/INCIDENTES.md`.
+
+## 12. Matrices de autorización y RLS (E11-01, revisión 2026-11-03)
+
+### 12.1 Cómo leer las matrices (comportamiento real)
+
+- **Sin sesión** → toda Server Action responde `UNAUTHENTICATED`. Excepciones: flujos de sesión (`login`, verificación MFA de inicio), que son anónimos con rate limit.
+- **Inactivo** (`profiles.active = false`) → `USER_INACTIVE` en acciones; en RLS, `private.is_active_staff()` devuelve false y oculta los datos.
+- **Rol no permitido** → `FORBIDDEN` en acciones; en RLS, `private.is_owner()` deniega.
+- Toda entrada pasa por Zod `.strict()` antes de ejecutar. El cajero nunca ve `cost_cents` (sin GRANT de columna; solo `products_with_cost()`, que exige `is_owner()`).
+- Orden en todo punto: autenticar → autorizar → validar → ejecutar → auditar.
+
+### 12.2 Acciones de servidor por rol
+
+| Módulo | Acciones | dueño | cajero |
+|---|---|:-:|:-:|
+| auth (sesión) | login, registro, logout, restablecer contraseña | flujo anónimo + rate limit | — |
+| mfa (login) | verificar MFA de inicio | flujo anónimo + rate limit | — |
+| mfa (gestión) | enroll, verifyEnrollment, getStatus, unenroll | ✔ | ✖ |
+| caja | getOverview, getOpen, open, addMovement, close, list | ✔ | ✔ |
+| categorías | list | ✔ | ✔ |
+| categorías | create, update, reorder, delete | ✔ | ✖ |
+| ventas pausadas | list, save, delete | ✔ | ✔ |
+| inventario | list, movements, ajuste (`adjust_stock` RPC) | ✔ | ✖ |
+| productos | list, create, update, setActive | ✔ | ✖ |
+| productos CSV | preview, import | ✔ | ✖ |
+| búsqueda POS | searchPos, listPos, getByIds | ✔ | ✔ |
+| compras | create, list, get, receive (`receive_purchase` RPC) | ✔ | ✖ |
+| reportes | getData, exportCsv | ✔ | ✖ |
+| ventas | confirmar (`confirm_sale`), ticket, list, detalle | ✔ | ✔ |
+| ventas | anular (`void_sale`) | ✔ | ✖ |
+| configuración | getPublic | ✔ | ✔ |
+| configuración | get, update (audita `settings.update`) | ✔ | ✖ |
+| proveedores | CRUD (4) | ✔ | ✖ |
+| usuarios | list, updateName, updateRole, toggleActive | ✔ | ✖ |
+
+### 12.3 Páginas (guard de servidor; la data además está protegida por acción + RLS)
+
+- `requireRole("owner", "/caja")`: `/panel`, `/productos`, `/proveedores`, `/compras`, `/compras/nueva`, `/compras/[id]`, `/inventario`, `/reportes`, `/usuarios`, `/configuracion`, `/configuracion/asistente`.
+- `requireUser("/login")` (+ layout con `requireUser`): `/caja`, `/turno`, `/ventas`, `/ventas/[saleId]`.
+- El detalle de venta de un cajero ajenó cae en estado "no encontrado" por RLS (`sales.sale_items` solo propios).
+
+### 12.4 Tablas → políticas RLS
+
+| Tabla | SELECT | Escritura | Nota |
+|---|---|---|---|
+| `profiles` | dueño; cada usuario su fila activa | INSERT dueño; UPDATE dueño o fila propia; DELETE denegado | trigger 0009 (último dueño); **brecha cerrada con DB-010** (ver 12.6) |
+| `business_settings` | dueño (`anon`: solo `name,logo_url` de la fila 1 tras DB-009) | UPDATE/INSERT/DELETE solo dueño (insert/delete con check `false`) | público vía RPC `get_business_public()` |
+| `categories` | dueño o personal activo (filas `active`) | solo dueño | borrado físico solo por app |
+| `products` | dueño o personal activo (filas `active`) | solo dueño | sin GRANT de `cost_cents`; vista `products_pos` sin costos |
+| `cash_sessions` | dueño; sesión abierta (personal activo); filas propias | solo RPC (security definer) | solo existe 1 sesión abierta a la vez (lo exige la RPC) |
+| `cash_movements` | dueño, propios o de la sesión propia | solo RPC | |
+| `sales` | dueño o `cashier_id = auth.uid()` | sin escritura directa (`confirm_sale`/`void_sale` RPC) | inmutabilidad + trigger 0008 |
+| `sale_items` | dueño o vía venta propia | solo RPC | |
+| `held_sales` | dueño o `cashier_id = auth.uid()` | INSERT/UPDATE/DELETE: dueño o fila propia | |
+| `stock_movements` | dueño | solo RPC `adjust_stock`/`receive_purchase` | inmutable (trigger 0008) |
+| `suppliers`, `purchases`, `purchase_items` | dueño | solo dueño | |
+| `audit_log` | dueño | solo RPC `write_audit_log()` (fuerza `auth.uid()`) | inmutable (trigger 0008) |
+| todo (`anon`) | sin acceso (revocado en 0015) | — | salvo DB-009 (2 columnas de `business_settings`) |
+
+### 12.5 RPC → EXECUTE grant → chequeo interno
+
+| RPC | Grant | Chequeo interno |
+|---|---|---|
+| `get_business_public()`, `get_open_cash_session_public()` | authenticated | `private.is_active_staff()` |
+| `open_cash_session`, `add_cash_movement`, `close_cash_session` | authenticated | personal activo + validaciones de turno (1 sola sesión abierta) |
+| `confirm_sale(...)` | authenticated | personal activo; permiso de descuento por rol (dueño o `cashier_can_discount`) |
+| `void_sale`, `adjust_stock`, `receive_purchase`, `products_with_cost()` | authenticated | `get_user_role() = owner` (42501) |
+| `write_audit_log(...)` | authenticated | personal activo; fuerza `user_id = auth.uid()` |
+| `private.*` (`is_owner`, `is_active_staff`, `get_user_role`, triggers) | revocado a `public`/`anon`/`authenticated` | security definer con `search_path = ''` |
+
+### 12.6 Hallazgos de la revisión y verificación pendiente
+
+1. **DB-010 (brecha corregida con SQL propuesto):** `profiles` tenía `grant update` de todas las columnas y política de fila propia; un cajero podía autoascenderse (`update profiles set role='owner' where id=auth.uid()`) porque el trigger 0009 solo protege al último dueño. Solución: `db/migrations/0017_profile_role_guard.sql` (trigger que exige sesión `owner` para cambiar `role`/`active`). Registrado en `DB_REQUESTS.md` como `PENDIENTE`.
+2. **DB-009 (PENDIENTE):** marca en la pantalla de login (`name,logo_url` a `anon`, fila 1).
+3. **Observaciones aceptadas (sin corrección):** el personal activo ve la sesión abierta (única del negocio); `full_name` editable por cada usuario; el borrado físico de categorías/productos/proveedores solo ocurre desde la app dueño (la RLS lo permite, no hay caso de uso de borrado contable).
+4. **Verificación humana pendiente (E11-01):** ejecutar `docs/RLS_VERIFICATION.sql`, revisar Security Advisor y, tras aplicar DB-010, las 3 comprobaciones de `0017_profile_role_guard.sql` (cajero no puede autoascenderse; puede editar su nombre; dueño puede cambiar roles).
+
+## 13. Revisión final E11-10 (03-nov-2026) — checklist con evidencia
+
+Contra §§1–12 de este documento y OWASP ASVS 4.0.3 (nivel 1: verificable con pruebas automatizadas y revisión estática).
+
+### 13.1 Evidencia por punto
+
+| Punto | Evidencia | Estado |
+|---|---|---|
+| §1 Modelo de amenazas | Este archivo §1 + `AGENTS.md` §7 invariantes + `docs/ARCHITECTURE.md` | OK |
+| §2 Autenticación y sesiones | `auth.test.ts` (mensaje genérico, sin enumerar usuarios, rate limit), `session-hardening.test.ts` (inactividad E1-05, revocación de desactivado, `auth.login_success` auditado), `src/lib/auth/mfa.test.ts` + `components/auth/mfa.test.tsx` (MFA), `security/authz-matrix.int.test.ts` §1–2 | OK |
+| §3 Autorización | Matrices §12 de este archivo (E11-01), `security/authz-matrix.int.test.ts`, `requireRole` en cada página `(app)` + `roles` en cada `secureAction` (E11-02), proxy solo refresca sesión | OK |
+| §4 Base de datos y RLS | Migraciones 0001–0019 con RLS+GRANT mínimo; `security/rls-checklist.md` + `docs/RLS_VERIFICATION.sql`; **PENDIENTE humano:** aplicar DB-009..DB-012 y pegar resultados | PENDIENTE HUMANO |
+| §5 Next.js (1) versiones | **16.4.5** y `eslint-config-next` 16.4.5 (03-nov-2026, November 2026 Security Release); `pnpm audit` **sin vulnerabilidades** (override `minimatch ^11.0.1` por GHSA-g3hv-75wg-m249); **SEC-01:** Node release ALTO del 11-nov-2026 | OK + SEC-01 |
+| §5 (2–4) CSRF/validación/rate limit | Mutaciones solo vía Server Actions; Zod `.strict()` en toda frontera (`security/validation.unit.test.ts`); rate limit en login/importación (`rate-limiter.ts`, `session-hardening.test.ts`) | OK |
+| §5 (5) Cabeceras | `security/headers.test.ts` (CSP, HSTS, nosniff, frame-ancestors) en `next.config.ts` + proxy | OK |
+| §5 (6–7) Secretos y XSS | `security/no-secrets.test.ts`; `server-only` en `supabase/server.ts`; `security/no-dangerous-html.test.ts` (sin `eval`/`dangerouslySetInnerHTML`); URLs de logo validadas por esquema (https) | OK |
+| §5 (8–9) CSV | `security/csv-injection.unit.test.ts` (neutraliza `=+-@\t\r`); límites de bytes/filas y cabeceras exigidas (E11-09) | OK |
+| §5 (10–11) Errores y logs | `error.tsx`/`not-found.tsx`/`global-error.tsx` sin filtrar errores (E11-07); `secure-action.test.ts` (códigos internos → mensaje genérico); auditoría sin secretos | OK |
+| §5 (12–13) Imágenes/redirecciones y dependencias | Sin proxies abiertos; `pnpm audit` en `pnpm check:security`; lockfile versionado | OK |
+| §6 Anti-fraude POS | Umbral de descuento con chequeo en app **y** RPC 0019 (E11-08, `sales.test.ts`); auditoría de anulación/ajuste/cobro/rol en SQL 0010–0014 + `security/audit-log.int.test.ts`; diferencia de caja registrada y no editable (cierre vía RPC 0010); costos solo dueño (`products_with_cost()` exige owner); alertas 24 h (E11-08) | OK (DB-012 pendiente) |
+| §7 Privacidad | Sin datos de clientes finales (v1); datos demo ficticios en factories; retención/respaldos → decisión humana (E11-11 + E12 cancelado) | PENDIENTE HUMANO |
+| §8 Despliegue | `docs/DEPLOY_NEW_CLIENT.md` → sección Seguridad (checklist ejecutable por el humano) | PENDIENTE HUMANO |
+| §9 Pruebas obligatorias | `authz-matrix`, **`no-client-trust` (nuevo en E11-10)**, `validation`, `csv-injection`, `headers`, `no-secrets`, `no-dangerous-html`, `audit-log`, `rls-checklist.md` — todos existen y corren en `pnpm check:security` | OK |
+| §10 Reglas para el agente | Sin secretos escritos ni pedidos; migraciones con RLS+GRANT; tests de seguridad jamás relajados (E11-10 corrigió controles/faltantes, no los desactivó) | OK |
+| §11 Mantenimiento | Fuentes reverificadas hoy (nextjs.org/blog GHSA, nodejs.org); `docs/INCIDENTES.md` creado (E11-11) | OK + SEC-01 |
+
+### 13.2 OWASP ASVS 4.0.3 — nivel 1 aplicable
+
+| Capítulo | Evidencia en LILA MARKET |
+|---|---|
+| V1 Arquitectura y threat model | `docs/SECURITY.md` §1; controles centralizados (`secureAction`, repos, RLS) |
+| V2 Autenticación | Supabase Auth + política ≥12 caracteres; login genérico; rate limit; MFA del dueño (E1-06) |
+| V3 Sesiones | Cookies `@supabase/ssr` (HTTPS, `SameSite`); refresco en `proxy.ts`; cierre por inactividad (E1-05); revocación al desactivar |
+| V4 Control de acceso | `requireRole` (páginas) + `roles` en cada acción + RLS owner-only (§12); matriz de verificación |
+| V5 Validación y codificación | Zod `.strict()` en toda entrada (`validation.unit.test.ts`); escape React; CSV con límites y neutralización |
+| V6 Criptografía almacenada | Credenciales gestionadas por Supabase Auth (hashes); la app no guarda contraseñas ni claves |
+| V7 Errores y bitácora | Mensajes genéricos al usuario; `audit_log` inmutable de acciones sensibles; sin secretos en logs |
+| V8 Protección de datos | `cost_cents` fuera de la vista POS; sin PII de clientes finales; HTTPS obligatorio |
+| V9 Comunicación | HSTS + HTTPS en despliegue (§8); cabeceras en `next.config.ts` |
+| V10 Código malicioso | Sin `eval`/`new Function`/`dangerouslySetInnerHTML` (`no-dangerous-html.test.ts`); `pnpm audit` limpio |
+| V11 Lógica de negocio | Invariantes de `AGENTS.md` §7 con tests (`sales.test`, `void-sale.int.test`, caja); umbral de descuento |
+| V12 Archivos y recursos | Sin subida de archivos en v1 (CSV como texto); logo limitado a https/ruta propia; sin SSRF |
+| V13 API | Server Actions autenticadas+autorizadas+Zod; sin GraphQL/SOAP; rate limit en acciones costosas |
+| V14 Configuración | Cabeceras (`headers.test.ts`), secretos fuera del repo (`no-secrets.test.ts`), `.env.example` |
+| Nivel 1 como conjunto | Cubierto por tests automatizados + esta revisión; **quedan verificaciones humanas:** E2E (E11-02), `RLS_VERIFICATION.sql`, Security Advisor, actualización de Node (SEC-01) |
+
+### 13.3 Hallazgos de esta revisión
+
+1. **Corregido en la propia revisión:** Next.js 16.4.3 → **16.4.5** y `eslint-config-next` → 16.4.5 (release de seguridad del mismo día); `minimatch` forzado a `^11.0.1` (GHSA-g3hv-75wg-m249) vía `overrides` en `pnpm-workspace.yaml` → `pnpm audit` limpio.
+2. **Corregido en la propia revisión:** `docs/SECURITY.md` §9 referenciaba `security/no-client-trust.int.test.ts` y `security/rls-checklist.md` **sin existir** → creados; ya corren en `check:security`.
+3. **SEC-01 (nuevo, humano):** Node.js publicará release de severidad ALTA el **11-nov-2026**; actualizar el runtime de cada despliegue y reverificar `pnpm audit` después.
+4. **Sin hallazgos nuevos** contra el OWASP ASVS nivel 1 más allá de los puntos humanos listados en 13.1.

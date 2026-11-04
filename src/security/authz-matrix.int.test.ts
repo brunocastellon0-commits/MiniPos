@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { RateLimiter } from "@/lib/actions/rate-limiter";
-import { type AuthenticatedUser, secureAction } from "@/lib/actions/secure-action";
+import {
+  ActionException,
+  type AuthenticatedUser,
+  secureAction,
+} from "@/lib/actions/secure-action";
 
 describe("Matriz de Autorización y Flujo Seguro (authz-matrix)", () => {
   const activeOwner: AuthenticatedUser = {
@@ -212,20 +216,36 @@ describe("Matriz de Autorización y Flujo Seguro (authz-matrix)", () => {
       }
     });
 
-    it("preserva errores de dominio controlados con código de negocio", async () => {
-      class DomainError extends Error {
-        code = "STOCK_INSUFFICIENT";
-        constructor(message: string) {
-          super(message);
-          this.name = "DomainError";
-        }
-      }
+    it("enmascara errores ajenos que solo traen un código (p. ej. de Postgres)", async () => {
+      const dbError = Object.assign(new Error("duplicate key value violates unique constraint"), {
+        code: "23505",
+      });
 
+      const failingAction = secureAction({
+        roles: ["cashier"],
+        currentUserResolver: async () => activeCashier,
+        handler: async () => {
+          throw dbError;
+        },
+      });
+
+      const result = await failingAction({});
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.code).toBe("INTERNAL_ERROR");
+        expect(result.message).not.toContain("duplicate key");
+      }
+    });
+
+    it("preserva errores de dominio controlados con código de negocio", async () => {
       const domainErrorAction = secureAction({
         roles: ["cashier"],
         currentUserResolver: async () => activeCashier,
         handler: async () => {
-          throw new DomainError("No hay stock disponible para completar la venta.");
+          throw new ActionException(
+            "No hay stock disponible para completar la venta.",
+            "STOCK_INSUFFICIENT",
+          );
         },
       });
 

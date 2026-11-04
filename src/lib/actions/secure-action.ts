@@ -115,12 +115,23 @@ interface KnownActionError extends Error {
   code: string;
 }
 
+// Códigos de error controlados por actions que no usan ActionException (auth/mfa).
+// Solo estos mensajes se devuelven al cliente además de ActionException; cualquier
+// otro Error (p. ej. un error de Postgres con `code`) queda como INTERNAL_ERROR
+// y jamás se filtra su mensaje.
+const KNOWN_ACTION_CODES: ReadonlySet<string> = new Set([
+  "INVALID_CREDENTIALS",
+  "USER_INACTIVE",
+  "MFA_ENROLL_FAILED",
+  "MFA_UNENROLL_FAILED",
+  "INVALID_MFA_CODE",
+]);
+
 function isKnownActionError(error: unknown): error is KnownActionError {
-  return (
-    error instanceof Error &&
-    "code" in error &&
-    typeof (error as Record<string, unknown>).code === "string"
-  );
+  if (!(error instanceof Error)) return false;
+  if (!("code" in error) || typeof error.code !== "string") return false;
+  if (error instanceof ActionException) return true;
+  return KNOWN_ACTION_CODES.has(error.code);
 }
 
 export function secureAction<TInput, TOutput>(options: SecureActionOptions<TInput, TOutput>) {
