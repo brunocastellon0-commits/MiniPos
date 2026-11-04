@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
-import { Spinner } from "@/components/ui/spinner";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type Tab = "ventas" | "productos" | "inventario" | "caja";
 
@@ -173,8 +173,24 @@ export function ReportsView({ initialRange, initialData, initialError = null }: 
       ) : null}
 
       {loading ? (
-        <div className="flex justify-center py-8">
-          <Spinner className="size-8" label="Cargando reportes" />
+        <div aria-busy="true" className="space-y-4">
+          <span role="status" className="sr-only">
+            Cargando reportes…
+          </span>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            {Array.from({ length: 5 }, (_, index) => (
+              <div key={index} className="space-y-2 rounded-card border border-border bg-surface p-4">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-7 w-28" />
+                <Skeleton className="h-3 w-24" />
+              </div>
+            ))}
+          </div>
+          <div className="space-y-3 rounded-card border border-border bg-surface p-4">
+            {Array.from({ length: 6 }, (_, index) => (
+              <Skeleton key={index} className="h-5 w-full" />
+            ))}
+          </div>
         </div>
       ) : !data ? (
         <EmptyState title="Sin datos" description="Selecciona un periodo y pulsa «Actualizar»." />
