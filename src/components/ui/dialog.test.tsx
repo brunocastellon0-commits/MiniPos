@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { describe, expect, it } from "vitest";
@@ -64,5 +64,27 @@ describe("Dialog", () => {
     await user.click(screen.getByTestId("dialog-overlay"));
 
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
+
+  it("encicla el foco con Tab y Shift+Tab dentro del diálogo (E11-04)", async () => {
+    const user = userEvent.setup();
+    render(<DialogHarness />);
+    await user.click(screen.getByRole("button", { name: "Abrir" }));
+
+    const dialog = screen.getByRole("dialog", { name: "Anular venta" });
+    const focusable = Array.from(
+      dialog.querySelectorAll<HTMLElement>("button:not([disabled]), input:not([disabled])"),
+    );
+    expect(focusable.length).toBeGreaterThan(1);
+    const first = focusable[0]!;
+    const last = focusable[focusable.length - 1]!;
+
+    last.focus();
+    fireEvent.keyDown(document, { key: "Tab" });
+    expect(document.activeElement).toBe(first);
+
+    first.focus();
+    fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
+    expect(document.activeElement).toBe(last);
   });
 });

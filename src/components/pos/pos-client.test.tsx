@@ -101,12 +101,63 @@ describe("PosClient (E4-02/E4-03/E4-04)", () => {
     });
   });
 
+  it("agregar al carrito es local, sin llamadas al servidor (E11-05: <100 ms percibido)", async () => {
+    renderPos();
+
+    addToCart("Arroz 1kg");
+
+    expect(screen.getByLabelText("Carrito")).toHaveTextContent("Bs 12,00");
+    expect(searchPosProductsAction).not.toHaveBeenCalled();
+    expect(getProductsByIdsAction).not.toHaveBeenCalled();
+    expect(confirmSaleAction).not.toHaveBeenCalled();
+    expect(saveHeldSaleAction).not.toHaveBeenCalled();
+  });
+
+  it("resumen inferior del carrito para pantallas chicas con enlace al panel (E11-06)", async () => {
+    renderPos();
+
+    const bar = screen.getByRole("region", { name: "Resumen del carrito" });
+    expect(bar).toHaveClass("lg:hidden");
+    expect(bar).toHaveTextContent("0 productos");
+    expect(bar).toHaveTextContent("Bs 0,00");
+    expect(screen.getByLabelText("Carrito")).toHaveAttribute("id", "carrito");
+
+    addToCart("Arroz 1kg");
+    expect(bar).toHaveTextContent("1 producto");
+    expect(bar).toHaveTextContent("Bs 12,00");
+
+    const scrollSpy = vi.fn();
+    const originalScroll = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = scrollSpy;
+    try {
+      fireEvent.click(screen.getByRole("button", { name: "Ver carrito" }));
+      expect(scrollSpy).toHaveBeenCalledTimes(1);
+    } finally {
+      if (originalScroll) {
+        Element.prototype.scrollIntoView = originalScroll;
+      } else {
+        Reflect.deleteProperty(Element.prototype, "scrollIntoView");
+      }
+    }
+  });
+
   it("deshabilita Agregar en productos agotados", () => {
     renderPos();
 
     expect(screen.getByText("Agotado")).toBeInTheDocument();
     const addButton = within(cardOf("Leche 1L")).getByRole("button", { name: "Agregar" });
     expect(addButton).toBeDisabled();
+  });
+
+  it("anuncia el total del carrito con aria-live polite (E11-04)", async () => {
+    renderPos();
+    addToCart("Arroz 1kg");
+
+    const totalLabel = screen.getByText("Total");
+    const region = totalLabel.closest("[aria-live='polite']");
+    expect(region).not.toBeNull();
+    expect(region).toHaveAttribute("aria-atomic", "true");
+    await waitFor(() => expect(region).toHaveTextContent("Bs 12,00"));
   });
 
   it("F2 enfoca el buscador y F9 abre el cobro solo con productos", async () => {

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CashOverview } from "@/lib/actions/cash-core";
 import { buildCashMovement, buildCashSession, buildSale } from "@/test/factories";
@@ -98,5 +98,28 @@ describe("TurnoClient (E3-01/E3-02/E3-04)", () => {
     await waitFor(() => {
       expect(openCashSessionAction).toHaveBeenCalledWith({ openingCents: 10000, notes: undefined });
     });
+  });
+
+  it("muestra la diferencia de caja con estado textual al cierre (E11-03)", async () => {
+    render(<TurnoClient initialOverview={overview} initialHistory={[]} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Cerrar turno" }));
+    const dialog = screen.getByRole("dialog");
+    const countedInput = within(dialog).getByLabelText("Efectivo contado");
+
+    expect(within(dialog).getByText("Efectivo esperado")).toBeInTheDocument();
+    expect(within(dialog).queryByText("Diferencia")).not.toBeInTheDocument();
+
+    fireEvent.change(countedInput, { target: { value: "115,00" } });
+    expect(within(dialog).getByText("Diferencia")).toBeInTheDocument();
+    expect(within(dialog).getByText("Faltante")).toBeInTheDocument();
+    expect(within(dialog).getByText("-Bs 5,00")).toBeInTheDocument();
+
+    fireEvent.change(countedInput, { target: { value: "120,00" } });
+    expect(within(dialog).getByText("Cuadra")).toBeInTheDocument();
+    expect(within(dialog).queryByText("Faltante")).not.toBeInTheDocument();
+
+    fireEvent.change(countedInput, { target: { value: "125,00" } });
+    expect(within(dialog).getByText("Sobrante")).toBeInTheDocument();
   });
 });

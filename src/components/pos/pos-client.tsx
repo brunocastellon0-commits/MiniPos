@@ -10,6 +10,7 @@ import {
   calculateDiscount,
   cartSubtotalCents,
   cartTotals,
+  cartUnits,
   clearCart,
   createCart,
   productStockState,
@@ -301,6 +302,7 @@ export function PosClient({
           }}
         />
       ) : (
+        <>
         <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
           <section aria-label="Catálogo de productos" className="space-y-4">
             <div className="relative">
@@ -379,7 +381,7 @@ export function PosClient({
             )}
           </section>
 
-          <aside aria-label="Carrito" className="lg:sticky lg:top-20 lg:self-start">
+          <aside id="carrito" aria-label="Carrito" className="lg:sticky lg:top-20 lg:self-start">
             <Card>
               <CardHeader className="flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
@@ -557,7 +559,11 @@ export function PosClient({
                   )
                 ) : null}
 
-                <div className="flex items-center justify-between border-t border-border pt-3">
+                <div
+                  className="flex items-center justify-between border-t border-border pt-3"
+                  aria-live="polite"
+                  aria-atomic="true"
+                >
                   <span className="text-sm font-medium text-muted">Total</span>
                   <span className="text-2xl font-bold text-foreground">{formatBs(totals.totalCents)}</span>
                 </div>
@@ -574,6 +580,31 @@ export function PosClient({
             </Card>
           </aside>
         </div>
+
+        <div
+          className="sticky bottom-0 z-30 -mx-4 flex items-center justify-between gap-3 border-t border-border bg-surface px-4 py-3 shadow-raised sm:-mx-6 sm:px-6 lg:hidden"
+          role="region"
+          aria-label="Resumen del carrito"
+        >
+          <div>
+            <p className="text-xs text-muted">
+              {cartUnits(cart)} {cartUnits(cart) === 1 ? "producto" : "productos"}
+            </p>
+            <p className="text-lg font-bold text-foreground">{formatBs(totals.totalCents)}</p>
+          </div>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => {
+              document
+                .getElementById("carrito")
+                ?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }}
+          >
+            Ver carrito
+          </Button>
+        </div>
+        </>
       )}
 
       {paymentOpen ? (
