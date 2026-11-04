@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
+import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { createCategoryAction, updateCategoryAction } from "@/lib/actions/categories";
 import type { Category } from "@/lib/repos/types";
@@ -56,20 +57,26 @@ function CategoryForm({
   const [sortOrder, setSortOrder] = useState(String(category?.sort_order ?? ""));
   const [active, setActive] = useState(category?.active ?? true);
   const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ name?: string; sortOrder?: string }>({});
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setErrorMessage(null);
-    setLoading(true);
+    setFormError(null);
+    setFieldErrors({});
 
-    const parsedSortOrder = sortOrder.trim() === "" ? undefined : Number(sortOrder);
-    if (parsedSortOrder !== undefined && (!Number.isInteger(parsedSortOrder) || parsedSortOrder < 0)) {
-      setErrorMessage("El orden debe ser un número entero mayor o igual a cero.");
-      setLoading(false);
+    if (name.trim() === "") {
+      setFieldErrors({ name: "Escribe el nombre de la categoría." });
       return;
     }
 
+    const parsedSortOrder = sortOrder.trim() === "" ? undefined : Number(sortOrder);
+    if (parsedSortOrder !== undefined && (!Number.isInteger(parsedSortOrder) || parsedSortOrder < 0)) {
+      setFieldErrors({ sortOrder: "El orden debe ser un número entero mayor o igual a cero." });
+      return;
+    }
+
+    setLoading(true);
     try {
       const result = category
         ? await updateCategoryAction({
@@ -85,14 +92,14 @@ function CategoryForm({
           });
 
       if (!result.ok) {
-        setErrorMessage(result.message);
+        setFormError(result.message);
         return;
       }
 
       onSaved(result.data);
       onClose();
     } catch {
-      setErrorMessage("No se pudo guardar la categoría. Intenta de nuevo.");
+      setFormError("No se pudo guardar la categoría. Intenta de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -100,50 +107,53 @@ function CategoryForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {errorMessage ? (
+      {formError ? (
         <div
           role="alert"
           className="flex items-start gap-2.5 rounded-lg border border-danger/30 bg-danger/10 p-3 text-xs text-danger"
         >
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-          <span>{errorMessage}</span>
+          <span>{formError}</span>
         </div>
       ) : null}
 
-      <div className="space-y-1.5">
-        <label htmlFor="category-name" className="text-xs font-medium text-foreground">
-          Nombre
-        </label>
-        <Input
-          id="category-name"
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          placeholder="Ej. Bebidas"
-          maxLength={60}
-          required
-          disabled={loading}
-          invalid={Boolean(errorMessage)}
-        />
-      </div>
+      <FormField id="category-name" label="Nombre" error={fieldErrors.name}>
+        {(control) => (
+          <Input
+            id={control.id}
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            placeholder="Ej. Bebidas"
+            maxLength={60}
+            required
+            disabled={loading}
+            invalid={control.invalid}
+            aria-describedby={control["aria-describedby"]}
+          />
+        )}
+      </FormField>
 
-      <div className="space-y-1.5">
-        <label htmlFor="category-order" className="text-xs font-medium text-foreground">
-          Orden (opcional)
-        </label>
-        <Input
-          id="category-order"
-          type="number"
-          min={0}
-          max={9999}
-          value={sortOrder}
-          onChange={(event) => setSortOrder(event.target.value)}
-          placeholder="Se asigna automáticamente"
-          disabled={loading}
-        />
-        <p className="text-xs text-foreground-muted">
-          Un número menor aparece primero en la caja y en los filtros.
-        </p>
-      </div>
+      <FormField
+        id="category-order"
+        label="Orden (opcional)"
+        error={fieldErrors.sortOrder}
+        help="Un número menor aparece primero en la caja y en los filtros."
+      >
+        {(control) => (
+          <Input
+            id={control.id}
+            type="number"
+            min={0}
+            max={9999}
+            value={sortOrder}
+            onChange={(event) => setSortOrder(event.target.value)}
+            placeholder="Se asigna automáticamente"
+            disabled={loading}
+            invalid={control.invalid}
+            aria-describedby={control["aria-describedby"]}
+          />
+        )}
+      </FormField>
 
       <label className="flex items-center gap-2 text-sm text-foreground">
         <input

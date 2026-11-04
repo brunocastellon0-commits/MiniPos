@@ -7,6 +7,7 @@ import { createPurchaseAction } from "@/lib/actions/purchases";
 import { formatBs, toCents } from "@/lib/money";
 import type { Product, Supplier } from "@/lib/repos/types";
 import { Button } from "@/components/ui/button";
+import { FormField } from "@/components/ui/form-field";
 
 export interface NewPurchaseFormProps {
   suppliers: Supplier[];
@@ -46,6 +47,7 @@ export function NewPurchaseForm({ suppliers, products, initialItems = [] }: NewP
   const [supplierId, setSupplierId] = useState("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [supplierError, setSupplierError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   function addRow() {
@@ -87,9 +89,11 @@ export function NewPurchaseForm({ suppliers, products, initialItems = [] }: NewP
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    setError(null);
+    setSupplierError(null);
 
     if (!supplierId) {
-      setError("Selecciona un proveedor.");
+      setSupplierError("Selecciona un proveedor.");
       return;
     }
     if (rows.length === 0) {
@@ -123,7 +127,6 @@ export function NewPurchaseForm({ suppliers, products, initialItems = [] }: NewP
     }
 
     setSubmitting(true);
-    setError(null);
     try {
       const result = await createPurchaseAction({
         supplierId,
@@ -144,41 +147,52 @@ export function NewPurchaseForm({ suppliers, products, initialItems = [] }: NewP
 
   return (
     <form id="new-purchase-form" onSubmit={handleSubmit} className="space-y-6">
+      {error ? (
+        <p role="alert" className="text-sm text-danger">
+          {error}
+        </p>
+      ) : null}
+
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <label htmlFor="purchase-supplier" className="block text-sm font-medium text-foreground">
-            Proveedor (obligatorio)
-          </label>
-          <select
-            id="purchase-supplier"
-            value={supplierId}
-            onChange={(event) => setSupplierId(event.target.value)}
-            aria-invalid={Boolean(error) && !supplierId}
-            className="h-10 w-full rounded-md border border-border bg-surface px-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <option value="">
-              {suppliers.length === 0 ? "Sin proveedores disponibles" : "Selecciona un proveedor"}
-            </option>
-            {suppliers.map((supplier) => (
-              <option key={supplier.id} value={supplier.id}>
-                {supplier.name}
+        <FormField
+          id="purchase-supplier"
+          label="Proveedor (obligatorio)"
+          error={supplierError}
+          help="Elige el proveedor de esta compra."
+        >
+          {(control) => (
+            <select
+              id={control.id}
+              value={supplierId}
+              onChange={(event) => setSupplierId(event.target.value)}
+              aria-invalid={control.invalid || undefined}
+              aria-describedby={control["aria-describedby"]}
+              className="h-10 w-full rounded-md border border-border bg-surface px-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <option value="">
+                {suppliers.length === 0 ? "Sin proveedores disponibles" : "Selecciona un proveedor"}
               </option>
-            ))}
-          </select>
-        </div>
-        <div className="space-y-1.5">
-          <label htmlFor="purchase-notes" className="block text-sm font-medium text-foreground">
-            Notas
-          </label>
-          <input
-            id="purchase-notes"
-            value={notes}
-            onChange={(event) => setNotes(event.target.value)}
-            maxLength={300}
-            placeholder="Ej. Entrega el viernes"
-            className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm text-foreground placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          />
-        </div>
+              {suppliers.map((supplier) => (
+                <option key={supplier.id} value={supplier.id}>
+                  {supplier.name}
+                </option>
+              ))}
+            </select>
+          )}
+        </FormField>
+        <FormField id="purchase-notes" label="Notas" help="Ej. Entrega el viernes.">
+          {(control) => (
+            <input
+              id={control.id}
+              value={notes}
+              onChange={(event) => setNotes(event.target.value)}
+              maxLength={300}
+              placeholder="Ej. Entrega el viernes"
+              aria-describedby={control["aria-describedby"]}
+              className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm text-foreground placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+          )}
+        </FormField>
       </div>
 
       <div className="space-y-3">
@@ -291,12 +305,6 @@ export function NewPurchaseForm({ suppliers, products, initialItems = [] }: NewP
           </Button>
         </div>
       </div>
-
-      {error ? (
-        <p role="alert" className="text-sm text-danger">
-          {error}
-        </p>
-      ) : null}
     </form>
   );
 }

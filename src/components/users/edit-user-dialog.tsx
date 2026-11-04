@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
+import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import type { Profile } from "@/lib/repos/types";
@@ -54,11 +55,21 @@ function EditUserDialogContent({
   const [role, setRole] = useState<"owner" | "cashier">(user.role as "owner" | "cashier");
   const [active, setActive] = useState(user.active);
   const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [roleError, setRoleError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage(null);
+    setFormError(null);
+    setNameError(null);
+    setRoleError(null);
+
+    if (fullName.trim() === "") {
+      setNameError("Escribe el nombre completo del usuario.");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -71,7 +82,7 @@ function EditUserDialogContent({
           fullName: fullName.trim(),
         });
         if (!nameRes.ok) {
-          setErrorMessage(nameRes.message);
+          setNameError(nameRes.message);
           setLoading(false);
           return;
         }
@@ -85,7 +96,7 @@ function EditUserDialogContent({
           role,
         });
         if (!roleRes.ok) {
-          setErrorMessage(roleRes.message);
+          setRoleError(roleRes.message);
           setLoading(false);
           return;
         }
@@ -99,7 +110,7 @@ function EditUserDialogContent({
           active,
         });
         if (!activeRes.ok) {
-          setErrorMessage(activeRes.message);
+          setFormError(activeRes.message);
           setLoading(false);
           return;
         }
@@ -109,7 +120,7 @@ function EditUserDialogContent({
       onUserUpdated(current);
       onClose();
     } catch {
-      setErrorMessage("Error al guardar los cambios del usuario.");
+      setFormError("Error al guardar los cambios del usuario.");
     } finally {
       setLoading(false);
     }
@@ -146,48 +157,57 @@ function EditUserDialogContent({
       }
     >
       <form onSubmit={handleSubmit} className="space-y-4 py-2">
-        {errorMessage && (
+        {formError && (
           <div
             role="alert"
             className="flex items-start gap-2.5 rounded-lg border border-danger/30 bg-danger/10 p-3 text-xs text-danger"
           >
             <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-            <span>{errorMessage}</span>
+            <span>{formError}</span>
           </div>
         )}
 
-        <div className="space-y-1.5">
-          <label htmlFor="user-full-name" className="text-xs font-medium text-foreground">
-            Nombre Completo
-          </label>
-          <Input
-            id="user-full-name"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            placeholder="Ej. Juan Pérez"
-            required
-            disabled={loading}
-          />
-        </div>
+        <FormField
+          id="user-full-name"
+          label="Nombre completo"
+          error={nameError}
+          help="Ej. Juan Pérez. Aparece en las ventas y reportes."
+        >
+          {(control) => (
+            <Input
+              id={control.id}
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="Ej. Juan Pérez"
+              required
+              disabled={loading}
+              invalid={control.invalid}
+              aria-describedby={control["aria-describedby"]}
+            />
+          )}
+        </FormField>
 
-        <div className="space-y-1.5">
-          <label htmlFor="user-role-select" className="text-xs font-medium text-foreground">
-            Rol en el sistema
-          </label>
-          <select
-            id="user-role-select"
-            value={role}
-            onChange={(e) => setRole(e.target.value as "owner" | "cashier")}
-            disabled={loading}
-            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-foreground shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
-          >
-            <option value="owner">Propietario (Acceso total)</option>
-            <option value="cashier">Cajero (Solo Caja, Turno e Historial)</option>
-          </select>
-          <p className="text-xs text-foreground-muted">
-            Los cajeros no pueden ver reportes, costos ni configuración.
-          </p>
-        </div>
+        <FormField
+          id="user-role-select"
+          label="Rol en el sistema"
+          error={roleError}
+          help="Los cajeros no pueden ver reportes, costos ni configuración."
+        >
+          {(control) => (
+            <select
+              id={control.id}
+              value={role}
+              onChange={(e) => setRole(e.target.value as "owner" | "cashier")}
+              disabled={loading}
+              aria-invalid={control.invalid || undefined}
+              aria-describedby={control["aria-describedby"]}
+              className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-foreground shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
+            >
+              <option value="owner">Propietario (Acceso total)</option>
+              <option value="cashier">Cajero (Solo Caja, Turno e Historial)</option>
+            </select>
+          )}
+        </FormField>
 
         <div className="space-y-1.5 pt-2">
           <label className="text-xs font-medium text-foreground">Estado de la cuenta</label>

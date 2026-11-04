@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
+import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { createProductAction, updateProductAction } from "@/lib/actions/products";
 import { formatBs, toCents } from "@/lib/money";
@@ -85,21 +86,30 @@ function ProductForm({
   const [minStock, setMinStock] = useState(String(product?.min_stock ?? defaultMinStock));
   const [active, setActive] = useState(product?.active ?? true);
   const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<
+    Partial<Record<"name" | "price" | "cost" | "stock" | "minStock", string>>
+  >({});
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setErrorMessage(null);
+    setFormError(null);
+    setFieldErrors({});
+
+    if (name.trim() === "") {
+      setFieldErrors({ name: "Escribe el nombre del producto." });
+      return;
+    }
 
     let priceCents: number;
     try {
       priceCents = toCents(price);
     } catch {
-      setErrorMessage("El precio no es válido. Usa un monto como 12,50.");
+      setFieldErrors({ price: "El precio no es válido. Usa un monto como 12,50." });
       return;
     }
     if (priceCents < 0) {
-      setErrorMessage("El precio no puede ser negativo.");
+      setFieldErrors({ price: "El precio no puede ser negativo." });
       return;
     }
 
@@ -108,11 +118,11 @@ function ProductForm({
       try {
         costCents = toCents(cost);
       } catch {
-        setErrorMessage("El costo no es válido. Usa un monto como 8,00 o déjalo vacío.");
+        setFieldErrors({ cost: "El costo no es válido. Usa un monto como 8,00 o déjalo vacío." });
         return;
       }
       if (costCents < 0) {
-        setErrorMessage("El costo no puede ser negativo.");
+        setFieldErrors({ cost: "El costo no puede ser negativo." });
         return;
       }
     }
@@ -120,11 +130,11 @@ function ProductForm({
     const parsedStock = parseInteger(stock);
     const parsedMinStock = parseInteger(minStock);
     if (parsedStock === null) {
-      setErrorMessage("El stock debe ser un número entero mayor o igual a cero.");
+      setFieldErrors({ stock: "El stock debe ser un número entero mayor o igual a cero." });
       return;
     }
     if (parsedMinStock === null) {
-      setErrorMessage("El stock mínimo debe ser un número entero mayor o igual a cero.");
+      setFieldErrors({ minStock: "El stock mínimo debe ser un número entero mayor o igual a cero." });
       return;
     }
 
@@ -157,14 +167,14 @@ function ProductForm({
           });
 
       if (!result.ok) {
-        setErrorMessage(result.message);
+        setFormError(result.message);
         return;
       }
 
       onSaved(result.data);
       onClose();
     } catch {
-      setErrorMessage("No se pudo guardar el producto. Intenta de nuevo.");
+      setFormError("No se pudo guardar el producto. Intenta de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -172,13 +182,13 @@ function ProductForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      {errorMessage ? (
+      {formError ? (
         <div
           role="alert"
           className="flex items-start gap-2.5 rounded-lg border border-danger/30 bg-danger/10 p-3 text-xs text-danger"
         >
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-          <span>{errorMessage}</span>
+          <span>{formError}</span>
         </div>
       ) : null}
 
@@ -186,81 +196,86 @@ function ProductForm({
         <legend className="text-xs font-semibold uppercase tracking-wide text-foreground-muted">
           Identificación
         </legend>
-        <div className="space-y-1.5">
-          <label htmlFor="product-name" className="text-xs font-medium text-foreground">
-            Nombre del producto
-          </label>
-          <Input
-            id="product-name"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            placeholder="Ej. Coca-Cola 2L"
-            maxLength={120}
-            required
-            disabled={loading}
-          />
+        <FormField id="product-name" label="Nombre del producto" error={fieldErrors.name}>
+          {(control) => (
+            <Input
+              id={control.id}
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="Ej. Coca-Cola 2L"
+              maxLength={120}
+              required
+              disabled={loading}
+              invalid={control.invalid}
+              aria-describedby={control["aria-describedby"]}
+            />
+          )}
+        </FormField>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <FormField id="product-barcode" label="Código de barras">
+            {(control) => (
+              <Input
+                id={control.id}
+                value={barcode}
+                onChange={(event) => setBarcode(event.target.value)}
+                placeholder="Escanea o escribe el código"
+                maxLength={64}
+                disabled={loading}
+                aria-describedby={control["aria-describedby"]}
+              />
+            )}
+          </FormField>
+          <FormField id="product-internal-code" label="Código interno (opcional)">
+            {(control) => (
+              <Input
+                id={control.id}
+                value={internalCode}
+                onChange={(event) => setInternalCode(event.target.value)}
+                placeholder="Ej. A-001"
+                maxLength={64}
+                disabled={loading}
+                aria-describedby={control["aria-describedby"]}
+              />
+            )}
+          </FormField>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <label htmlFor="product-barcode" className="text-xs font-medium text-foreground">
-              Código de barras
-            </label>
-            <Input
-              id="product-barcode"
-              value={barcode}
-              onChange={(event) => setBarcode(event.target.value)}
-              placeholder="Escanea o escribe el código"
-              maxLength={64}
-              disabled={loading}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <label htmlFor="product-internal-code" className="text-xs font-medium text-foreground">
-              Código interno (opcional)
-            </label>
-            <Input
-              id="product-internal-code"
-              value={internalCode}
-              onChange={(event) => setInternalCode(event.target.value)}
-              placeholder="Ej. A-001"
-              maxLength={64}
-              disabled={loading}
-            />
-          </div>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <label htmlFor="product-category" className="text-xs font-medium text-foreground">
-              Categoría
-            </label>
-            <select
-              id="product-category"
-              value={categoryId}
-              onChange={(event) => setCategoryId(event.target.value)}
-              disabled={loading}
-              className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <option value="">Sin categoría</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="space-y-1.5">
-            <label htmlFor="product-unit" className="text-xs font-medium text-foreground">
-              Unidad de venta
-            </label>
-            <Input
-              id="product-unit"
-              value={unitLabel}
-              onChange={(event) => setUnitLabel(event.target.value)}
-              placeholder="unidad, kg, litro..."
-              maxLength={20}
-              disabled={loading}
-            />
-          </div>
+          <FormField id="product-category" label="Categoría" help="Agrupa el producto en la caja.">
+            {(control) => (
+              <select
+                id={control.id}
+                value={categoryId}
+                onChange={(event) => setCategoryId(event.target.value)}
+                disabled={loading}
+                aria-describedby={control["aria-describedby"]}
+                className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <option value="">Sin categoría</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </FormField>
+          <FormField
+            id="product-unit"
+            label="Unidad de venta"
+            help="Se muestra junto al precio en la caja."
+          >
+            {(control) => (
+              <Input
+                id={control.id}
+                value={unitLabel}
+                onChange={(event) => setUnitLabel(event.target.value)}
+                placeholder="unidad, kg, litro..."
+                maxLength={20}
+                disabled={loading}
+                aria-describedby={control["aria-describedby"]}
+              />
+            )}
+          </FormField>
         </div>
       </fieldset>
 
@@ -269,39 +284,47 @@ function ProductForm({
           Precio y costo
         </legend>
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <label htmlFor="product-price" className="text-xs font-medium text-foreground">
-              Precio de venta (Bs)
-            </label>
-            <Input
-              id="product-price"
-              inputMode="decimal"
-              value={price}
-              onChange={(event) => setPrice(event.target.value)}
-              placeholder="12,50"
-              required
-              disabled={loading}
-            />
-            <p className="text-xs text-foreground-muted">
-              {price.trim() !== "" ? `Se mostrará como ${safeFormat(price)}` : "Monto en bolivianos."}
-            </p>
-          </div>
-          <div className="space-y-1.5">
-            <label htmlFor="product-cost" className="text-xs font-medium text-foreground">
-              Costo (Bs, opcional)
-            </label>
-            <Input
-              id="product-cost"
-              inputMode="decimal"
-              value={cost}
-              onChange={(event) => setCost(event.target.value)}
-              placeholder="8,00"
-              disabled={loading}
-            />
-            <p className="text-xs text-foreground-muted">
-              Solo lo ve el propietario. Sirve para estimar el margen.
-            </p>
-          </div>
+          <FormField
+            id="product-price"
+            label="Precio de venta (Bs)"
+            error={fieldErrors.price}
+            help={
+              price.trim() !== "" ? `Se mostrará como ${safeFormat(price)}` : "Monto en bolivianos."
+            }
+          >
+            {(control) => (
+              <Input
+                id={control.id}
+                inputMode="decimal"
+                value={price}
+                onChange={(event) => setPrice(event.target.value)}
+                placeholder="12,50"
+                required
+                disabled={loading}
+                invalid={control.invalid}
+                aria-describedby={control["aria-describedby"]}
+              />
+            )}
+          </FormField>
+          <FormField
+            id="product-cost"
+            label="Costo (Bs, opcional)"
+            error={fieldErrors.cost}
+            help="Solo lo ve el propietario. Sirve para estimar el margen."
+          >
+            {(control) => (
+              <Input
+                id={control.id}
+                inputMode="decimal"
+                value={cost}
+                onChange={(event) => setCost(event.target.value)}
+                placeholder="8,00"
+                disabled={loading}
+                invalid={control.invalid}
+                aria-describedby={control["aria-describedby"]}
+              />
+            )}
+          </FormField>
         </div>
       </fieldset>
 
@@ -310,40 +333,46 @@ function ProductForm({
           Inventario
         </legend>
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <label htmlFor="product-stock" className="text-xs font-medium text-foreground">
-              Stock actual
-            </label>
-            <Input
-              id="product-stock"
-              inputMode="numeric"
-              value={stock}
-              onChange={(event) => setStock(event.target.value)}
-              disabled={loading || Boolean(product)}
-            />
-            {product ? (
-              <p className="text-xs text-foreground-muted">
-                El stock se modifica con ventas, compras o ajustes en Inventario.
-              </p>
-            ) : (
-              <p className="text-xs text-foreground-muted">Stock inicial al crear el producto.</p>
+          <FormField
+            id="product-stock"
+            label="Stock actual"
+            error={fieldErrors.stock}
+            help={
+              product
+                ? "El stock se modifica con ventas, compras o ajustes en Inventario."
+                : "Stock inicial al crear el producto."
+            }
+          >
+            {(control) => (
+              <Input
+                id={control.id}
+                inputMode="numeric"
+                value={stock}
+                onChange={(event) => setStock(event.target.value)}
+                disabled={loading || Boolean(product)}
+                invalid={control.invalid}
+                aria-describedby={control["aria-describedby"]}
+              />
             )}
-          </div>
-          <div className="space-y-1.5">
-            <label htmlFor="product-min-stock" className="text-xs font-medium text-foreground">
-              Stock mínimo
-            </label>
-            <Input
-              id="product-min-stock"
-              inputMode="numeric"
-              value={minStock}
-              onChange={(event) => setMinStock(event.target.value)}
-              disabled={loading}
-            />
-            <p className="text-xs text-foreground-muted">
-              Te avisaremos cuando el stock llegue a este nivel.
-            </p>
-          </div>
+          </FormField>
+          <FormField
+            id="product-min-stock"
+            label="Stock mínimo"
+            error={fieldErrors.minStock}
+            help="Te avisaremos cuando el stock llegue a este nivel."
+          >
+            {(control) => (
+              <Input
+                id={control.id}
+                inputMode="numeric"
+                value={minStock}
+                onChange={(event) => setMinStock(event.target.value)}
+                disabled={loading}
+                invalid={control.invalid}
+                aria-describedby={control["aria-describedby"]}
+              />
+            )}
+          </FormField>
         </div>
 
         <label className="flex items-center gap-2 text-sm text-foreground">

@@ -68,6 +68,7 @@ export function UsersClient({ initialUsers }: UsersClientProps) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por nombre..."
+            aria-label="Buscar usuario por nombre"
             className="pl-9 text-sm"
           />
         </div>

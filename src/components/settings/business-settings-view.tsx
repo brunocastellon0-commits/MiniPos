@@ -6,6 +6,7 @@ import { toCents } from "@/lib/money";
 import type { BusinessSettings } from "@/lib/repos/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { Toast } from "@/components/ui/toast";
 
@@ -37,6 +38,7 @@ export function BusinessSettingsView({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(initialError);
+  const [discountError, setDiscountError] = useState<string | null>(null);
 
   function handleChange() {
     setSaved(false);
@@ -47,11 +49,14 @@ export function BusinessSettingsView({
     setSaving(true);
     setSaved(false);
     setError(null);
+    setDiscountError(null);
     let maxCashierDiscountCents: number;
     try {
       maxCashierDiscountCents = toCents(maxCashierDiscount);
     } catch {
-      setError("El máximo de descuento del cajero no es un monto válido.");
+      setDiscountError(
+        "El máximo de descuento del cajero no es un monto válido. Ejemplo: 25,50.",
+      );
       setSaving(false);
       return;
     }
@@ -218,29 +223,29 @@ export function BusinessSettingsView({
                 </span>
               </span>
             </label>
-            <div className="space-y-1.5 sm:max-w-40">
-              <label
-                htmlFor="business-max-cashier-discount"
-                className="block text-sm font-medium text-foreground"
-              >
-                Descuento máximo del cajero
-              </label>
-              <Input
-                id="business-max-cashier-discount"
-                type="text"
-                inputMode="decimal"
-                className={inputClass}
-                value={maxCashierDiscount}
-                onChange={(event) => {
-                  setMaxCashierDiscount(event.target.value);
-                  handleChange();
-                }}
-              />
-              <p className="text-xs text-muted">
-                Monto máximo en Bs que un cajero puede descontar con permiso; 0 = sin límite. El
-                dueño no tiene límite.
-              </p>
-            </div>
+            <FormField
+              id="business-max-cashier-discount"
+              label="Descuento máximo del cajero"
+              error={discountError}
+              className="sm:max-w-40"
+              help="Monto máximo en Bs que un cajero puede descontar con permiso; 0 = sin límite. El dueño no tiene límite."
+            >
+              {(control) => (
+                <Input
+                  id={control.id}
+                  type="text"
+                  inputMode="decimal"
+                  className={inputClass}
+                  value={maxCashierDiscount}
+                  invalid={control.invalid}
+                  aria-describedby={control["aria-describedby"]}
+                  onChange={(event) => {
+                    setMaxCashierDiscount(event.target.value);
+                    handleChange();
+                  }}
+                />
+              )}
+            </FormField>
             <div className="space-y-1.5 sm:max-w-40">
               <label
                 htmlFor="business-low-stock-default"
