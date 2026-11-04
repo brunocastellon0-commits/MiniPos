@@ -44,6 +44,11 @@ export const updateBusinessSettingsSchema = z
     logo_url: logoUrlSchema,
     allow_negative_stock: z.boolean(),
     cashier_can_discount: z.boolean(),
+    cashier_max_discount_cents: z
+      .number()
+      .int({ message: "El máximo de descuento del cajero debe ser un número entero." })
+      .min(0, { message: "El máximo de descuento del cajero no puede ser negativo." })
+      .max(10_000_000, { message: "El máximo de descuento del cajero es demasiado alto." }),
     low_stock_default: z
       .number()
       .int({ message: "El umbral de stock bajo debe ser un número entero." })

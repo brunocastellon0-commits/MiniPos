@@ -51,6 +51,7 @@ describe("BusinessSettingsView (E10-01)", () => {
         logo_url: "https://ejemplo.com/logo.png",
         allow_negative_stock: false,
         cashier_can_discount: false,
+        cashier_max_discount_cents: 0,
         low_stock_default: 5,
       }),
     );
@@ -80,6 +81,7 @@ describe("BusinessSettingsView (E10-01)", () => {
       screen.getByRole("checkbox", { name: /El cajero puede aplicar descuentos/ }),
     ).not.toBeChecked();
     expect(screen.getByLabelText("Stock bajo por defecto")).toHaveValue(5);
+    expect(screen.getByLabelText("Descuento máximo del cajero")).toHaveValue("0.00");
 
     fireEvent.click(screen.getByRole("checkbox", { name: /Permitir stock negativo/ }));
     fireEvent.click(
@@ -87,6 +89,9 @@ describe("BusinessSettingsView (E10-01)", () => {
     );
     fireEvent.change(screen.getByLabelText("Stock bajo por defecto"), {
       target: { value: "2" },
+    });
+    fireEvent.change(screen.getByLabelText("Descuento máximo del cajero"), {
+      target: { value: "25,50" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Guardar" }));
 
@@ -96,6 +101,7 @@ describe("BusinessSettingsView (E10-01)", () => {
           allow_negative_stock: true,
           cashier_can_discount: true,
           low_stock_default: 2,
+          cashier_max_discount_cents: 2550,
         }),
       ),
     );

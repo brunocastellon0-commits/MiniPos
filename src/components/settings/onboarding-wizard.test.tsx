@@ -88,6 +88,7 @@ describe("OnboardingWizard (E10-03)", () => {
         logo_url: "",
         allow_negative_stock: false,
         cashier_can_discount: true,
+        cashier_max_discount_cents: 0,
         low_stock_default: 4,
       }),
     );

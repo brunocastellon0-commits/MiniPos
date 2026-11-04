@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { updateBusinessSettingsAction } from "@/lib/actions/settings";
+import { toCents } from "@/lib/money";
 import type { BusinessSettings } from "@/lib/repos/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +32,9 @@ export function BusinessSettingsView({
   const [lowStockDefault, setLowStockDefault] = useState(
     String(initialSettings.low_stock_default),
   );
+  const [maxCashierDiscount, setMaxCashierDiscount] = useState(
+    (initialSettings.cashier_max_discount_cents / 100).toFixed(2),
+  );
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(initialError);
@@ -44,6 +48,14 @@ export function BusinessSettingsView({
     setSaving(true);
     setSaved(false);
     setError(null);
+    let maxCashierDiscountCents: number;
+    try {
+      maxCashierDiscountCents = toCents(maxCashierDiscount);
+    } catch {
+      setError("El máximo de descuento del cajero no es un monto válido.");
+      setSaving(false);
+      return;
+    }
     try {
       const result = await updateBusinessSettingsAction({
         name,
@@ -54,6 +66,7 @@ export function BusinessSettingsView({
         allow_negative_stock: allowNegative,
         cashier_can_discount: cashierCanDiscount,
         low_stock_default: Number(lowStockDefault),
+        cashier_max_discount_cents: maxCashierDiscountCents,
       });
       if (result.ok) {
         setName(result.data.name);
@@ -64,6 +77,7 @@ export function BusinessSettingsView({
         setAllowNegative(result.data.allow_negative_stock);
         setCashierCanDiscount(result.data.cashier_can_discount);
         setLowStockDefault(String(result.data.low_stock_default));
+        setMaxCashierDiscount((result.data.cashier_max_discount_cents / 100).toFixed(2));
         setSaved(true);
       } else {
         setError(result.message);
@@ -231,6 +245,29 @@ export function BusinessSettingsView({
                 </span>
               </span>
             </label>
+            <div className="space-y-1.5 sm:max-w-40">
+              <label
+                htmlFor="business-max-cashier-discount"
+                className="block text-sm font-medium text-foreground"
+              >
+                Descuento máximo del cajero
+              </label>
+              <Input
+                id="business-max-cashier-discount"
+                type="text"
+                inputMode="decimal"
+                className={inputClass}
+                value={maxCashierDiscount}
+                onChange={(event) => {
+                  setMaxCashierDiscount(event.target.value);
+                  handleChange();
+                }}
+              />
+              <p className="text-xs text-muted">
+                Monto máximo en Bs que un cajero puede descontar con permiso; 0 = sin límite. El
+                dueño no tiene límite.
+              </p>
+            </div>
             <div className="space-y-1.5 sm:max-w-40">
               <label
                 htmlFor="business-low-stock-default"

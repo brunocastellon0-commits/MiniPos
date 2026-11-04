@@ -66,6 +66,7 @@ export function OnboardingWizard({ initialSettings }: OnboardingWizardProps) {
         logo_url: logoUrl,
         allow_negative_stock: initialSettings.allow_negative_stock,
         cashier_can_discount: initialSettings.cashier_can_discount,
+        cashier_max_discount_cents: initialSettings.cashier_max_discount_cents,
         low_stock_default: initialSettings.low_stock_default,
       });
       if (result.ok) {

@@ -93,6 +93,7 @@ describe("Configuración del negocio (E10-01/E10-02)", () => {
     logo_url: "https://ejemplo.com/logo.png",
     allow_negative_stock: false,
     cashier_can_discount: true,
+    cashier_max_discount_cents: 500,
     low_stock_default: 3,
   };
 
@@ -121,6 +122,7 @@ describe("Configuración del negocio (E10-01/E10-02)", () => {
     expect(result.data.currency_code).toBe("BOB");
     expect(result.data.logo_url).toBe("https://ejemplo.com/logo.png");
     expect(result.data.cashier_can_discount).toBe(true);
+    expect(result.data.cashier_max_discount_cents).toBe(500);
     expect(result.data.low_stock_default).toBe(3);
 
     const logs = Array.from(store.auditLog.values());
