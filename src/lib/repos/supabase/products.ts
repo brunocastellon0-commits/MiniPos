@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { countLowStock as countLowStockDomain } from "@/lib/domain/inventory";
 import type { Database } from "@/types/database";
 import type { ProductsRepo, Product, ProductInsert, ProductUpdate, UserContext } from "../types";
 
@@ -71,6 +72,17 @@ export class SupabaseProductsRepo implements ProductsRepo {
     }
 
     return items;
+  }
+
+  // Select mínimo (2 columnas numéricas) sobre los activos; evita el RPC
+  // products_with_cost completo solo para el badge de stock bajo.
+  async countLowStock(): Promise<number> {
+    const { data, error } = await this.supabase
+      .from("products")
+      .select("stock_qty, min_stock")
+      .eq("active", true);
+    if (error) throw new Error(`Error al contar el stock bajo: ${error.message}`);
+    return countLowStockDomain(data ?? []);
   }
 
   async getById(id: string): Promise<Product | null> {

@@ -5,6 +5,7 @@ import { MemoryProductsRepo } from "@/lib/repos/memory/products";
 import type { InventoryRepo, ProductsRepo, UserContext } from "@/lib/repos/types";
 import {
   createAdjustStockAction,
+  createCountLowStockAction,
   createListInventoryProductsAction,
   createListStockMovementsAction,
   type InventoryActionDeps,
@@ -139,6 +140,40 @@ describe("Inventario - Server Actions (E6-01 / E6-03)", () => {
     const movements = await createListStockMovementsAction(makeDeps(null))({});
     expect(movements.ok).toBe(false);
     if (!movements.ok) expect(movements.code).toBe("UNAUTHENTICATED");
+  });
+
+  it("cuenta solo activos con stock <= mínimo (badge de stock bajo)", async () => {
+    const { makeDeps, store } = await setup();
+    const ownerContext: UserContext = { id: owner.id, role: "owner", active: true };
+    const productsRepo = new MemoryProductsRepo(store, ownerContext);
+
+    // Siembra base: coca (activo, 1 <= 5) ya es stock bajo; galletas está inactiva.
+    await productsRepo.create({ name: "En el límite", price_cents: 100, stock_qty: 5, min_stock: 5 });
+    await productsRepo.create({ name: "Stock sano", price_cents: 100, stock_qty: 6, min_stock: 5 });
+    await productsRepo.create({
+      name: "Inactivo bajo",
+      price_cents: 100,
+      stock_qty: 0,
+      min_stock: 5,
+      active: false,
+    });
+
+    const result = await createCountLowStockAction(makeDeps(owner))();
+
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data).toBe(2);
+  });
+
+  it("el conteo de stock bajo es solo del dueño (cajero y anónimo)", async () => {
+    const { makeDeps } = await setup();
+
+    const byCashier = await createCountLowStockAction(makeDeps(cashier))();
+    expect(byCashier.ok).toBe(false);
+    if (!byCashier.ok) expect(byCashier.code).toBe("FORBIDDEN");
+
+    const anon = await createCountLowStockAction(makeDeps(null))();
+    expect(anon.ok).toBe(false);
+    if (!anon.ok) expect(anon.code).toBe("UNAUTHENTICATED");
   });
 
   it("rechaza entradas inválidas o claves desconocidas (Zod estricto)", async () => {

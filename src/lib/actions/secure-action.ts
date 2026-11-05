@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth/session";
 import { RateLimiter } from "./rate-limiter";
 
 export type UserRole = "owner" | "cashier";
@@ -62,44 +62,9 @@ function getOrCreateLimiter(keyPrefix: string, maxRequests: number, windowMs: nu
   return limiter;
 }
 
+// Fuente única de autenticación: delega en getCurrentUser (memoizado por request).
 export async function defaultGetCurrentUser(): Promise<AuthenticatedUser | null> {
-  try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return null;
-    }
-
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("id, full_name, role, active")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    if (profileError || !profile) {
-      return {
-        id: user.id,
-        email: user.email,
-        name: (user.user_metadata?.full_name as string) ?? "Usuario",
-        role: "cashier",
-        isActive: false,
-      };
-    }
-
-    return {
-      id: profile.id,
-      email: user.email,
-      name: profile.full_name,
-      role: profile.role as UserRole,
-      isActive: profile.active,
-    };
-  } catch {
-    return null;
-  }
+  return getCurrentUser();
 }
 
 export class ActionException extends Error {
@@ -136,9 +101,10 @@ function isKnownActionError(error: unknown): error is KnownActionError {
 
 export function secureAction<TInput, TOutput>(options: SecureActionOptions<TInput, TOutput>) {
   return async (input: TInput): Promise<ActionResult<TOutput>> => {
-    // 1. Autenticar
+    // 1. Autenticar (las acciones públicas no resuelven usuario: login/MFA no
+    // dependen de ctx.user y se ahorran las llamadas a Supabase Auth)
     const userResolver = options.currentUserResolver ?? defaultGetCurrentUser;
-    const user = await userResolver();
+    const user = options.isPublic ? null : await userResolver();
 
     if (!options.isPublic) {
       if (!user) {

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { cache } from "react";
 import type { AuthenticatedUser, UserRole } from "@/lib/actions/secure-action";
 import { createClient } from "@/lib/supabase/server";
 
@@ -53,8 +54,10 @@ export const defaultSessionClientProvider: SessionClientProvider = {
   },
 };
 
-export async function getCurrentUser(
-  provider: SessionClientProvider = defaultSessionClientProvider,
+// Carga sin caché (fuente única de verdad). React cache() solo memoiza dentro
+// del ámbito RSC de Next; fuera de él delega sin efecto.
+async function loadCurrentUser(
+  provider: SessionClientProvider,
 ): Promise<AuthenticatedUser | null> {
   const user = await provider.getUser();
   if (!user) return null;
@@ -77,6 +80,14 @@ export async function getCurrentUser(
     role: profile.role as UserRole,
     isActive: profile.active,
   };
+}
+
+const cachedCurrentUser = cache(loadCurrentUser);
+
+export async function getCurrentUser(
+  provider: SessionClientProvider = defaultSessionClientProvider,
+): Promise<AuthenticatedUser | null> {
+  return cachedCurrentUser(provider);
 }
 
 export async function requireUser(

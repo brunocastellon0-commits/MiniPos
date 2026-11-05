@@ -69,6 +69,9 @@ export interface ProductsRepo {
   getById(id: string): Promise<Product | null>;
   getByIds(ids: string[]): Promise<Product[]>;
   getByBarcode(barcode: string): Promise<Product | null>;
+  // Conteo ligero para la UI (badge de stock bajo): solo activos con
+  // stock_qty <= min_stock, sin cargar nombres ni costos.
+  countLowStock(): Promise<number>;
   create(data: ProductInsert): Promise<Product>;
   createMany(items: ProductInsert[]): Promise<Product[]>;
   update(id: string, data: ProductUpdate): Promise<Product>;

@@ -60,6 +60,22 @@ export function createListInventoryProductsAction(deps: InventoryActionDeps = {}
   };
 }
 
+export function createCountLowStockAction(deps: InventoryActionDeps = {}) {
+  const { currentUserResolver, productsRepoFactory = defaultProductsRepoFactory } = deps;
+
+  return async (): Promise<ActionResult<number>> => {
+    return secureAction<Record<string, never>, number>({
+      roles: ["owner"],
+      schema: emptyInputSchema,
+      currentUserResolver,
+      handler: async (_input, ctx) => {
+        const productsRepo = await productsRepoFactory(toUserContext(ctx.user));
+        return productsRepo.countLowStock();
+      },
+    })({});
+  };
+}
+
 export function createListStockMovementsAction(deps: InventoryActionDeps = {}) {
   const { currentUserResolver, inventoryRepoFactory = defaultInventoryRepoFactory } = deps;
 

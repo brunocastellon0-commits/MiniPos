@@ -16,8 +16,32 @@ export const metadata: Metadata = {
 
 export default async function CajaPage() {
   const user = await requireUser("/login");
-  
-  const overviewResult = await getCashOverviewAction();
+
+  let overviewResult: Awaited<ReturnType<typeof getCashOverviewAction>>;
+  let initialProducts: Awaited<ReturnType<typeof listPosProductsAction>>;
+  let categories: Awaited<ReturnType<typeof listCategoriesAction>>;
+  let publicSettings: Awaited<ReturnType<typeof getBusinessPublicAction>> | null;
+
+  try {
+    [overviewResult, initialProducts, categories, publicSettings] = await Promise.all([
+      getCashOverviewAction(),
+      listPosProductsAction(),
+      listCategoriesAction(),
+      user.role === "owner"
+        ? (Promise.resolve(null) as Promise<null>)
+        : getBusinessPublicAction(),
+    ]);
+  } catch {
+    overviewResult = {
+      ok: false,
+      code: "INTERNAL_ERROR",
+      message: "No se pudo cargar la caja.",
+    };
+    initialProducts = { ok: false, code: "INTERNAL_ERROR", message: "No se pudo cargar el catálogo." };
+    categories = { ok: false, code: "INTERNAL_ERROR", message: "No se pudieron cargar las categorías." };
+    publicSettings = null;
+  }
+
   const overview = overviewResult.ok ? overviewResult.data : null;
 
   if (!overview) {
@@ -42,24 +66,6 @@ export default async function CajaPage() {
         />
       </div>
     );
-  }
-
-  let initialProducts: Awaited<ReturnType<typeof listPosProductsAction>>;
-  let categories: Awaited<ReturnType<typeof listCategoriesAction>>;
-  let publicSettings: Awaited<ReturnType<typeof getBusinessPublicAction>> | null;
-
-  try {
-    [initialProducts, categories, publicSettings] = await Promise.all([
-      listPosProductsAction(),
-      listCategoriesAction(),
-      user.role === "owner"
-        ? (Promise.resolve(null) as Promise<null>)
-        : getBusinessPublicAction(),
-    ]);
-  } catch {
-    initialProducts = { ok: false, code: "INTERNAL_ERROR", message: "No se pudo cargar el catálogo." };
-    categories = { ok: false, code: "INTERNAL_ERROR", message: "No se pudieron cargar las categorías." };
-    publicSettings = null;
   }
 
   const products = initialProducts.ok ? initialProducts.data : [];

@@ -1,6 +1,9 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { getCurrentUser } from "@/lib/auth/session";
 import type { AuthenticatedUser } from "./secure-action";
-import { ActionException, secureAction } from "./secure-action";
+import { ActionException, defaultGetCurrentUser, secureAction } from "./secure-action";
+
+vi.mock("@/lib/auth/session");
 
 const owner: AuthenticatedUser = {
   id: "owner-1",
@@ -16,6 +19,54 @@ function actionWith(handler: () => Promise<string>) {
     handler,
   });
 }
+
+describe("secureAction - resolución de usuario (rendimiento)", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it("defaultGetCurrentUser delega en getCurrentUser (fuente única de autenticación)", async () => {
+    vi.mocked(getCurrentUser).mockResolvedValue(owner);
+
+    const user = await defaultGetCurrentUser();
+
+    expect(getCurrentUser).toHaveBeenCalledTimes(1);
+    expect(user).toEqual(owner);
+  });
+
+  it("las acciones isPublic no resuelven usuario ni tocan Supabase Auth", async () => {
+    let seenUser: unknown = "sin-llamar";
+
+    const action = secureAction<void, string>({
+      isPublic: true,
+      handler: async (_input, ctx) => {
+        seenUser = ctx.user;
+        return "ok";
+      },
+    });
+
+    const result = await action(undefined);
+
+    expect(result).toEqual({ ok: true, data: "ok" });
+    expect(getCurrentUser).not.toHaveBeenCalled();
+    expect(seenUser).toBeNull();
+  });
+
+  it("las acciones privadas sí resuelven usuario y exigen sesión", async () => {
+    vi.mocked(getCurrentUser).mockResolvedValue(null);
+
+    const action = secureAction<void, string>({
+      roles: ["owner"],
+      handler: async () => "nunca-debe-ejecutarse",
+    });
+
+    const result = await action(undefined);
+
+    expect(getCurrentUser).toHaveBeenCalledTimes(1);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.code).toBe("UNAUTHENTICATED");
+  });
+});
 
 describe("secureAction - manejo de errores (E11-07)", () => {
   it("ActionException conserva su mensaje y código ante el cliente", async () => {

@@ -66,8 +66,10 @@ export type ClientFactory = (
   options: Parameters<typeof createServerClient<Database>>[2],
 ) => {
   auth: {
-    getUser: () => Promise<{
-      data: { user: { id: string } | null };
+    // Verificación local de firma del JWT (JWKS cacheada); con algoritmo
+    // simétrico o red caída, auth-js cae a getUser() como respaldo.
+    getClaims: () => Promise<{
+      data: { claims: unknown } | null;
       error: unknown | null;
     }>;
   };
@@ -104,11 +106,16 @@ export async function updateSession(request: NextRequest, clientFactory?: Client
     },
   });
 
-  const { data, error } = await supabase.auth.getUser();
-  
-  
-  const isAuthenticated = !error && Boolean(data?.user);
   const pathname = request.nextUrl.pathname;
+
+  // Solo se valida la sesión donde importa (rutas protegidas y de login);
+  // el resto de rutas no paga la llamada a Auth. La renovación de tokens
+  // sigue ocurriendo en rutas protegidas (getClaims → getSession → refresh).
+  let isAuthenticated = false;
+  if (isProtectedRoute(pathname) || isAuthRoute(pathname)) {
+    const { data, error } = await supabase.auth.getClaims();
+    isAuthenticated = !error && Boolean(data?.claims);
+  }
 
   // Helper: redirect conservando las cookies refrescadas
   const redirectTo = (url: URL) => {

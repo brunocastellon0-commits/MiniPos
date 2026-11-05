@@ -1,3 +1,4 @@
+import { countLowStock as countLowStockDomain } from "@/lib/domain/inventory";
 import type { ProductsRepo, Product, ProductInsert, ProductUpdate, UserContext } from "../types";
 import type { MemoryStore } from "./memory-store";
 
@@ -44,6 +45,11 @@ export class MemoryProductsRepo implements ProductsRepo {
     }
 
     return items.map((p) => this.sanitizeForRole(p));
+  }
+
+  async countLowStock(): Promise<number> {
+    const active = Array.from(this.store.products.values()).filter((p) => p.active);
+    return countLowStockDomain(active);
   }
 
   async getById(id: string): Promise<Product | null> {

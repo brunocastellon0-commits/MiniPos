@@ -40,8 +40,8 @@ describe("updateSession", () => {
 
     const mockFactory: ClientFactory = () => ({
       auth: {
-        getUser: vi.fn().mockResolvedValue({
-          data: { user: null },
+        getClaims: vi.fn().mockResolvedValue({
+          data: null,
           error: null,
         }),
       },
@@ -60,8 +60,8 @@ describe("updateSession", () => {
 
     const mockFactory: ClientFactory = () => ({
       auth: {
-        getUser: vi.fn().mockResolvedValue({
-          data: { user: null },
+        getClaims: vi.fn().mockResolvedValue({
+          data: null,
           error: null,
         }),
       },
@@ -78,8 +78,8 @@ describe("updateSession", () => {
 
     const mockFactory: ClientFactory = () => ({
       auth: {
-        getUser: vi.fn().mockResolvedValue({
-          data: { user: { id: "user-123" } },
+        getClaims: vi.fn().mockResolvedValue({
+          data: { claims: { sub: "user-123" } },
           error: null,
         }),
       },
@@ -97,8 +97,8 @@ describe("updateSession", () => {
 
     const mockFactory: ClientFactory = () => ({
       auth: {
-        getUser: vi.fn().mockResolvedValue({
-          data: { user: { id: "user-123" } },
+        getClaims: vi.fn().mockResolvedValue({
+          data: { claims: { sub: "user-123" } },
           error: null,
         }),
       },
@@ -130,8 +130,8 @@ describe("updateSession", () => {
 
       return {
         auth: {
-          getUser: vi.fn().mockResolvedValue({
-            data: { user: { id: "user-123" } },
+          getClaims: vi.fn().mockResolvedValue({
+            data: { claims: { sub: "user-123" } },
             error: null,
           }),
         },
@@ -143,5 +143,43 @@ describe("updateSession", () => {
     expect(response.status).toBe(200);
     const setCookieHeader = response.headers.get("set-cookie");
     expect(setCookieHeader).toContain("sb-token=refreshed-token-abc");
+  });
+
+  it("no consulta Auth en rutas públicas (sin round trips innecesarios)", async () => {
+    const request = new NextRequest("http://localhost:3000/_design");
+    const getClaims = vi.fn().mockResolvedValue({ data: null, error: null });
+    const mockFactory: ClientFactory = () => ({ auth: { getClaims } });
+
+    const response = await updateSession(request, mockFactory);
+
+    expect(response.status).toBe(200);
+    expect(getClaims).not.toHaveBeenCalled();
+  });
+
+  it("consulta Auth en rutas protegidas y en rutas de login", async () => {
+    const getClaims = vi
+      .fn()
+      .mockResolvedValue({ data: { claims: { sub: "user-123" } }, error: null });
+    const mockFactory: ClientFactory = () => ({ auth: { getClaims } });
+
+    await updateSession(new NextRequest("http://localhost:3000/caja"), mockFactory);
+    expect(getClaims).toHaveBeenCalledTimes(1);
+
+    await updateSession(new NextRequest("http://localhost:3000/login"), mockFactory);
+    expect(getClaims).toHaveBeenCalledTimes(2);
+  });
+
+  it("un error de getClaims (token vencido sin refresco) cuenta como no autenticado", async () => {
+    const request = new NextRequest("http://localhost:3000/panel");
+    const mockFactory: ClientFactory = () => ({
+      auth: {
+        getClaims: vi.fn().mockResolvedValue({ data: null, error: new Error("jwt expired") }),
+      },
+    });
+
+    const response = await updateSession(request, mockFactory);
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toContain("/login");
   });
 });

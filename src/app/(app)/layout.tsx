@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import { AppLayoutClient } from "@/components/layout/app-layout-client";
 import { getOpenCashSessionAction, listCashSessionsAction } from "@/lib/actions/cash";
-import { listInventoryProductsAction } from "@/lib/actions/inventory";
+import { countLowStockAction } from "@/lib/actions/inventory";
 import { getBusinessPublicAction } from "@/lib/actions/settings";
 import { requireUser } from "@/lib/auth";
 import { buildDashboardNotifications, type DashboardNotification } from "@/lib/domain/dashboard";
-import { countLowStock } from "@/lib/domain/inventory";
 import type { OpenCashSessionPublic } from "@/lib/repos/types";
 
 export const metadata: Metadata = {
@@ -24,11 +23,17 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   let lowStockCount = 0;
   let notifications: DashboardNotification[] | null = null;
 
+  const isOwner = user.role === "owner";
+
   try {
-    const [publicSettingsResult, openSessionResult] = await Promise.all([
-      getBusinessPublicAction(),
-      getOpenCashSessionAction(),
-    ]);
+    const [publicSettingsResult, openSessionResult, lowStockResult, sessionsResult] =
+      await Promise.all([
+        getBusinessPublicAction(),
+        getOpenCashSessionAction(),
+        isOwner ? countLowStockAction() : Promise.resolve(null),
+        isOwner ? listCashSessionsAction({ limit: 20 }) : Promise.resolve(null),
+      ]);
+
     if (publicSettingsResult.ok) {
       businessName = publicSettingsResult.data.name;
     }
@@ -36,15 +41,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       cashSession = openSessionResult.data;
     }
 
-    if (user.role === "owner") {
-      const [inventoryResult, sessionsResult] = await Promise.all([
-        listInventoryProductsAction(),
-        listCashSessionsAction({ limit: 20 }),
-      ]);
-      if (inventoryResult.ok) {
-        lowStockCount = countLowStock(inventoryResult.data.filter((product) => product.active));
+    if (isOwner) {
+      if (lowStockResult?.ok) {
+        lowStockCount = lowStockResult.data;
       }
-      const sessions = sessionsResult.ok ? sessionsResult.data : [];
+      const sessions = sessionsResult?.ok ? sessionsResult.data : [];
       const openFromSessions = sessions.find((session) => session.status === "open");
       const lastClosed = sessions.find((session) => session.status === "closed");
       notifications = buildDashboardNotifications({
