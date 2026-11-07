@@ -16,6 +16,8 @@ export interface FormFieldProps {
   help?: ReactNode;
   labelClassName?: string;
   className?: string;
+  /** Marca visual de campo obligatorio (asterisco visible + texto para lectores de pantalla). */
+  required?: boolean;
 }
 
 /**
@@ -30,6 +32,7 @@ export function FormField({
   help,
   labelClassName,
   className,
+  required = false,
 }: FormFieldProps) {
   const helpId = `${id}-help`;
   const errorId = `${id}-error`;
@@ -47,6 +50,14 @@ export function FormField({
     <div className={cn("space-y-1.5", className)}>
       <label htmlFor={id} className={cn("text-xs font-medium text-foreground", labelClassName)}>
         {label}
+        {required ? (
+          <>
+            <span aria-hidden="true" className="ml-1 text-danger">
+              *
+            </span>
+            <span className="sr-only"> (obligatorio)</span>
+          </>
+        ) : null}
       </label>
       {typeof children === "function" ? children(control) : children}
       {error ? (

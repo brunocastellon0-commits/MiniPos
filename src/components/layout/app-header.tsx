@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -8,9 +8,9 @@ import { Bell, LogOut, Menu, X } from "lucide-react";
 import { logoutAction } from "@/lib/actions/auth";
 import type { AuthenticatedUser } from "@/lib/auth";
 import { LOGO_SRC } from "@/lib/branding";
-import { formatTime } from "@/lib/dates";
 import type { DashboardNotification } from "@/lib/domain/dashboard";
 import type { OpenCashSessionPublic } from "@/lib/repos/types";
+import { formatTime } from "@/lib/dates";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -35,6 +35,9 @@ export function AppHeader({
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [isPinned, setIsPinned] = useState(false);
+  const leaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -49,6 +52,53 @@ export function AppHeader({
       router.push("/login");
     }
   };
+
+  const handleMouseEnter = () => {
+    if (leaveTimerRef.current) {
+      clearTimeout(leaveTimerRef.current);
+      leaveTimerRef.current = null;
+    }
+    setNotificationsOpen(true);
+  };
+
+  const handleMouseLeave = () => {
+    if (isPinned) return;
+    leaveTimerRef.current = setTimeout(() => {
+      setNotificationsOpen(false);
+    }, 250);
+  };
+
+  const handleToggleClick = () => {
+    if (isPinned) {
+      setIsPinned(false);
+      setNotificationsOpen(false);
+    } else {
+      setIsPinned(true);
+      setNotificationsOpen(true);
+    }
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && notificationsOpen) {
+        setNotificationsOpen(false);
+        setIsPinned(false);
+      }
+    };
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setNotificationsOpen(false);
+        setIsPinned(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("mousedown", handleClickOutside);
+      if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
+    };
+  }, [notificationsOpen]);
 
   const roleLabel = user.role === "owner" ? "Dueño" : "Cajero";
   const roleBadgeTone = user.role === "owner" ? "accent" : "neutral";
@@ -69,45 +119,41 @@ export function AppHeader({
         )}
 
         <div className="flex items-center gap-2.5">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <Image
-              src={LOGO_SRC}
-              alt={businessName}
-              width={28}
-              height={28}
-              className="size-7 rounded-md object-contain"
-            />
-          </div>
-          <span className="font-bold text-foreground text-sm sm:text-base tracking-tight">
-            {businessName}
-          </span>
-        </div>
-      </div>
-
-      {/* Centro / Estado de caja */}
-      <div className="hidden sm:flex items-center gap-2">
-        <div
-          className="flex items-center gap-2 rounded-full border border-border bg-surface-muted px-3 py-1 text-xs font-medium"
-          aria-live="polite"
-        >
-          <span
-            className={`size-2 rounded-full ${
-              cashSessionOpen ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
-            }`}
-            aria-hidden="true"
+          <Image
+            src={LOGO_SRC}
+            alt={businessName}
+            width={120}
+            height={28}
+            priority
+            className="h-7 w-auto object-contain"
           />
-          <span className="text-foreground">
-            {cashSession
-              ? `Caja abierta · desde ${formatTime(new Date(cashSession.opened_at))} · ${cashSession.opened_by_name}`
-              : "Caja cerrada"}
-          </span>
+          <span className="sr-only">{businessName}</span>
         </div>
       </div>
 
-      {/* Derecha: Notificaciones, Usuario y Cerrar sesión */}
+      {/* Derecha: Notificaciones, Estado de caja, Usuario y Cerrar sesión */}
       <div className="flex items-center gap-3">
+        {cashSessionOpen && cashSession ? (
+          <Badge tone="success" className="hidden sm:inline-flex text-[11px] px-2 py-0.5 items-center gap-1.5">
+            <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />
+            Caja abierta
+            <span className="hidden font-normal md:inline">
+              · desde {formatTime(new Date(cashSession.opened_at))} · {cashSession.opened_by_name}
+            </span>
+          </Badge>
+        ) : (
+          <Badge tone="neutral" className="hidden text-[11px] px-2 py-0.5 sm:inline-flex">
+            Caja cerrada
+          </Badge>
+        )}
+
         {notifications ? (
-          <div className="relative">
+          <div
+            ref={containerRef}
+            className="relative"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+          >
             <Button
               type="button"
               variant="ghost"
@@ -115,7 +161,7 @@ export function AppHeader({
               aria-label={`Notificaciones${notifications.length > 0 ? ` (${notifications.length})` : ""}`}
               aria-expanded={notificationsOpen}
               aria-controls="notifications-panel"
-              onClick={() => setNotificationsOpen((prev) => !prev)}
+              onClick={handleToggleClick}
               className="relative"
             >
               <Bell className="size-4" aria-hidden="true" />
@@ -137,13 +183,16 @@ export function AppHeader({
                       <li key={notification.kind}>
                         <Link
                           href={notification.href}
-                          onClick={() => setNotificationsOpen(false)}
+                          onClick={() => {
+                            setNotificationsOpen(false);
+                            setIsPinned(false);
+                          }}
                           className="block px-4 py-3 hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         >
                           <span className="block text-sm font-semibold text-foreground">
                             {notification.title}
                           </span>
-                          <span className="mt-0.5 block text-xs text-foreground-muted">
+                          <span className="mt-0.5 block text-xs text-muted">
                             {notification.description}
                           </span>
                         </Link>
@@ -151,7 +200,7 @@ export function AppHeader({
                     ))}
                   </ul>
                 ) : (
-                  <p className="px-4 py-3 text-sm text-foreground-muted">Sin notificaciones.</p>
+                  <p className="px-4 py-3 text-sm text-muted">Sin notificaciones.</p>
                 )}
               </div>
             ) : null}

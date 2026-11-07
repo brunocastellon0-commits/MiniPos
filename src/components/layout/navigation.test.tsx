@@ -109,9 +109,9 @@ describe("Navegación y Layout por Rol (E1-03)", () => {
       expect(screen.getByText("Minimarket San Martín")).toBeInTheDocument();
       expect(screen.getByText("Carlos Cajero")).toBeInTheDocument();
       expect(screen.getByText("Cajero")).toBeInTheDocument();
-      expect(
-        screen.getByText("Caja abierta · desde 08:02 · María Choque"),
-      ).toBeInTheDocument();
+      expect(screen.getByText("Caja abierta")).toBeInTheDocument();
+      expect(screen.getByText(/desde 08:02/)).toBeInTheDocument();
+      expect(screen.getByText(/María Choque/)).toBeInTheDocument();
       expect(screen.getByRole("button", { name: /cerrar sesión/i })).toBeInTheDocument();
     });
 

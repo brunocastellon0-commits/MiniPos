@@ -5,7 +5,9 @@ import { addCashMovementAction } from "@/lib/actions/cash";
 import { toCents } from "@/lib/money";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
+import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 
 export interface MovementDialogProps {
   open: boolean;
@@ -92,7 +94,7 @@ export function MovementDialog({ open, sessionId, onClose, onCreated }: Movement
       description="Registra un ingreso o egreso de dinero de la caja."
       footer={
         <>
-          <Button type="button" variant="secondary" onClick={handleClose} disabled={saving}>
+          <Button type="button" variant="ghost" onClick={handleClose} disabled={saving}>
             Cancelar
           </Button>
           <Button type="submit" form="cash-movement-form" loading={saving} disabled={saving}>
@@ -102,48 +104,38 @@ export function MovementDialog({ open, sessionId, onClose, onCreated }: Movement
       }
     >
       <form id="cash-movement-form" className="space-y-4" onSubmit={handleSubmit}>
-        <div className="space-y-1.5">
-          <label htmlFor="movement-kind" className="text-sm font-medium text-foreground">
-            Tipo de movimiento
-          </label>
-          <select
+        <FormField id="movement-kind" label="Tipo de movimiento">
+          <Select
             id="movement-kind"
             value={kind}
             onChange={(event) => setKind(event.target.value === "out" ? "out" : "in")}
-            className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
             <option value="in">Ingreso de efectivo</option>
             <option value="out">Egreso de efectivo</option>
-          </select>
-        </div>
+          </Select>
+        </FormField>
 
-        <div className="space-y-1.5">
-          <label htmlFor="movement-amount" className="text-sm font-medium text-foreground">
-            Monto
-          </label>
+        <FormField id="movement-amount" label="Monto">
           <Input
             id="movement-amount"
             inputMode="decimal"
             placeholder="0,00"
             value={amount}
-            invalid={Boolean(error)}
+            invalid={Boolean(error && !amount)}
             onChange={(event) => setAmount(event.target.value)}
           />
-        </div>
+        </FormField>
 
-        <div className="space-y-1.5">
-          <label htmlFor="movement-reason" className="text-sm font-medium text-foreground">
-            Motivo
-          </label>
+        <FormField id="movement-reason" label="Motivo">
           <Input
             id="movement-reason"
             maxLength={200}
             placeholder="Ej. Cambio, pago a proveedor, retiro"
             value={reason}
-            invalid={Boolean(error)}
+            invalid={Boolean(error && !reason)}
             onChange={(event) => setReason(event.target.value)}
           />
-        </div>
+        </FormField>
 
         {error ? (
           <p role="alert" className="text-sm text-danger">
