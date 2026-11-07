@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import {
   createConfirmSaleAction,
   createGetSaleDetailAction,
@@ -22,7 +23,13 @@ const getSaleDetailInternal = createGetSaleDetailAction();
 const voidSaleInternal = createVoidSaleAction();
 
 export async function confirmSaleAction(input: ConfirmSaleInput) {
-  return confirmSaleInternal(input);
+  const res = await confirmSaleInternal(input);
+  if (res.ok) {
+    revalidatePath("/caja");
+    revalidatePath("/ventas");
+    revalidatePath("/panel");
+  }
+  return res;
 }
 
 export async function getSaleTicketAction(input: GetSaleTicketInput) {
@@ -38,5 +45,11 @@ export async function getSaleDetailAction(input: GetSaleDetailInput) {
 }
 
 export async function voidSaleAction(input: VoidSaleInput) {
-  return voidSaleInternal(input);
+  const res = await voidSaleInternal(input);
+  if (res.ok) {
+    revalidatePath("/ventas");
+    revalidatePath("/inventario");
+    revalidatePath("/panel");
+  }
+  return res;
 }

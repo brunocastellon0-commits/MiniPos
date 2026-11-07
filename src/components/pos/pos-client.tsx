@@ -63,9 +63,7 @@ export function PosClient({
   overview,
   canDiscount,
 }: PosClientProps) {
-  const [searchResults, setSearchResults] = useState<Product[] | null>(null);
   const [query, setQuery] = useState("");
-  const [searching, setSearching] = useState(false);
   const [category, setCategory] = useState<string | null>(null);
   const [cart, setCart] = useState<Cart>(createCart);
   const [discountCents, setDiscountCents] = useState(0);
@@ -85,34 +83,20 @@ export function PosClient({
 
   const searchRef = useRef<HTMLInputElement>(null);
   const hasQuery = query.trim().length > 0;
-  const products = useMemo(
-    () => (hasQuery ? (searchResults ?? []) : initialProducts),
-    [hasQuery, searchResults, initialProducts],
-  );
+  const products = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return initialProducts;
+    return initialProducts.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        (p.barcode && p.barcode.toLowerCase().includes(q)) ||
+        (p.internal_code && p.internal_code.toLowerCase().includes(q)),
+    );
+  }, [query, initialProducts]);
 
   useEffect(() => {
     searchRef.current?.focus();
   }, []);
-
-  useEffect(() => {
-    if (!query.trim()) return;
-
-    let cancelled = false;
-    const timer = setTimeout(async () => {
-      if (!cancelled) setSearching(true);
-      try {
-        const result = await searchPosProductsAction({ query: query.trim(), limit: 50 });
-        if (!cancelled && result.ok) setSearchResults(result.data);
-      } finally {
-        if (!cancelled) setSearching(false);
-      }
-    }, 250);
-
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [query]);
 
   const visibleProducts = useMemo(() => {
     if (!category) return products;
@@ -211,7 +195,6 @@ export function PosClient({
 
     handleAdd(match);
     setQuery("");
-    setSearchResults(null);
     searchRef.current?.focus();
   }
 
@@ -340,12 +323,6 @@ export function PosClient({
                 </Button>
               ))}
             </div>
-
-            {searching ? (
-              <p className="text-sm text-muted" role="status">
-                Buscando productos…
-              </p>
-            ) : null}
 
             {visibleProducts.length === 0 ? (
               <EmptyState

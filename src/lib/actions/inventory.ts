@@ -1,5 +1,7 @@
 "use server";
 
+import { cache } from "react";
+import { revalidatePath } from "next/cache";
 import {
   createAdjustStockAction,
   createCountLowStockAction,
@@ -17,14 +19,20 @@ export async function listInventoryProductsAction() {
   return listInventoryProductsInternal();
 }
 
-export async function countLowStockAction() {
+export const countLowStockAction = cache(async function countLowStockAction() {
   return countLowStockInternal();
-}
+});
 
 export async function listStockMovementsAction(input: ListStockMovementsInput) {
   return listStockMovementsInternal(input);
 }
 
 export async function adjustStockAction(input: AdjustStockInput) {
-  return adjustStockInternal(input);
+  const res = await adjustStockInternal(input);
+  if (res.ok) {
+    revalidatePath("/inventario");
+    revalidatePath("/caja");
+    revalidatePath("/panel");
+  }
+  return res;
 }

@@ -48,7 +48,12 @@ export default async function CompraDetallePage({ params }: CompraDetallePagePro
   let state: ViewState;
 
   try {
-    const purchaseResult = await getPurchaseAction({ id });
+    const [purchaseResult, productsResult, suppliersResult] = await Promise.all([
+      getPurchaseAction({ id }),
+      listPosProductsAction({ limit: 200 }),
+      listSuppliersAction(),
+    ]);
+
     if (!purchaseResult.ok) {
       state = {
         kind: "error",
@@ -57,10 +62,6 @@ export default async function CompraDetallePage({ params }: CompraDetallePagePro
       };
     } else {
       const { purchase, items } = purchaseResult.data;
-      const [productsResult, suppliersResult] = await Promise.all([
-        listPosProductsAction({ limit: 200 }),
-        listSuppliersAction(),
-      ]);
 
       const productNames: Record<string, string> = productsResult.ok
         ? Object.fromEntries(productsResult.data.map((product) => [product.id, product.name]))

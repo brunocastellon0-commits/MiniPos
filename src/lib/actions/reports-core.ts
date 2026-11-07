@@ -137,7 +137,13 @@ async function buildReportsData(
 ): Promise<ReportsData> {
   const factories = resolveRangeFactories(deps);
   const context = toUserContext(user);
-  const salesRepo = await factories.salesRepoFactory(context);
+  const [salesRepo, purchasesRepo, cashRepo, productsRepo] = await Promise.all([
+    factories.salesRepoFactory(context),
+    factories.purchasesRepoFactory(context),
+    factories.cashRepoFactory(context),
+    factories.productsRepoFactory(context),
+  ]);
+
   const bounds = laPazDayBoundsIso(range.dateFrom);
   const endBounds = laPazDayBoundsIso(range.dateTo);
   const previousRange = previousPeriodRange(range.dateFrom, range.dateTo);
@@ -151,9 +157,9 @@ async function buildReportsData(
       dateTo: previousEnd.end,
       limit: 1000,
     }),
-    (await factories.purchasesRepoFactory(context)).list(),
-    (await factories.cashRepoFactory(context)).listSessions(200),
-    (await factories.productsRepoFactory(context)).list(),
+    purchasesRepo.list(),
+    cashRepo.listSessions(200),
+    productsRepo.list(),
   ]);
 
   const items =

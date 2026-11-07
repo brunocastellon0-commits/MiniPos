@@ -76,16 +76,16 @@ export function createListAuditLogAction(deps: AuditActionDeps = {}) {
           role: ctx.user.role,
           active: ctx.user.isActive,
         };
-        const auditRepo = await auditRepoFactory(userContext);
-        const logs = await auditRepo.list({ limit: 100 });
+        const [auditRepo, usersRepo] = await Promise.all([
+          auditRepoFactory(userContext),
+          usersRepoFactory(userContext),
+        ]);
 
-        let profiles: Profile[] = [];
-        try {
-          const usersRepo = await usersRepoFactory(userContext);
-          profiles = await usersRepo.listProfiles();
-        } catch {
-          profiles = [];
-        }
+        const [logs, profiles] = await Promise.all([
+          auditRepo.list({ limit: 100 }),
+          usersRepo.listProfiles().catch(() => [] as Profile[]),
+        ]);
+
         const namesById = new Map(profiles.map((profile) => [profile.id, profile.full_name]));
 
         return logs.map((log) => ({
@@ -122,11 +122,15 @@ export function createGetAuditAlertsAction(deps: AuditActionDeps = {}) {
           role: ctx.user.role,
           active: ctx.user.isActive,
         };
-        const auditRepo = await auditRepoFactory(userContext);
-        const cashRepo = await cashRepoFactory(userContext);
+        const [auditRepo, cashRepo] = await Promise.all([
+          auditRepoFactory(userContext),
+          cashRepoFactory(userContext),
+        ]);
 
-        const logs = await auditRepo.list({ limit: 100 });
-        const sessions = await cashRepo.listSessions(50);
+        const [logs, sessions] = await Promise.all([
+          auditRepo.list({ limit: 100 }),
+          cashRepo.listSessions(50),
+        ]);
 
         const entries: AuditEntryInput[] = logs.map((log) => ({
           action: log.action,

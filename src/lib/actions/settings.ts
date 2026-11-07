@@ -1,5 +1,7 @@
 "use server";
 
+import { cache } from "react";
+import { revalidatePath } from "next/cache";
 import {
   createGetBusinessPublicAction,
   createGetBusinessSettingsAction,
@@ -11,14 +13,18 @@ const getBusinessPublicInternal = createGetBusinessPublicAction();
 const getBusinessSettingsInternal = createGetBusinessSettingsAction();
 const updateBusinessSettingsInternal = createUpdateBusinessSettingsAction();
 
-export async function getBusinessPublicAction() {
+export const getBusinessPublicAction = cache(async function getBusinessPublicAction() {
   return getBusinessPublicInternal();
-}
+});
 
-export async function getBusinessSettingsAction() {
+export const getBusinessSettingsAction = cache(async function getBusinessSettingsAction() {
   return getBusinessSettingsInternal();
-}
+});
 
 export async function updateBusinessSettingsAction(input: UpdateBusinessSettingsInput) {
-  return updateBusinessSettingsInternal(input);
+  const res = await updateBusinessSettingsInternal(input);
+  if (res.ok) {
+    revalidatePath("/", "layout");
+  }
+  return res;
 }

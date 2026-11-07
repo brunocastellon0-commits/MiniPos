@@ -281,23 +281,18 @@ describe("PosClient (E4-02/E4-03/E4-04)", () => {
     expect(input).toHaveFocus();
   });
 
-  it("filtra el catálogo al buscar y muestra estado sin resultados", async () => {
-    vi.mocked(searchPosProductsAction).mockResolvedValue({ ok: true, data: [arroz] });
-
+  it("filtra el catálogo en cliente al buscar sin llamar al servidor por tecla", async () => {
     renderPos();
     fireEvent.change(screen.getByLabelText("Buscar productos"), { target: { value: "arroz" } });
 
-    await waitFor(() => {
-      expect(searchPosProductsAction).toHaveBeenCalledWith({ query: "arroz", limit: 50 });
-    });
-    await waitFor(() => {
-      expect(screen.queryByText("Leche 1L")).not.toBeInTheDocument();
-    });
+    expect(await screen.findByText("Arroz 1kg")).toBeInTheDocument();
+    expect(screen.queryByText("Leche 1L")).not.toBeInTheDocument();
+    expect(searchPosProductsAction).not.toHaveBeenCalled();
 
-    vi.mocked(searchPosProductsAction).mockResolvedValue({ ok: true, data: [] });
     fireEvent.change(screen.getByLabelText("Buscar productos"), { target: { value: "zzz" } });
 
     expect(await screen.findByText("Sin resultados")).toBeInTheDocument();
+    expect(searchPosProductsAction).not.toHaveBeenCalled();
   });
 
   it("pausa la venta con etiqueta, limpia el carrito y avisa (E4-05)", async () => {
