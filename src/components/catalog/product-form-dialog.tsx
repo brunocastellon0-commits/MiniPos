@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { createProductAction, updateProductAction } from "@/lib/actions/products";
 import { formatBs, toCents } from "@/lib/money";
 import type { Category, Product } from "@/lib/repos/types";
+import { BarcodeCameraScanner } from "./barcode-camera-scanner";
 
 export interface ProductFormDialogProps {
   product: Product | null;
@@ -214,15 +215,19 @@ function ProductForm({
         <div className="grid gap-3 sm:grid-cols-2">
           <FormField id="product-barcode" label="Código de barras">
             {(control) => (
-              <Input
-                id={control.id}
-                value={barcode}
-                onChange={(event) => setBarcode(event.target.value)}
-                placeholder="Escanea o escribe el código"
-                maxLength={64}
-                disabled={loading}
-                aria-describedby={control["aria-describedby"]}
-              />
+              <div className="flex gap-2">
+                <Input
+                  id={control.id}
+                  value={barcode}
+                  onChange={(event) => setBarcode(event.target.value)}
+                  placeholder="Escanea o escribe el código"
+                  maxLength={64}
+                  disabled={loading}
+                  aria-describedby={control["aria-describedby"]}
+                  className="flex-1"
+                />
+                <BarcodeCameraScanner onDetected={(code) => setBarcode(code)} />
+              </div>
             )}
           </FormField>
           <FormField id="product-internal-code" label="Código interno (opcional)">
@@ -239,44 +244,25 @@ function ProductForm({
             )}
           </FormField>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <FormField id="product-category" label="Categoría" help="Agrupa el producto en la caja.">
-            {(control) => (
-              <select
-                id={control.id}
-                value={categoryId}
-                onChange={(event) => setCategoryId(event.target.value)}
-                disabled={loading}
-                aria-describedby={control["aria-describedby"]}
-                className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <option value="">Sin categoría</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-            )}
-          </FormField>
-          <FormField
-            id="product-unit"
-            label="Unidad de venta"
-            help="Se muestra junto al precio en la caja."
-          >
-            {(control) => (
-              <Input
-                id={control.id}
-                value={unitLabel}
-                onChange={(event) => setUnitLabel(event.target.value)}
-                placeholder="unidad, kg, litro..."
-                maxLength={20}
-                disabled={loading}
-                aria-describedby={control["aria-describedby"]}
-              />
-            )}
-          </FormField>
-        </div>
+        <FormField id="product-category" label="Categoría" help="Agrupa el producto en la caja.">
+          {(control) => (
+            <select
+              id={control.id}
+              value={categoryId}
+              onChange={(event) => setCategoryId(event.target.value)}
+              disabled={loading}
+              aria-describedby={control["aria-describedby"]}
+              className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <option value="">Sin categoría</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          )}
+        </FormField>
       </fieldset>
 
       <fieldset className="space-y-3">

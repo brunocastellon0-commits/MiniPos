@@ -40,7 +40,7 @@ describe("Security Headers & CSP", () => {
     expect(response.headers.get("X-Frame-Options")).toBe("DENY");
     expect(response.headers.get("Strict-Transport-Security")).toContain("max-age=63072000");
     expect(response.headers.get("Referrer-Policy")).toBe("strict-origin-when-cross-origin");
-    expect(response.headers.get("Permissions-Policy")).toContain("camera=(), microphone=()");
+    expect(response.headers.get("Permissions-Policy")).toContain("camera=(self), microphone=()");
 
     // Comprobar Content-Security-Policy
     const csp = response.headers.get("Content-Security-Policy");
