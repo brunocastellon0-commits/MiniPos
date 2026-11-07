@@ -172,7 +172,10 @@ export function CategoriesPanel({ initialCategories, onCategoriesChange }: Categ
                 return (
                   <tr key={category.id} className="hover:bg-surface-muted/30">
                     <Td>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-5 text-center text-xs font-semibold tabular-nums text-muted">
+                          {category.sort_order}
+                        </span>
                         <IconButton
                           aria-label={`Subir ${category.name}`}
                           

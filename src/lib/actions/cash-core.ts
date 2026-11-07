@@ -119,6 +119,49 @@ export function createGetCashOverviewAction(deps: CashActionDeps = {}) {
   };
 }
 
+export function createGetCashSessionDetailAction(deps: CashActionDeps = {}) {
+  const {
+    currentUserResolver,
+    cashRepoFactory = defaultCashRepoFactory,
+    salesRepoFactory = defaultSalesRepoFactory,
+  } = deps;
+
+  return async (input: { sessionId: string }): Promise<ActionResult<CashOverview | null>> => {
+    return secureAction<{ sessionId: string }, CashOverview | null>({
+      roles: ["owner", "cashier"],
+      schema: z.object({ sessionId: z.string().uuid() }),
+      currentUserResolver,
+      handler: async ({ sessionId }, ctx) => {
+        const userContext = toUserContext(ctx.user);
+        const [cashRepo, salesRepo] = await Promise.all([
+          cashRepoFactory(userContext),
+          salesRepoFactory(userContext),
+        ]);
+        const session = await cashRepo.getSessionById(sessionId);
+        if (!session) return null;
+
+        const [movements, sales] = await Promise.all([
+          cashRepo.listMovements(session.id),
+          salesRepo.list({ sessionId: session.id }),
+        ]);
+
+        return {
+          session,
+          openedByName: "Personal",
+          movements,
+          sales,
+          payments: summarizeSalesByPayment(sales),
+          expectedCents: expectedCashCents({
+            openingCents: session.opening_cents,
+            sales,
+            movements,
+          }),
+        };
+      },
+    })(input);
+  };
+}
+
 export function createGetOpenCashSessionAction(deps: CashActionDeps = {}) {
   const { currentUserResolver, cashRepoFactory = defaultCashRepoFactory } = deps;
 

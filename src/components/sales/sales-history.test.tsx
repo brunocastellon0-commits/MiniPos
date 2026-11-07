@@ -6,9 +6,10 @@ import { SalesHistory } from "./sales-history";
 
 vi.mock("@/lib/actions/sales", () => ({
   listSalesAction: vi.fn(),
+  getSaleDetailAction: vi.fn(),
 }));
 
-import { listSalesAction } from "@/lib/actions/sales";
+import { getSaleDetailAction, listSalesAction } from "@/lib/actions/sales";
 
 const saleCash = buildSale({
   id: "sale-1",
@@ -56,18 +57,28 @@ describe("SalesHistory (E5-01)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(listSalesAction).mockResolvedValue(ok([saleCash, saleQr]));
+    vi.mocked(getSaleDetailAction).mockResolvedValue({
+      ok: true,
+      data: { sale: saleCash, items: [], cashierName: "Carlos Mamani" },
+    });
   });
 
-  it("lista ventas con enlace al detalle, cajero, método y estado", () => {
+  it("lista ventas con fila expandible, cajero, método y estado", async () => {
     renderHistory();
 
-    const link = screen.getByRole("link", { name: "#101" });
-    expect(link).toHaveAttribute("href", "/ventas/sale-1");
+    expect(screen.getByText("#101")).toBeInTheDocument();
     expect(screen.getAllByText("Carlos Mamani").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Ana Quispe").length).toBeGreaterThan(0);
     expect(screen.getByText("Pagada")).toBeInTheDocument();
     expect(screen.getByText("Anulada")).toBeInTheDocument();
     expect(screen.getByText("Bs 30,00")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText("#101"));
+    await waitFor(() =>
+      expect(getSaleDetailAction).toHaveBeenCalledWith({ saleId: "sale-1" }),
+    );
+    const link = await screen.findByRole("link", { name: /Ver página completa/ });
+    expect(link).toHaveAttribute("href", "/ventas/sale-1");
   });
 
   it("filtra por método de pago y actualiza la lista", async () => {
@@ -82,10 +93,8 @@ describe("SalesHistory (E5-01)", () => {
     await waitFor(() =>
       expect(listSalesAction).toHaveBeenCalledWith({ paymentMethod: "qr" }),
     );
-    await waitFor(() =>
-      expect(screen.queryByRole("link", { name: "#101" })).not.toBeInTheDocument(),
-    );
-    expect(screen.getByRole("link", { name: "#102" })).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByText("#101")).not.toBeInTheDocument());
+    expect(screen.getByText("#102")).toBeInTheDocument();
   });
 
   it("filtra por rango de fechas", async () => {
@@ -114,14 +123,14 @@ describe("SalesHistory (E5-01)", () => {
     await waitFor(() =>
       expect(listSalesAction).toHaveBeenCalledWith({ cashierId: "cashier-1" }),
     );
-    expect(screen.queryByRole("link", { name: "#102" })).not.toBeInTheDocument();
+    expect(screen.queryByText("#102")).not.toBeInTheDocument();
   });
 
   it("el cajero no ve el filtro de cajeros", () => {
     renderHistory(false, [saleCash]);
 
     expect(screen.queryByLabelText("Filtrar por cajero")).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "#101" })).toBeInTheDocument();
+    expect(screen.getByText("#101")).toBeInTheDocument();
   });
 
   it("muestra error del servidor sin perder la lista", async () => {
@@ -136,7 +145,7 @@ describe("SalesHistory (E5-01)", () => {
 
     await waitFor(() => expect(screen.getByRole("alert")).toBeInTheDocument());
     expect(screen.getByRole("alert")).toHaveTextContent("No autorizado.");
-    expect(screen.getByRole("link", { name: "#101" })).toBeInTheDocument();
+    expect(screen.getByText("#101")).toBeInTheDocument();
   });
 
   it("muestra estado de carga mientras busca", async () => {
@@ -187,6 +196,6 @@ describe("SalesHistory (E5-01)", () => {
     await waitFor(() =>
       expect(screen.queryByRole("button", { name: "Cargar más" })).not.toBeInTheDocument(),
     );
-    expect(screen.getByRole("link", { name: "#102" })).toBeInTheDocument();
+    expect(screen.getByText("#102")).toBeInTheDocument();
   });
 });
