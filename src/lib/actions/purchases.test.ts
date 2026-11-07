@@ -1,18 +1,27 @@
 import { describe, expect, it, vi } from "vitest";
+import { MemoryAuditRepo } from "@/lib/repos/memory/audit";
 import { MemoryProductsRepo } from "@/lib/repos/memory/products";
 import { MemoryPurchasesRepo } from "@/lib/repos/memory/purchases";
 import { MemoryStore } from "@/lib/repos/memory/memory-store";
 import { MemorySuppliersRepo } from "@/lib/repos/memory/suppliers";
+import { MemoryUsersRepo } from "@/lib/repos/memory/users";
+import { buildProfile } from "@/test/factories";
 import type {
+  AuditRepo,
   ProductsRepo,
   PurchasesRepo,
   SuppliersRepo,
   UserContext,
+  UsersRepo,
 } from "@/lib/repos/types";
 import {
+  createCancelPurchaseAction,
   createCreatePurchaseAction,
   createGetPurchaseAction,
+  createGetPurchaseTimelineAction,
   createListPurchasesAction,
+  createReceivePurchaseAction,
+  createRegisterPurchaseVisitAction,
   type PurchasesActionDeps,
 } from "./purchases-core";
 import type { AuthenticatedUser } from "./secure-action";
@@ -34,6 +43,11 @@ const cashier: AuthenticatedUser = {
 async function setup() {
   const store = new MemoryStore();
   const ownerContext: UserContext = { id: owner.id, role: "owner", active: true };
+
+  store.profiles.set(
+    owner.id,
+    buildProfile({ id: owner.id, full_name: owner.name, role: "owner" }),
+  );
 
   const supplier = await new MemorySuppliersRepo(store, ownerContext).create({
     name: "Distribuidora Andina",
@@ -71,6 +85,10 @@ async function setup() {
       new MemorySuppliersRepo(store, ctx),
     productsRepoFactory: async (ctx: UserContext): Promise<ProductsRepo> =>
       new MemoryProductsRepo(store, ctx),
+    auditRepoFactory: async (ctx: UserContext): Promise<AuditRepo> =>
+      new MemoryAuditRepo(store, ctx),
+    usersRepoFactory: async (ctx: UserContext): Promise<UsersRepo> =>
+      new MemoryUsersRepo(store, ctx),
   });
 
   return { store, makeDeps, supplier, inactiveSupplier, arroz, leche, retired };
@@ -225,5 +243,179 @@ describe("Compras - Server Actions (E7-02)", () => {
     const anon = await createCreatePurchaseAction(makeDeps(null))(payload);
     expect(anon.ok).toBe(false);
     if (!anon.ok) expect(anon.code).toBe("UNAUTHENTICATED");
+  });
+});
+
+describe("Compras - seguimiento, cancelación y auditoría (D4)", () => {
+  async function seedPurchase() {
+    const ctx = await setup();
+    const created = await createCreatePurchaseAction(ctx.makeDeps(owner))({
+      supplierId: ctx.supplier.id,
+      notes: "Entrega el viernes",
+      items: [{ productId: ctx.arroz.id, quantity: 10, unitCostCents: 900 }],
+    });
+    if (!created.ok) throw new Error("No se pudo sembrar la compra");
+    return { ...ctx, purchaseId: created.data.purchase.id };
+  }
+
+  it("escribe auditoría al crear una compra y al recibirla", async () => {
+    const { makeDeps, store, supplier, arroz, purchaseId } = await seedPurchase();
+
+    const auditRepo = new MemoryAuditRepo(store, {
+      id: owner.id,
+      role: "owner",
+      active: true,
+    });
+    const afterCreate = await auditRepo.list({ entity: "purchase" });
+    const createEntry = afterCreate.find((entry) => entry.action === "purchases.create");
+    expect(createEntry).toBeDefined();
+    expect(createEntry?.entity_id).toBe(purchaseId);
+
+    const received = await createReceivePurchaseAction(makeDeps(owner))({
+      purchaseId,
+      items: [{ productId: arroz.id, qtyReceived: 10 }],
+    });
+    expect(received.ok).toBe(true);
+
+    const afterReceive = await auditRepo.list({ entity: "purchase" });
+    const receiveEntry = afterReceive.find((entry) => entry.action === "purchases.receive");
+    expect(receiveEntry).toBeDefined();
+    expect(receiveEntry?.entity_id).toBe(purchaseId);
+
+    const otherPurchase = await createCreatePurchaseAction(makeDeps(owner))({
+      supplierId: supplier.id,
+      items: [{ productId: arroz.id, quantity: 1, unitCostCents: 100 }],
+    });
+    expect(otherPurchase.ok).toBe(true);
+    const allEntries = await auditRepo.list({ entity: "purchase" });
+    expect(allEntries.filter((entry) => entry.entity_id === purchaseId)).toHaveLength(2);
+  });
+
+  it("cancela una compra activa con motivo y bloquea la cancelación de una recibida", async () => {
+    const { makeDeps, store, purchaseId } = await seedPurchase();
+    const cancel = createCancelPurchaseAction(makeDeps(owner));
+
+    const invalidReason = await cancel({ purchaseId, reason: "no" });
+    expect(invalidReason.ok).toBe(false);
+    if (!invalidReason.ok) expect(invalidReason.code).toBe("VALIDATION_ERROR");
+
+    const missing = await cancel({ purchaseId: "no-existe", reason: "Sin proveedor" });
+    expect(missing.ok).toBe(false);
+    if (!missing.ok) expect(missing.code).toBe("NOT_FOUND");
+
+    const cancelled = await cancel({ purchaseId, reason: "El proveedor no tiene mercadería" });
+    expect(cancelled.ok).toBe(true);
+    if (cancelled.ok) expect(cancelled.data.status).toBe("cancelled");
+
+    const auditRepo = new MemoryAuditRepo(store, {
+      id: owner.id,
+      role: "owner",
+      active: true,
+    });
+    const entries = await auditRepo.list({ entity: "purchase" });
+    const cancelEntry = entries.find((entry) => entry.action === "purchases.cancel");
+    expect(cancelEntry?.reason).toBe("El proveedor no tiene mercadería");
+    expect(cancelEntry?.entity_id).toBe(purchaseId);
+
+    const twice = await cancel({ purchaseId, reason: "Otra vez por si acaso" });
+    expect(twice.ok).toBe(false);
+    if (!twice.ok) expect(twice.code).toBe("BAD_REQUEST");
+
+    const receivedSetup = await seedPurchase();
+    const receive = await createReceivePurchaseAction(receivedSetup.makeDeps(owner))({
+      purchaseId: receivedSetup.purchaseId,
+      items: [{ productId: receivedSetup.arroz.id, qtyReceived: 10 }],
+    });
+    expect(receive.ok).toBe(true);
+    const cancelReceived = await createCancelPurchaseAction(receivedSetup.makeDeps(owner))({
+      purchaseId: receivedSetup.purchaseId,
+      reason: "Intento de cancelar lo recibido",
+    });
+    expect(cancelReceived.ok).toBe(false);
+    if (!cancelReceived.ok) expect(cancelReceived.code).toBe("BAD_REQUEST");
+
+    const byCashier = await createCancelPurchaseAction(makeDeps(cashier))({
+      purchaseId,
+      reason: "El cajero no puede cancelar",
+    });
+    expect(byCashier.ok).toBe(false);
+    if (!byCashier.ok) expect(byCashier.code).toBe("FORBIDDEN");
+  });
+
+  it("registra la visita del preventista con motivo en la bitácora", async () => {
+    const { makeDeps, store, purchaseId } = await seedPurchase();
+    const registerVisit = createRegisterPurchaseVisitAction(makeDeps(owner));
+
+    const missing = await registerVisit({ purchaseId: "no-existe" });
+    expect(missing.ok).toBe(false);
+    if (!missing.ok) expect(missing.code).toBe("NOT_FOUND");
+
+    const withNotes = await registerVisit({ purchaseId, notes: "Dejó muestras" });
+    expect(withNotes.ok).toBe(true);
+
+    const withoutNotes = await registerVisit({ purchaseId });
+    expect(withoutNotes.ok).toBe(true);
+
+    const auditRepo = new MemoryAuditRepo(store, {
+      id: owner.id,
+      role: "owner",
+      active: true,
+    });
+    const entries = await auditRepo.list({ entity: "purchase" });
+    const visits = entries.filter((entry) => entry.action === "purchases.visit");
+    expect(visits).toHaveLength(2);
+    expect(visits.map((entry) => entry.reason)).toContain("Dejó muestras");
+    expect(visits.map((entry) => entry.reason)).toContain("Visita de preventista");
+    expect(visits.every((entry) => entry.entity_id === purchaseId)).toBe(true);
+  });
+
+  it("devuelve el historial de una compra con el nombre del usuario", async () => {
+    const { makeDeps, purchaseId } = await seedPurchase();
+    await createRegisterPurchaseVisitAction(makeDeps(owner))({
+      purchaseId,
+      notes: "Habló con el vendedor",
+    });
+    await createCancelPurchaseAction(makeDeps(owner))({
+      purchaseId,
+      reason: "Se cancela el pedido",
+    });
+
+    const timeline = await createGetPurchaseTimelineAction(makeDeps(owner))({ purchaseId });
+    expect(timeline.ok).toBe(true);
+    if (!timeline.ok) return;
+    expect(timeline.data.length).toBeGreaterThanOrEqual(3);
+    expect(timeline.data.every((entry) => entry.userName === owner.name)).toBe(true);
+    expect(timeline.data.map((entry) => entry.action)).toContain("purchases.visit");
+    expect(timeline.data.map((entry) => entry.action)).toContain("purchases.cancel");
+
+    const other = await seedPurchase();
+    const otherTimeline = await createGetPurchaseTimelineAction(other.makeDeps(owner))({
+      purchaseId: other.purchaseId,
+    });
+    expect(otherTimeline.ok).toBe(true);
+    if (otherTimeline.ok) {
+      expect(otherTimeline.data.every((entry) => entry.action === "purchases.create")).toBe(true);
+    }
+
+    const byCashier = await createGetPurchaseTimelineAction(makeDeps(cashier))({ purchaseId });
+    expect(byCashier.ok).toBe(false);
+    if (!byCashier.ok) expect(byCashier.code).toBe("FORBIDDEN");
+  });
+
+  it("el cajero no registra visitas ni cancela compras", async () => {
+    const { makeDeps, purchaseId } = await seedPurchase();
+
+    const visitByCashier = await createRegisterPurchaseVisitAction(makeDeps(cashier))({
+      purchaseId,
+    });
+    expect(visitByCashier.ok).toBe(false);
+    if (!visitByCashier.ok) expect(visitByCashier.code).toBe("FORBIDDEN");
+
+    const cancelByCashier = await createCancelPurchaseAction(makeDeps(cashier))({
+      purchaseId,
+      reason: "No autorizado",
+    });
+    expect(cancelByCashier.ok).toBe(false);
+    if (!cancelByCashier.ok) expect(cancelByCashier.code).toBe("FORBIDDEN");
   });
 });

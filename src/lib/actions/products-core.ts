@@ -21,6 +21,8 @@ import {
   createProductSchema,
   type ListProductsInput,
   listProductsSchema,
+  type ProductNamesInput,
+  productNamesSchema,
   type SetProductActiveInput,
   setProductActiveSchema,
   type UpdateProductInput,
@@ -306,6 +308,23 @@ export function createSetProductActiveAction(deps: ProductsActionDeps = {}) {
           throw new ActionException("Producto no encontrado.", "NOT_FOUND");
         }
         return await repo.update(existing.id, { active: validatedInput.active });
+      },
+    })(input);
+  };
+}
+
+export function createGetProductNamesAction(deps: ProductsActionDeps = {}) {
+  const { currentUserResolver, productsRepoFactory = defaultProductsRepoFactory } = deps;
+
+  return async (input: ProductNamesInput): Promise<ActionResult<Record<string, string>>> => {
+    return secureAction<ProductNamesInput, Record<string, string>>({
+      roles: ["owner"],
+      schema: productNamesSchema,
+      currentUserResolver,
+      handler: async (validatedInput, ctx) => {
+        const repo = await productsRepoFactory(toUserContext(ctx.user));
+        const products = await repo.getByIds([...new Set(validatedInput.ids)]);
+        return Object.fromEntries(products.map((product) => [product.id, product.name]));
       },
     })(input);
   };

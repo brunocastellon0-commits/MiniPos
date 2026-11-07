@@ -2,6 +2,7 @@
 
 import {
   createCreateProductAction,
+  createGetProductNamesAction,
   createListProductsAction,
   createSetProductActiveAction,
   createUpdateProductAction,
@@ -9,6 +10,7 @@ import {
 import type {
   CreateProductInput,
   ListProductsInput,
+  ProductNamesInput,
   SetProductActiveInput,
   UpdateProductInput,
 } from "./products-schema";
@@ -17,6 +19,7 @@ const listProductsInternal = createListProductsAction();
 const createProductInternal = createCreateProductAction();
 const updateProductInternal = createUpdateProductAction();
 const setProductActiveInternal = createSetProductActiveAction();
+const getProductNamesInternal = createGetProductNamesAction();
 
 export async function listProductsAction(input: ListProductsInput = {}) {
   return listProductsInternal(input);
@@ -32,4 +35,8 @@ export async function updateProductAction(input: UpdateProductInput) {
 
 export async function setProductActiveAction(input: SetProductActiveInput) {
   return setProductActiveInternal(input);
+}
+
+export async function getProductNamesAction(input: ProductNamesInput) {
+  return getProductNamesInternal(input);
 }

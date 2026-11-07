@@ -99,3 +99,37 @@ export const receivePurchaseSchema = z
   });
 
 export type ReceivePurchaseInput = z.infer<typeof receivePurchaseSchema>;
+
+export const cancelPurchaseSchema = z
+  .object({
+    purchaseId: z.string().min(1, { message: "ID de compra requerido." }),
+    reason: z
+      .string()
+      .trim()
+      .min(3, { message: "El motivo debe tener al menos 3 caracteres." })
+      .max(300, { message: "El motivo no puede exceder 300 caracteres." }),
+  })
+  .strict();
+
+export type CancelPurchaseInput = z.infer<typeof cancelPurchaseSchema>;
+
+export const registerPurchaseVisitSchema = z
+  .object({
+    purchaseId: z.string().min(1, { message: "ID de compra requerido." }),
+    notes: z
+      .string()
+      .trim()
+      .max(300, { message: "Las notas no pueden exceder 300 caracteres." })
+      .optional(),
+  })
+  .strict();
+
+export type RegisterPurchaseVisitInput = z.infer<typeof registerPurchaseVisitSchema>;
+
+export const purchaseTimelineSchema = z
+  .object({
+    purchaseId: z.string().min(1, { message: "ID de compra requerido." }),
+  })
+  .strict();
+
+export type PurchaseTimelineInput = z.infer<typeof purchaseTimelineSchema>;

@@ -85,3 +85,14 @@ export const listProductsSchema = z
   .strict();
 
 export type ListProductsInput = z.infer<typeof listProductsSchema>;
+
+export const productNamesSchema = z
+  .object({
+    ids: z
+      .array(z.string().min(1, { message: "ID de producto requerido." }))
+      .min(1, { message: "Debe indicar al menos un producto." })
+      .max(200, { message: "No se pueden consultar más de 200 productos." }),
+  })
+  .strict();
+
+export type ProductNamesInput = z.infer<typeof productNamesSchema>;
