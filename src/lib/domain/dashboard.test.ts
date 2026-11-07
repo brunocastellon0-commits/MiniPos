@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   buildDashboardNotifications,
+  buildPanelComparison,
   compareSalesDays,
+  estimateGrossMargin,
   lastDayKeys,
+  summarizeDayMovements,
   summarizeSalesByDay,
   summarizeSalesDay,
   type DashboardSale,
@@ -248,5 +251,97 @@ describe("dashboard - notificaciones del panel (E8-03)", () => {
       "stale_open_session",
     ]);
     expect(buildDashboardNotifications({ lowStockCount: 0, now })).toEqual([]);
+  });
+});
+
+describe("dashboard - comparativa del panel hoy/ayer/semana (D7)", () => {
+  const today = [sale({ total_cents: 19500, subtotal_cents: 19500 })];
+  const yesterday = [
+    sale({ total_cents: 10000, subtotal_cents: 10000, created_at: "2026-11-02T14:00:00.000Z" }),
+  ];
+  const weekAgo = [
+    sale({ total_cents: 5000, subtotal_cents: 5000, created_at: "2026-10-27T14:00:00.000Z" }),
+  ];
+
+  it("calcula los porcentajes contra ayer y contra la semana pasada", () => {
+    const comparison = buildPanelComparison(today, yesterday, weekAgo);
+
+    expect(comparison.today.totalCents).toBe(19500);
+    expect(comparison.yesterday?.totalCents).toBe(10000);
+    expect(comparison.weekAgo?.totalCents).toBe(5000);
+    expect(comparison.vsYesterdayPercent).toBe(95);
+    expect(comparison.vsWeekAgoPercent).toBe(290);
+  });
+
+  it("usa null (no 0) cuando no hay ventas que comparar", () => {
+    const comparison = buildPanelComparison([], [], []);
+
+    expect(comparison.yesterday).toBeNull();
+    expect(comparison.weekAgo).toBeNull();
+    expect(comparison.vsYesterdayPercent).toBeNull();
+    expect(comparison.vsWeekAgoPercent).toBeNull();
+  });
+
+  it("el porcentaje es null si el día anterior no tuvo transacciones", () => {
+    const comparison = buildPanelComparison(today, [sale({ status: "voided" })], []);
+
+    expect(comparison.yesterday).toBeNull();
+    expect(comparison.vsYesterdayPercent).toBeNull();
+  });
+});
+
+describe("dashboard - margen bruto estimado (D7)", () => {
+  const item = (productId: string | null, quantity: number, lineTotal: number) => ({
+    product_id: productId,
+    quantity,
+    line_total_cents: lineTotal,
+  });
+
+  it("devuelve null sin ítems o sin costos registrados (nunca inventa ganancia)", () => {
+    const costs = new Map([["p-1", 700]]);
+
+    expect(estimateGrossMargin([], costs)).toBeNull();
+    expect(estimateGrossMargin([item("p-1", 1, 1500)], new Map())).toBeNull();
+    expect(estimateGrossMargin([item(null, 1, 1500)], costs)).toBeNull();
+  });
+
+  it("resta el costo de las unidades vendidas al precio de línea", () => {
+    const costs = new Map([
+      ["p-1", 700],
+      ["p-2", 300],
+    ]);
+
+    const margin = estimateGrossMargin([item("p-1", 2, 3000), item("p-2", 1, 800)], costs);
+
+    expect(margin).toEqual({ marginCents: 2100, revenueCents: 3800, costCents: 1700 });
+  });
+
+  it("permite margen negativo si se vendió por debajo del costo", () => {
+    const margin = estimateGrossMargin([item("p-1", 1, 500)], new Map([["p-1", 900]]));
+
+    expect(margin?.marginCents).toBe(-400);
+  });
+});
+
+describe("dashboard - ingresos y egresos del día (D7)", () => {
+  it("suma solo los movimientos del día en zona La Paz", () => {
+    const flow = summarizeDayMovements(
+      [
+        { kind: "in", amount_cents: 20000, created_at: "2026-11-03T12:00:00.000Z" },
+        { kind: "out", amount_cents: 3500, created_at: "2026-11-03T18:30:00.000Z" },
+        { kind: "in", amount_cents: 999, created_at: "2026-11-02T23:59:00.000Z" },
+        { kind: "out", amount_cents: 100, created_at: "2026-11-04T05:00:00.000Z" },
+      ],
+      "2026-11-03",
+    );
+
+    expect(flow).toEqual({ incomeCents: 20000, expenseCents: 3500 });
+  });
+
+  it("devuelve ceros cuando no hay movimientos", () => {
+    expect(summarizeDayMovements([], "2026-11-03")).toEqual({
+      incomeCents: 0,
+      expenseCents: 0,
+    });
   });
 });

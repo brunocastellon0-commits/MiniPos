@@ -177,3 +177,98 @@ export function buildDashboardNotifications(
 
   return notifications;
 }
+
+// --- Comparativa del panel (D7) ---
+
+export interface PanelComparison {
+  today: DailySalesStats;
+  yesterday: DailySalesStats | null;
+  weekAgo: DailySalesStats | null;
+  vsYesterdayPercent: number | null;
+  vsWeekAgoPercent: number | null;
+}
+
+function statsOrNull(sales: readonly DashboardSale[]): DailySalesStats | null {
+  const stats = summarizeSalesDay(sales);
+  return stats.transactionCount > 0 ? stats : null;
+}
+
+export function buildPanelComparison(
+  todaySales: readonly DashboardSale[],
+  yesterdaySales: readonly DashboardSale[],
+  weekAgoSales: readonly DashboardSale[],
+): PanelComparison {
+  const today = summarizeSalesDay(todaySales);
+  const yesterday = statsOrNull(yesterdaySales);
+  const weekAgo = statsOrNull(weekAgoSales);
+  return {
+    today,
+    yesterday,
+    weekAgo,
+    vsYesterdayPercent:
+      yesterday === null ? null : percentChange(today.totalCents, yesterday.totalCents),
+    vsWeekAgoPercent: weekAgo === null ? null : percentChange(today.totalCents, weekAgo.totalCents),
+  };
+}
+
+// --- Margen bruto estimado (D7, cero BD) ---
+
+export interface MarginSaleItemLike {
+  product_id: string | null;
+  quantity: number;
+  line_total_cents: number;
+}
+
+export interface GrossMarginEstimate {
+  marginCents: number;
+  revenueCents: number;
+  costCents: number;
+}
+
+/**
+ * Estima el margen bruto del día sobre el costo registrado actualmente para
+ * cada producto. Devuelve `null` (y la UI oculta la tarjeta) si algún ítem
+ * vendido no tiene costo conocido: nunca se inventa una ganancia.
+ */
+export function estimateGrossMargin(
+  items: readonly MarginSaleItemLike[],
+  costByProductId: ReadonlyMap<string, number>,
+): GrossMarginEstimate | null {
+  if (items.length === 0) return null;
+  let revenueCents = 0;
+  let costCents = 0;
+  for (const item of items) {
+    if (item.product_id === null) return null;
+    const unitCost = costByProductId.get(item.product_id);
+    if (unitCost === undefined) return null;
+    if (!Number.isSafeInteger(item.quantity) || item.quantity <= 0) return null;
+    if (!Number.isSafeInteger(unitCost) || unitCost < 0) return null;
+    revenueCents += item.line_total_cents;
+    costCents += unitCost * item.quantity;
+  }
+  if (!Number.isSafeInteger(revenueCents) || !Number.isSafeInteger(costCents)) return null;
+  return { marginCents: revenueCents - costCents, revenueCents, costCents };
+}
+
+// --- Ingresos y egresos del día (D7, cero BD) ---
+
+export interface DayCashFlow {
+  incomeCents: number;
+  expenseCents: number;
+}
+
+export function summarizeDayMovements(
+  movements: readonly { kind: "in" | "out"; amount_cents: number; created_at: string }[],
+  dayKey: string,
+): DayCashFlow {
+  const flow: DayCashFlow = { incomeCents: 0, expenseCents: 0 };
+  for (const movement of movements) {
+    if (laPazDayKey(new Date(movement.created_at)) !== dayKey) continue;
+    if (movement.kind === "in") flow.incomeCents += movement.amount_cents;
+    else flow.expenseCents += movement.amount_cents;
+  }
+  if (!Number.isSafeInteger(flow.incomeCents) || !Number.isSafeInteger(flow.expenseCents)) {
+    throw new RangeError("El flujo de caja del día excede los enteros seguros.");
+  }
+  return flow;
+}

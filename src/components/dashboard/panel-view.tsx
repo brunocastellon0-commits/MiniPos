@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { useState } from "react";
 import { formatTime } from "@/lib/dates";
-import type { DailySalesStats, SalesComparison } from "@/lib/domain/dashboard";
+import type { DailySalesStats, PanelComparison } from "@/lib/domain/dashboard";
 import { formatBs } from "@/lib/money";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonClasses } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ProgressBar } from "@/components/ui/progress-bar";
@@ -37,16 +37,36 @@ export interface PanelCashState {
   differenceCents?: number | null;
 }
 
+export interface PanelTopProduct {
+  productId: string | null;
+  name: string;
+  units: number;
+  totalCents: number;
+}
+
+export interface PanelMargin {
+  marginCents: number;
+  revenueCents: number;
+  costCents: number;
+}
+
+export interface PanelDayCash {
+  incomeCents: number;
+  expenseCents: number;
+}
+
 export interface PanelViewProps {
   userName: string;
   greetingDate: string;
-  todayStats: DailySalesStats;
-  comparison: SalesComparison;
+  comparison: PanelComparison;
   dayKeys: string[];
   series: Record<string, DailySalesStats>;
   cash: PanelCashState;
   lowStock: PanelLowStockProduct[];
   recentSales: PanelSaleSummary[];
+  topProducts: PanelTopProduct[];
+  margin: PanelMargin | null;
+  dayCash: PanelDayCash | null;
   initialError?: string | null;
 }
 
@@ -63,13 +83,15 @@ function formatChangePercent(value: number | null): string {
 export function PanelView({
   userName,
   greetingDate,
-  todayStats,
   comparison,
   dayKeys,
   series,
   cash,
   lowStock,
   recentSales,
+  topProducts,
+  margin,
+  dayCash,
   initialError = null,
 }: PanelViewProps) {
   const [range, setRange] = useState<number>(7);
@@ -103,21 +125,32 @@ export function PanelView({
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card variant="metric" className="border-l-2 border-primary">
           <CardHeader>
-            <CardTitle>Ventas de hoy</CardTitle>
+            <CardTitle>Comparativa de ventas</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-foreground" data-testid="today-sales">
-              {formatBs(todayStats.totalCents)}
+            <p className="text-3xl font-bold tabular-nums text-foreground" data-testid="today-sales">
+              {formatBs(comparison.today.totalCents)}
             </p>
             <p className="mt-2 text-sm text-foreground-muted">
+              vs. ayer:{" "}
+              <span className="font-semibold" data-testid="today-change-yesterday">
+                {formatChangePercent(comparison.vsYesterdayPercent)}
+              </span>
+              {" · "}
+              Ayer:{" "}
+              <span className="font-semibold" data-testid="yesterday-sales">
+                {comparison.yesterday ? formatBs(comparison.yesterday.totalCents) : "—"}
+              </span>
+            </p>
+            <p className="mt-1 text-sm text-foreground-muted">
               vs. mismo día de la semana pasada:{" "}
               <span className="font-semibold" data-testid="today-change">
-                {formatChangePercent(comparison.totalCentsChangePercent)}
+                {formatChangePercent(comparison.vsWeekAgoPercent)}
               </span>
             </p>
             <p className="mt-1 text-xs text-foreground-muted">
-              {comparison.previous
-                ? `Ese día: ${formatBs(comparison.previous.totalCents)}`
+              {comparison.weekAgo
+                ? `Ese día: ${formatBs(comparison.weekAgo.totalCents)}`
                 : "Sin datos suficientes del día anterior"}
             </p>
           </CardContent>
@@ -128,20 +161,20 @@ export function PanelView({
             <CardTitle>Transacciones</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-foreground" data-testid="today-transactions">
-              {todayStats.transactionCount}
+            <p className="text-3xl font-bold tabular-nums text-foreground" data-testid="today-transactions">
+              {comparison.today.transactionCount}
             </p>
             <p className="mt-2 text-sm text-foreground-muted">
               Ticket promedio:{" "}
               <span className="font-semibold" data-testid="average-ticket">
-                {todayStats.averageTicketCents === null
+                {comparison.today.averageTicketCents === null
                   ? "—"
-                  : formatBs(todayStats.averageTicketCents)}
+                  : formatBs(comparison.today.averageTicketCents)}
               </span>
             </p>
             <p className="mt-1 text-xs text-foreground-muted">
-              {todayStats.voidedCount > 0
-                ? `${todayStats.voidedCount} venta(s) anulada(s) hoy`
+              {comparison.today.voidedCount > 0
+                ? `${comparison.today.voidedCount} venta(s) anulada(s) hoy`
                 : "Sin ventas anuladas hoy"}
             </p>
           </CardContent>
@@ -315,20 +348,107 @@ export function PanelView({
 
         <Card>
           <CardHeader>
-            <CardTitle>Accesos directos</CardTitle>
+            <CardTitle>Top productos vendidos</CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-wrap gap-2">
-            <Link href="/caja" className={buttonClasses({ variant: "primary" })}>
-              Abrir punto de venta
-            </Link>
-            <Link href="/compras/nueva" className={buttonClasses({ variant: "secondary" })}>
-              Registrar compra
-            </Link>
-            <Link href="/turno" className={buttonClasses({ variant: "ghost" })}>
-              Ver turno de caja
-            </Link>
+          <CardContent>
+            {topProducts.length > 0 ? (
+              <ul className="space-y-3">
+                {topProducts.map((product, index) => (
+                  <li
+                    key={`${product.productId ?? "sin-id"}-${index}`}
+                    className="space-y-1"
+                  >
+                    <div className="flex items-center justify-between gap-3 text-sm">
+                      <span className="truncate font-medium text-foreground">
+                        {product.name}
+                      </span>
+                      <span className="shrink-0 tabular-nums text-foreground-muted">
+                        {product.units} u. · {formatBs(product.totalCents)}
+                      </span>
+                    </div>
+                    <ProgressBar
+                      value={product.totalCents}
+                      max={topProducts[0]?.totalCents || 1}
+                      label={`Ventas de ${product.name}: ${product.units} unidades, ${formatBs(product.totalCents)}`}
+                    />
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <EmptyState
+                title="Sin ventas hoy"
+                description="Los productos más vendidos aparecerán aquí."
+              />
+            )}
           </CardContent>
         </Card>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card className={margin ? undefined : "lg:col-span-2"}>
+          <CardHeader>
+            <CardTitle>Ingresos y egresos de hoy</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {dayCash ? (
+              <>
+                <dl className="grid grid-cols-2 gap-4">
+                  <div>
+                    <dt className="text-sm text-foreground-muted">Ingresos</dt>
+                    <dd
+                      className="mt-1 text-2xl font-bold tabular-nums text-foreground"
+                      data-testid="day-income"
+                    >
+                      {formatBs(dayCash.incomeCents)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm text-foreground-muted">Egresos</dt>
+                    <dd
+                      className="mt-1 text-2xl font-bold tabular-nums text-foreground"
+                      data-testid="day-expense"
+                    >
+                      {formatBs(dayCash.expenseCents)}
+                    </dd>
+                  </div>
+                </dl>
+                <p className="mt-3 text-xs text-foreground-muted">
+                  Movimientos manuales en efectivo de los turnos de hoy; las ventas no
+                  aparecen aquí.
+                </p>
+              </>
+            ) : (
+              <EmptyState
+                title="Sin movimientos hoy"
+                description="Los ingresos y egresos de efectivo aparecerán aquí."
+              />
+            )}
+          </CardContent>
+        </Card>
+
+        {margin ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Margen bruto estimado</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p
+                className="text-3xl font-bold tabular-nums text-foreground"
+                data-testid="gross-margin"
+              >
+                {formatBs(margin.marginCents)}
+              </p>
+              <p className="mt-2 text-sm text-foreground-muted">
+                Ventas: {formatBs(margin.revenueCents)} · Costo: {formatBs(margin.costCents)}
+              </p>
+              <p className="mt-2 text-xs text-foreground-muted">
+                Estimado con el costo registrado actualmente para los productos vendidos
+                hoy, sobre el precio de línea antes de descuentos de venta. No incluye
+                mermas ni gastos operativos.
+              </p>
+            </CardContent>
+          </Card>
+        ) : null}
       </div>
     </div>
   );

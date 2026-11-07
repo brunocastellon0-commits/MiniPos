@@ -24,14 +24,14 @@
   - `revalidatePath` incorporado en Server Actions (`sales.ts`, `cash.ts`, `inventory.ts`, `settings.ts`).
   - Dobles fetch eliminados con `Promise.all` en `reports-core.ts`, `audit-core.ts` y `compras/[id]/page.tsx`.
   - Búsqueda POS optimizada con filtrado instantáneo en cliente sobre `initialProducts` (evita peticiones al servidor en cada pulsación).
-- [ ] **Fase D — Módulos visuales**: EN PROGRESO (8 de 9 completados)
+- [x] **Fase D — Módulos visuales**: COMPLETADA (9 de 9)
   - [x] **D1 (Turnos)**: `getCashSessionDetailAction` implementada y `session-history.tsx` con filas desplegables `ExpandableRow` con desglose financiero.
   - [x] **D2 (Fechas)**: `DateRangeFilter` integrado en `sales-history.tsx`.
   - [x] **D3 (Ventas)**: Filas desplegables en `sales-history.tsx` con consulta bajo demanda de ítems congelados.
   - [x] **D4 (Compras)**: contadores por estado con filtro, fila desplegable `ExpandableRow` (ítems, notas, Recibir/Cancelar inline, línea de tiempo desde `audit_log` con usuario), nuevas acciones `cancelPurchaseAction`/`registerPurchaseVisitAction`/`getPurchaseTimelineAction` auditadas y sección independiente de Proveedores (`purchases-view.tsx`).
   - [x] **D5 (Categorías)**: Número de orden visible por fila y botones de mover en `categories-panel.tsx`.
   - [x] **D6 (Ajuste inventario)**: Modal rediseñado con 4 variantes visuales (Entrada, Salida, Merma, Corrección) y stock en vivo.
-  - [ ] **D7 (Panel del dueño)**: PENDIENTE (vista ejecutiva hoy vs ayer vs semana pasada, gráficos en CSS/SVG puro).
+  - [x] **D7 (Panel del dueño)**: "Accesos directos" eliminado; tarjeta "Comparativa de ventas" hoy/ayer/semana pasada con % de variación (`buildPanelComparison`); gráfico CSS puro existente conservado; top productos, ingresos/egresos del día (`getPanelInsightsAction` + `summarizeDayMovements`) y margen bruto estimado solo con costos completos (`estimateGrossMargin`, tarjeta oculta si falta algún costo, sin la palabra "ganancia").
   - [x] **D8 (Productos)**: Eliminada "Unidad de venta" del formulario; escáner de cámara nativo `barcode-camera-scanner.tsx` integrado; `camera=(self)` en `next.config.ts` y `headers.test.ts`.
   - [x] **D9 (Notificaciones)**: Panel con hover delay + clic de fijación implementado en `app-header.tsx`.
 - [ ] **Fase E — Configuración + Modo restaurante**: PENDIENTE
