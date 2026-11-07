@@ -45,6 +45,9 @@ export interface Database {
           low_stock_default: number;
           cashier_can_discount: boolean;
           cashier_max_discount_cents: number;
+          operating_mode: "micromarket" | "restaurant";
+          enable_held_sales: boolean;
+          order_charge_timing: "on_order" | "on_consumption";
           created_at: string;
           updated_at: string;
         };
@@ -59,6 +62,9 @@ export interface Database {
           low_stock_default?: number;
           cashier_can_discount?: boolean;
           cashier_max_discount_cents?: number;
+          operating_mode?: "micromarket" | "restaurant";
+          enable_held_sales?: boolean;
+          order_charge_timing?: "on_order" | "on_consumption";
           created_at?: string;
           updated_at?: string;
         };
@@ -73,6 +79,9 @@ export interface Database {
           low_stock_default?: number;
           cashier_can_discount?: boolean;
           cashier_max_discount_cents?: number;
+          operating_mode?: "micromarket" | "restaurant";
+          enable_held_sales?: boolean;
+          order_charge_timing?: "on_order" | "on_consumption";
           created_at?: string;
           updated_at?: string;
         };
@@ -422,6 +431,133 @@ export interface Database {
           },
         ];
       };
+      orders: {
+        Row: {
+          id: string;
+          order_number: number;
+          session_id: string;
+          created_by: string;
+          status: "pendiente" | "en_preparacion" | "listo" | "entregado" | "cancelado";
+          payment_status: "pendiente" | "pagado";
+          sale_id: string | null;
+          subtotal_cents: number;
+          discount_cents: number;
+          total_cents: number;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+          preparing_at: string | null;
+          ready_at: string | null;
+          delivered_at: string | null;
+          cancelled_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          order_number?: never;
+          session_id: string;
+          created_by?: string;
+          status?: "pendiente" | "en_preparacion" | "listo" | "entregado" | "cancelado";
+          payment_status?: "pendiente" | "pagado";
+          sale_id?: string | null;
+          subtotal_cents: number;
+          discount_cents?: number;
+          total_cents: number;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          preparing_at?: string | null;
+          ready_at?: string | null;
+          delivered_at?: string | null;
+          cancelled_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          order_number?: never;
+          session_id?: string;
+          created_by?: string;
+          status?: "pendiente" | "en_preparacion" | "listo" | "entregado" | "cancelado";
+          payment_status?: "pendiente" | "pagado";
+          sale_id?: string | null;
+          subtotal_cents?: number;
+          discount_cents?: number;
+          total_cents?: number;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          preparing_at?: string | null;
+          ready_at?: string | null;
+          delivered_at?: string | null;
+          cancelled_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "orders_session_id_fkey";
+            columns: ["session_id"];
+            isOneToOne: false;
+            referencedRelation: "cash_sessions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "orders_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "orders_sale_id_fkey";
+            columns: ["sale_id"];
+            isOneToOne: false;
+            referencedRelation: "sales";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      order_items: {
+        Row: {
+          id: string;
+          order_id: string;
+          product_id: string | null;
+          name_snapshot: string;
+          unit_price_cents: number;
+          quantity: number;
+          line_total_cents: number;
+        };
+        Insert: {
+          id?: string;
+          order_id: string;
+          product_id?: string | null;
+          name_snapshot: string;
+          unit_price_cents: number;
+          quantity: number;
+          line_total_cents: number;
+        };
+        Update: {
+          id?: string;
+          order_id?: string;
+          product_id?: string | null;
+          name_snapshot?: string;
+          unit_price_cents?: number;
+          quantity?: number;
+          line_total_cents?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       stock_movements: {
         Row: {
           id: string;
@@ -673,6 +809,9 @@ export interface Database {
           low_stock_default: number;
           cashier_can_discount: boolean;
           cashier_max_discount_cents: number;
+          operating_mode: "micromarket" | "restaurant";
+          enable_held_sales: boolean;
+          order_charge_timing: "on_order" | "on_consumption";
         }[];
       };
       products_with_cost: {
@@ -771,6 +910,24 @@ export interface Database {
         };
         Returns: string;
       };
+      create_order: {
+        Args: {
+          p_session_id: string;
+          p_items: Json;
+          p_discount_cents?: number;
+          p_notes?: string | null;
+        };
+        Returns: string;
+      };
+      charge_order: {
+        Args: {
+          p_order_id: string;
+          p_payment_method: string;
+          p_client_request_id: string;
+          p_cash_received_cents?: number | null;
+        };
+        Returns: string;
+      };
     };
     Enums: {
       user_role: "owner" | "cashier";
@@ -780,6 +937,10 @@ export interface Database {
       payment_method: "cash" | "qr" | "card";
       stock_movement_kind: "sale" | "purchase" | "adjustment" | "waste" | "void_return";
       purchase_status: "draft" | "ordered" | "partial" | "received" | "cancelled";
+      order_status: "pendiente" | "en_preparacion" | "listo" | "entregado" | "cancelado";
+      order_payment_status: "pendiente" | "pagado";
+      operating_mode: "micromarket" | "restaurant";
+      order_charge_timing: "on_order" | "on_consumption";
     };
     CompositeTypes: {
       [_ in never]: never;

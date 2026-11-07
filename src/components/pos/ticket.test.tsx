@@ -30,6 +30,9 @@ const ticket = {
     low_stock_default: 5,
     cashier_can_discount: false,
     cashier_max_discount_cents: 0,
+    operating_mode: "micromarket" as const,
+    enable_held_sales: true,
+    order_charge_timing: "on_consumption" as const,
   },
 };
 

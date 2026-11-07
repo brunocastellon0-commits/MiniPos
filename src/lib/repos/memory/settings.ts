@@ -51,6 +51,9 @@ export class MemorySettingsRepo implements SettingsRepo {
       low_stock_default: s.low_stock_default,
       cashier_can_discount: s.cashier_can_discount,
       cashier_max_discount_cents: s.cashier_max_discount_cents,
+      operating_mode: s.operating_mode,
+      enable_held_sales: s.enable_held_sales,
+      order_charge_timing: s.order_charge_timing,
     };
   }
 }

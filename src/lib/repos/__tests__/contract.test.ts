@@ -364,6 +364,9 @@ describe("Repositories Contract Suite (Memory)", () => {
       expect(pubSettings.name).toBe("Mi Minimarket");
       expect(pubSettings.currency_symbol).toBe("Bs");
       expect(pubSettings.cashier_can_discount).toBe(false);
+      expect(pubSettings.operating_mode).toBe("micromarket");
+      expect(pubSettings.enable_held_sales).toBe(true);
+      expect(pubSettings.order_charge_timing).toBe("on_order");
     });
 
     it("registra eventos de auditoría inmutables", async () => {
@@ -381,6 +384,116 @@ describe("Repositories Contract Suite (Memory)", () => {
 
       // El cajero no puede leer logs de auditoría
       await expect(cashierRepos.audit.list()).rejects.toThrow("Acceso denegado");
+    });
+  });
+
+  describe("Pedidos y Modo Restaurante (OrdersRepo)", () => {
+    it("crea un pedido con ítems congelados sin descontar stock anticipadamente", async () => {
+      const session = await cashierRepos.cash.openSession(10000);
+      const prod = await ownerRepos.products.create({
+        name: "Plato Especial",
+        barcode: null,
+        price_cents: 2500,
+        cost_cents: 1200,
+        stock_qty: 10,
+      });
+
+      const { order, items } = await cashierRepos.orders.createOrder({
+        sessionId: session.id,
+        items: [{ productId: prod.id, quantity: 2 }],
+        notes: "Mesa 4 - sin picante",
+      });
+
+      expect(order.id).toBeDefined();
+      expect(order.order_number).toBeGreaterThanOrEqual(1);
+      expect(order.status).toBe("pendiente");
+      expect(order.payment_status).toBe("pendiente");
+      expect(order.subtotal_cents).toBe(5000);
+      expect(order.total_cents).toBe(5000);
+      expect(order.notes).toBe("Mesa 4 - sin picante");
+      expect(items).toHaveLength(1);
+      expect(items[0]?.name_snapshot).toBe("Plato Especial");
+      expect(items[0]?.line_total_cents).toBe(5000);
+
+      // El stock NO debe haber bajado
+      const prodAfter = await ownerRepos.products.getById(prod.id);
+      expect(prodAfter?.stock_qty).toBe(10);
+    });
+
+    it("actualiza estados de pedido registrando timestamps", async () => {
+      const session = await cashierRepos.cash.openSession(10000);
+      const prod = await ownerRepos.products.create({
+        name: "Sopa",
+        price_cents: 1000,
+        stock_qty: 10,
+      });
+      const { order } = await cashierRepos.orders.createOrder({
+        sessionId: session.id,
+        items: [{ productId: prod.id, quantity: 1 }],
+      });
+
+      const inPrep = await cashierRepos.orders.updateStatus(order.id, "en_preparacion");
+      expect(inPrep.status).toBe("en_preparacion");
+      expect(inPrep.preparing_at).toBeDefined();
+
+      const ready = await cashierRepos.orders.updateStatus(order.id, "listo");
+      expect(ready.status).toBe("listo");
+      expect(ready.ready_at).toBeDefined();
+
+      const delivered = await cashierRepos.orders.updateStatus(order.id, "entregado");
+      expect(delivered.status).toBe("entregado");
+      expect(delivered.delivered_at).toBeDefined();
+    });
+
+    it("cobra el pedido atómicamente descontando stock y vinculando la venta", async () => {
+      const session = await cashierRepos.cash.openSession(10000);
+      const prod = await ownerRepos.products.create({
+        name: "Jugo",
+        price_cents: 1500,
+        stock_qty: 10,
+      });
+      const { order } = await cashierRepos.orders.createOrder({
+        sessionId: session.id,
+        items: [{ productId: prod.id, quantity: 3 }],
+      });
+
+      const { saleId, order: paidOrder } = await cashierRepos.orders.chargeOrder({
+        orderId: order.id,
+        paymentMethod: "cash",
+        clientRequestId: "req-order-1",
+        cashReceivedCents: 5000,
+      });
+
+      expect(saleId).toBeDefined();
+      expect(paidOrder.payment_status).toBe("pagado");
+      expect(paidOrder.sale_id).toBe(saleId);
+
+      // El stock bajó al cobrar
+      const prodAfter = await ownerRepos.products.getById(prod.id);
+      expect(prodAfter?.stock_qty).toBe(7);
+
+      // Idempotencia: cobrar de nuevo devuelve la misma venta sin duplicar
+      const repeat = await cashierRepos.orders.chargeOrder({
+        orderId: order.id,
+        paymentMethod: "cash",
+        clientRequestId: "req-order-1",
+        cashReceivedCents: 5000,
+      });
+      expect(repeat.saleId).toBe(saleId);
+
+      // Pedido cancelado no se puede cobrar
+      const { order: orderToCancel } = await cashierRepos.orders.createOrder({
+        sessionId: session.id,
+        items: [{ productId: prod.id, quantity: 1 }],
+      });
+      await cashierRepos.orders.updateStatus(orderToCancel.id, "cancelado");
+      await expect(
+        cashierRepos.orders.chargeOrder({
+          orderId: orderToCancel.id,
+          paymentMethod: "cash",
+          clientRequestId: "req-order-cancel",
+        }),
+      ).rejects.toThrow("No se puede cobrar un pedido cancelado.");
     });
   });
 });

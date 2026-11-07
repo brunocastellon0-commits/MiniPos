@@ -53,3 +53,4 @@ Sin pendientes.
 | DB-010 | 0017_profile_role_guard.sql | Trigger `BEFORE UPDATE` en `profiles`: solo `owner` cambia `role`/`active` (bloquea autoascenso de cajero, 42501) | 2026-11-04 |
 | DB-011 | 0018_perf_indexes.sql | Índices `sales(payment_method)`, `held_sales(created_at desc)` y `profiles(full_name)` (corregido: la columna es `full_name`) | 2026-11-04 |
 | DB-012 | 0019_cashier_discount_threshold.sql | Columna `business_settings.cashier_max_discount_cents` + `get_business_public()` la expone + `confirm_sale` aplica el umbral del cajero (42501) | 2026-11-04 |
+| DB-013 | 0020_operating_mode_orders.sql | Modalidad operativa (micromarket/restaurante), configuración y tablas/RPCs de pedidos transaccionales | 2026-11-05 |

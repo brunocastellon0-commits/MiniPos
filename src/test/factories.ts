@@ -237,6 +237,9 @@ export function buildBusinessSettings(overrides: Partial<BusinessSettings> = {})
     low_stock_default: overrides.low_stock_default ?? 5,
     cashier_can_discount: overrides.cashier_can_discount ?? false,
     cashier_max_discount_cents: overrides.cashier_max_discount_cents ?? 0,
+    operating_mode: overrides.operating_mode ?? "micromarket",
+    enable_held_sales: overrides.enable_held_sales ?? true,
+    order_charge_timing: overrides.order_charge_timing ?? "on_order",
     created_at: overrides.created_at || now,
     updated_at: overrides.updated_at || now,
   };

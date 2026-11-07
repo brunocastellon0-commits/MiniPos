@@ -5,6 +5,7 @@ import { SupabaseProductsRepo } from "./products";
 import { SupabaseCategoriesRepo } from "./categories";
 import { SupabaseCashRepo } from "./cash";
 import { SupabaseSalesRepo } from "./sales";
+import { SupabaseOrdersRepo } from "./orders";
 import { SupabaseInventoryRepo } from "./inventory";
 import { SupabasePurchasesRepo } from "./purchases";
 import { SupabaseSuppliersRepo } from "./suppliers";
@@ -21,6 +22,7 @@ export function createSupabaseRepositories(
     categories: new SupabaseCategoriesRepo(supabase, user),
     cash: new SupabaseCashRepo(supabase, user),
     sales: new SupabaseSalesRepo(supabase, user),
+    orders: new SupabaseOrdersRepo(supabase, user),
     inventory: new SupabaseInventoryRepo(supabase, user),
     purchases: new SupabasePurchasesRepo(supabase, user),
     suppliers: new SupabaseSuppliersRepo(supabase, user),

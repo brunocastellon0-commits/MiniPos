@@ -58,6 +58,42 @@ export interface BusinessPublicSettings {
   low_stock_default: number;
   cashier_can_discount: boolean;
   cashier_max_discount_cents: number;
+  operating_mode: "micromarket" | "restaurant";
+  enable_held_sales: boolean;
+  order_charge_timing: "on_order" | "on_consumption";
+}
+
+export type Order = Tables<"orders">;
+export type OrderInsert = TablesInsert<"orders">;
+export type OrderUpdate = TablesUpdate<"orders">;
+
+export type OrderItem = Tables<"order_items">;
+export type OrderItemInsert = TablesInsert<"order_items">;
+
+export interface OrdersListFilter {
+  sessionId?: string;
+  status?: Order["status"];
+  paymentStatus?: Order["payment_status"];
+  limit?: number;
+}
+
+export interface OrdersRepo {
+  createOrder(input: {
+    sessionId: string;
+    items: { productId: string; quantity: number }[];
+    discountCents?: number;
+    notes?: string | null;
+  }): Promise<{ order: Order; items: OrderItem[] }>;
+  getById(id: string): Promise<{ order: Order; items: OrderItem[] } | null>;
+  list(filter?: OrdersListFilter): Promise<Order[]>;
+  listItemsForOrders(orderIds: readonly string[]): Promise<OrderItem[]>;
+  updateStatus(id: string, status: Order["status"]): Promise<Order>;
+  chargeOrder(input: {
+    orderId: string;
+    paymentMethod: "cash" | "qr" | "card";
+    clientRequestId: string;
+    cashReceivedCents?: number | null;
+  }): Promise<{ saleId: string; order: Order }>;
 }
 
 export type AuditLog = Tables<"audit_log">;
@@ -197,6 +233,7 @@ export interface Repositories {
   categories: CategoriesRepo;
   cash: CashRepo;
   sales: SalesRepo;
+  orders: OrdersRepo;
   inventory: InventoryRepo;
   purchases: PurchasesRepo;
   suppliers: SuppliersRepo;

@@ -4,6 +4,7 @@ import { MemoryProductsRepo } from "./products";
 import { MemoryCategoriesRepo } from "./categories";
 import { MemoryCashRepo } from "./cash";
 import { MemorySalesRepo } from "./sales";
+import { MemoryOrdersRepo } from "./orders";
 import { MemoryInventoryRepo } from "./inventory";
 import { MemoryPurchasesRepo } from "./purchases";
 import { MemorySuppliersRepo } from "./suppliers";
@@ -19,6 +20,7 @@ export function createMemoryRepositories(store: MemoryStore, user: UserContext):
     categories: new MemoryCategoriesRepo(store, user),
     cash: new MemoryCashRepo(store, user),
     sales: new MemorySalesRepo(store, user),
+    orders: new MemoryOrdersRepo(store, user),
     inventory: new MemoryInventoryRepo(store, user),
     purchases: new MemoryPurchasesRepo(store, user),
     suppliers: new MemorySuppliersRepo(store, user),

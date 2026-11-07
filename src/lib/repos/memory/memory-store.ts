@@ -13,6 +13,8 @@ import type {
   Purchase,
   PurchaseItem,
   AuditLog,
+  Order,
+  OrderItem,
 } from "../types";
 
 export class MemoryStore {
@@ -25,6 +27,8 @@ export class MemoryStore {
   sales = new Map<string, Sale>();
   saleItems = new Map<string, SaleItem>();
   heldSales = new Map<string, HeldSale>();
+  orders = new Map<string, Order>();
+  orderItems = new Map<string, OrderItem>();
   stockMovements = new Map<string, StockMovement>();
   suppliers = new Map<string, Supplier>();
   purchases = new Map<string, Purchase>();
@@ -32,6 +36,7 @@ export class MemoryStore {
   auditLog = new Map<string, AuditLog>();
 
   private salesNumberSeq = 1;
+  private orderNumberSeq = 1;
 
   constructor() {
     this.businessSettings = {
@@ -45,6 +50,9 @@ export class MemoryStore {
       low_stock_default: 5,
       cashier_can_discount: false,
       cashier_max_discount_cents: 0,
+      operating_mode: "micromarket",
+      enable_held_sales: true,
+      order_charge_timing: "on_order",
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -52,6 +60,10 @@ export class MemoryStore {
 
   nextSaleNumber(): number {
     return this.salesNumberSeq++;
+  }
+
+  nextOrderNumber(): number {
+    return this.orderNumberSeq++;
   }
 
   reset(): void {
@@ -63,12 +75,15 @@ export class MemoryStore {
     this.sales.clear();
     this.saleItems.clear();
     this.heldSales.clear();
+    this.orders.clear();
+    this.orderItems.clear();
     this.stockMovements.clear();
     this.suppliers.clear();
     this.purchases.clear();
     this.purchaseItems.clear();
     this.auditLog.clear();
     this.salesNumberSeq = 1;
+    this.orderNumberSeq = 1;
 
     this.businessSettings = {
       id: 1,
@@ -81,6 +96,9 @@ export class MemoryStore {
       low_stock_default: 5,
       cashier_can_discount: false,
       cashier_max_discount_cents: 0,
+      operating_mode: "micromarket",
+      enable_held_sales: true,
+      order_charge_timing: "on_order",
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
