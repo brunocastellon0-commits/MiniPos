@@ -35,6 +35,7 @@ export interface PosClientProps {
   categories: Category[];
   overview: CashOverview;
   canDiscount: boolean;
+  enableHeldSales?: boolean;
 }
 
 const cartOptions = { allowNegativeStock: false };
@@ -62,6 +63,7 @@ export function PosClient({
   categories,
   overview,
   canDiscount,
+  enableHeldSales = true,
 }: PosClientProps) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string | null>(null);
@@ -379,20 +381,22 @@ export function PosClient({
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex gap-2">
+                  {enableHeldSales ? (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="flex-1"
+                      onClick={() => setPauseOpen(true)}
+                      disabled={cart.lines.length === 0}
+                    >
+                      <Pause className="size-4" aria-hidden="true" />
+                      Pausar venta
+                    </Button>
+                  ) : null}
                   <Button
                     size="sm"
                     variant="secondary"
-                    className="flex-1"
-                    onClick={() => setPauseOpen(true)}
-                    disabled={cart.lines.length === 0}
-                  >
-                    <Pause className="size-4" aria-hidden="true" />
-                    Pausar venta
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    className="flex-1"
+                    className={enableHeldSales ? "flex-1" : "w-full"}
                     onClick={() => setHeldOpen(true)}
                   >
                     Pausadas
@@ -604,7 +608,7 @@ export function PosClient({
         />
       ) : null}
 
-      {pauseOpen ? (
+      {enableHeldSales && pauseOpen ? (
         <PauseSaleDialog
           onClose={() => setPauseOpen(false)}
           onPaused={() => setPauseOpen(false)}

@@ -377,6 +377,25 @@ describe("PosClient (E4-02/E4-03/E4-04)", () => {
     expect(await screen.findByText("Ningún producto de la venta pausada está disponible.")).toBeInTheDocument();
   });
 
+  it("oculta Pausar venta cuando las ventas pausadas están desactivadas (Fase E)", () => {
+    const { unmount } = render(
+      <PosClient
+        initialProducts={[arroz, leche]}
+        categories={[]}
+        overview={overview}
+        canDiscount
+        enableHeldSales={false}
+      />,
+    );
+
+    expect(screen.queryByRole("button", { name: "Pausar venta" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Pausadas" })).toBeInTheDocument();
+    unmount();
+
+    renderPos();
+    expect(screen.getByRole("button", { name: "Pausar venta" })).toBeInTheDocument();
+  });
+
   it("aplica descuento por monto en el carrito (E4-07)", () => {
     renderPos();
     addToCart("Arroz 1kg");

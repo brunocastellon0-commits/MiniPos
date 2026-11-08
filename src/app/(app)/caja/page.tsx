@@ -1,21 +1,29 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ShoppingCart, Wallet } from "lucide-react";
+import { ArrowLeft, ShoppingCart, Wallet } from "lucide-react";
 import { PosClient } from "@/components/pos/pos-client";
+import { OrdersView } from "@/components/orders/orders-view";
+import { buttonClasses } from "@/components/ui/button";
 import { getCashOverviewAction } from "@/lib/actions/cash";
 import { listCategoriesAction } from "@/lib/actions/categories";
+import { listOrdersAction } from "@/lib/actions/orders";
 import { listPosProductsAction } from "@/lib/actions/products-search";
 import { getBusinessPublicAction } from "@/lib/actions/settings";
 import { requireUser } from "@/lib/auth";
 import { EmptyState } from "@/components/ui/empty-state";
 
 export const metadata: Metadata = {
-  title: "Caja (POS)",
-  description: "Punto de venta: buscar, cobrar y atender clientes.",
+  title: "Caja",
+  description: "Punto de venta y pedidos del negocio.",
 };
 
-export default async function CajaPage() {
+interface CajaPageProps {
+  searchParams: Promise<{ vista?: string }>;
+}
+
+export default async function CajaPage({ searchParams }: CajaPageProps) {
   const user = await requireUser("/login");
+  const params = await searchParams;
 
   let overviewResult: Awaited<ReturnType<typeof getCashOverviewAction>>;
   let initialProducts: Awaited<ReturnType<typeof listPosProductsAction>>;
@@ -27,9 +35,7 @@ export default async function CajaPage() {
       getCashOverviewAction(),
       listPosProductsAction(),
       listCategoriesAction(),
-      user.role === "owner"
-        ? (Promise.resolve(null) as Promise<null>)
-        : getBusinessPublicAction(),
+      getBusinessPublicAction(),
     ]);
   } catch {
     overviewResult = {
@@ -43,6 +49,10 @@ export default async function CajaPage() {
   }
 
   const overview = overviewResult.ok ? overviewResult.data : null;
+  const settings = publicSettings?.ok ? publicSettings.data : null;
+  const isRestaurant = settings?.operating_mode === "restaurant";
+  const enableHeldSales = settings?.enable_held_sales ?? true;
+  const showPos = !isRestaurant || params.vista === "pos";
 
   if (!overview) {
     return (
@@ -56,15 +66,34 @@ export default async function CajaPage() {
           title="No hay turno de caja abierto"
           description="Abre un turno con tu saldo inicial antes de registrar ventas."
           action={
-            <Link
-              href="/turno"
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-            >
+            <Link href="/turno" className={buttonClasses()}>
               Abrir turno
             </Link>
           }
         />
       </div>
+    );
+  }
+
+  if (isRestaurant && !showPos) {
+    let ordersResult: Awaited<ReturnType<typeof listOrdersAction>>;
+    try {
+      ordersResult = await listOrdersAction({});
+    } catch {
+      ordersResult = {
+        ok: false,
+        code: "INTERNAL_ERROR",
+        message: "No se pudieron cargar los pedidos.",
+      };
+    }
+
+    return (
+      <OrdersView
+        orders={ordersResult.ok ? ordersResult.data.orders : []}
+        items={ordersResult.ok ? ordersResult.data.items : []}
+        cashierNames={ordersResult.ok ? ordersResult.data.cashierNames : {}}
+        error={ordersResult.ok ? null : ordersResult.message}
+      />
     );
   }
 
@@ -75,8 +104,7 @@ export default async function CajaPage() {
 
   let canDiscount = true;
   if (user.role !== "owner") {
-    canDiscount =
-      publicSettings !== null && publicSettings.ok && publicSettings.data.cashier_can_discount;
+    canDiscount = settings !== null && settings.cashier_can_discount;
   }
 
   if (!initialProducts.ok) {
@@ -93,6 +121,37 @@ export default async function CajaPage() {
     );
   }
 
+  if (isRestaurant && showPos) {
+    return (
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm text-muted">Modo restaurante</p>
+            <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-foreground">
+              <ShoppingCart className="h-6 w-6 text-primary" aria-hidden="true" />
+              Venta directa
+            </h1>
+          </div>
+          <Link
+            href="/caja"
+            className={buttonClasses({ variant: "secondary" })}
+            data-testid="volver-pedidos-link"
+          >
+            <ArrowLeft className="size-4" aria-hidden="true" />
+            Volver a pedidos
+          </Link>
+        </div>
+        <PosClient
+          initialProducts={products}
+          categories={categoryList}
+          overview={overview}
+          canDiscount={canDiscount}
+          enableHeldSales={enableHeldSales}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div>
@@ -101,7 +160,7 @@ export default async function CajaPage() {
           Nueva venta
         </h1>
         <p className="mt-1 text-sm text-muted">
-          Busca productos, agrega al carrito y cobra. F2 para buscar · F9 para cobrar.
+          Busca productos, agrega al carrito y cobra. F2 para buscar — F9 para cobrar.
         </p>
       </div>
       <PosClient
@@ -109,6 +168,7 @@ export default async function CajaPage() {
         categories={categoryList}
         overview={overview}
         canDiscount={canDiscount}
+        enableHeldSales={enableHeldSales}
       />
     </div>
   );

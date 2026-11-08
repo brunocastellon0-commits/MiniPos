@@ -174,6 +174,23 @@ describe("Navegación y Layout por Rol (E1-03)", () => {
     });
   });
 
+  describe("Etiqueta de navegación por modalidad (Fase E)", () => {
+    it("muestra Caja en micromarket y Pedidos en restaurante (misma ruta)", () => {
+      const { unmount } = render(<AppSidebar user={ownerUser} operatingMode="micromarket" />);
+      expect(screen.getByRole("link", { name: "Caja" })).toHaveAttribute("href", "/caja");
+      unmount();
+
+      render(<AppSidebar user={ownerUser} operatingMode="restaurant" />);
+      expect(screen.getByRole("link", { name: "Pedidos" })).toHaveAttribute("href", "/caja");
+      expect(screen.queryByRole("link", { name: "Caja" })).not.toBeInTheDocument();
+    });
+
+    it("el cajero también ve Pedidos en restaurante", () => {
+      render(<AppSidebar user={cashierUser} operatingMode="restaurant" />);
+      expect(screen.getByRole("link", { name: "Pedidos" })).toHaveAttribute("href", "/caja");
+    });
+  });
+
   describe("Helper isPathAllowedForRole", () => {
     it("valida correctamente las rutas según la matriz de roles", () => {
       // Rutas de cajero

@@ -12,11 +12,18 @@ export interface AppSidebarProps {
   onNavigate?: () => void;
   className?: string;
   lowStockCount?: number;
+  operatingMode?: "micromarket" | "restaurant";
 }
 
-export function AppSidebar({ user, onNavigate, className, lowStockCount = 0 }: AppSidebarProps) {
+export function AppSidebar({
+  user,
+  onNavigate,
+  className,
+  lowStockCount = 0,
+  operatingMode,
+}: AppSidebarProps) {
   const pathname = usePathname();
-  const groups = getNavGroupsForRole(user.role);
+  const groups = getNavGroupsForRole(user.role, { operatingMode });
 
   return (
     <aside className={cn("flex h-full w-64 flex-col border-r border-border bg-surface", className)}>

@@ -34,10 +34,14 @@
   - [x] **D7 (Panel del dueño)**: "Accesos directos" eliminado; tarjeta "Comparativa de ventas" hoy/ayer/semana pasada con % de variación (`buildPanelComparison`); gráfico CSS puro existente conservado; top productos, ingresos/egresos del día (`getPanelInsightsAction` + `summarizeDayMovements`) y margen bruto estimado solo con costos completos (`estimateGrossMargin`, tarjeta oculta si falta algún costo, sin la palabra "ganancia").
   - [x] **D8 (Productos)**: Eliminada "Unidad de venta" del formulario; escáner de cámara nativo `barcode-camera-scanner.tsx` integrado; `camera=(self)` en `next.config.ts` y `headers.test.ts`.
   - [x] **D9 (Notificaciones)**: Panel con hover delay + clic de fijación implementado en `app-header.tsx`.
-- [ ] **Fase E — Configuración + Modo restaurante**: PENDIENTE
-  - Controles nuevos en pantalla de configuración (Modalidad, Pausar ventas, Momento de cobro).
-  - POS bifurcado en `/caja` según `operating_mode` (`OrdersView` vs `PosClient`).
-  - Rutas de pedidos (`/caja/nuevo`, `/caja/pedido/[id]`).
+- [x] **Fase E — Configuración + Modo restaurante**: COMPLETADA
+  - [x] **E1 (Configuración)**: +3 campos en `settings-schema.ts`/`settings-core.ts` (`operating_mode`, `enable_held_sales`, `order_charge_timing`), controles en `business-settings-view.tsx` (Modalidad, Ventas pausadas, Momento de cobro solo en restaurante) y payload +3 en `onboarding-wizard.tsx`.
+  - [x] **E2 (Dominio)**: `src/lib/domain/orders.ts` con cadena de estados, `canTransitionOrder` e `isOrderChargeable`.
+  - [x] **E3 (Acciones pedidos)**: `orders-schema.ts`/`orders-core.ts`/`orders.ts` — crear (valida restaurante + sesión + efectivo en `on_order`), listar con ítems y nombres de cajero, detalle con `createdByName`, cambio de estado auditado y cobro idempotente; rate limits dedicados.
+  - [x] **E4 (Tablero)**: `orders-view.tsx` con 4 columnas + Cancelados, tarjetas enlazando a `/caja/pedido/[id]`, estados vacío/error; `order-badges.tsx` con etiquetas/tonos.
+  - [x] **E5 (Nuevo pedido)**: rutas `/caja/nuevo` y `/caja/pedido/[id]`, `new-order-view.tsx` (carrito con dominio `cart.ts`, búsqueda con Enter por código, notas) y `payment-method-dialog.tsx` reutilizable.
+  - [x] **E6 (Detalle)**: `order-detail.tsx` con flujo paso a paso, cobro (diálogo), avance y cancelación con motivo; muestra "Pedido cobrado" con enlace a la venta.
+  - [x] **E7 (Integración)**: `/caja` bifurcado por `operating_mode` (+`?vista=pos` para venta directa), nav "Caja"→"Pedidos" en restaurante (`getNavGroupsForRole`), `enableHeldSales` oculta solo "Pausar venta" en el POS.
 - [ ] **Fase F — Reportes reestructurados**: PENDIENTE
   - Pestañas compartidas, micromarket y restaurante en `reports-view.tsx`.
 - [ ] **Fase G — Verificación y Tests**: PENDIENTE (el agente ejecuta `pnpm check` y los tests al cierre).

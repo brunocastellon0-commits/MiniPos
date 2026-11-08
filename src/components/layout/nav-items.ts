@@ -122,10 +122,20 @@ export const ALL_NAV_GROUPS: NavGroup[] = [
   },
 ];
 
-export function getNavGroupsForRole(role: UserRole): NavGroup[] {
+export interface NavOptions {
+  operatingMode?: "micromarket" | "restaurant";
+}
+
+export function getNavGroupsForRole(role: UserRole, options: NavOptions = {}): NavGroup[] {
   return ALL_NAV_GROUPS.map((group) => ({
     name: group.name,
-    items: group.items.filter((item) => item.roles.includes(role)),
+    items: group.items
+      .filter((item) => item.roles.includes(role))
+      .map((item) =>
+        item.href === "/caja" && options.operatingMode === "restaurant"
+          ? { ...item, title: "Pedidos" }
+          : item,
+      ),
   })).filter((group) => group.items.length > 0);
 }
 

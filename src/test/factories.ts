@@ -5,6 +5,8 @@ import type {
   CashMovement,
   Sale,
   SaleItem,
+  Order,
+  OrderItem,
   HeldSale,
   StockMovement,
   Supplier,
@@ -134,6 +136,50 @@ export function buildSaleItem(overrides: Partial<SaleItem> = {}): SaleItem {
     sale_id: overrides.sale_id || "sale-1",
     product_id: overrides.product_id || "prod-1",
     name_snapshot: overrides.name_snapshot || "Coca-Cola 2L",
+    unit_price_cents: unitPrice,
+    quantity: qty,
+    line_total_cents: overrides.line_total_cents ?? unitPrice * qty,
+  };
+}
+
+export function buildOrder(overrides: Partial<Order> = {}): Order {
+  const id = overrides.id || uniqueId("order");
+  const now = new Date().toISOString();
+  const subtotal = overrides.subtotal_cents ?? 2500;
+  const discount = overrides.discount_cents ?? 0;
+  const total = overrides.total_cents ?? subtotal - discount;
+  const status = overrides.status || "pendiente";
+  const isCancelled = status === "cancelado";
+  return {
+    id,
+    order_number: overrides.order_number ?? 1,
+    session_id: overrides.session_id || "session-1",
+    created_by: overrides.created_by || "user-cashier-1",
+    status,
+    payment_status: overrides.payment_status || "pendiente",
+    sale_id: overrides.sale_id ?? null,
+    subtotal_cents: subtotal,
+    discount_cents: discount,
+    total_cents: total,
+    notes: overrides.notes ?? null,
+    created_at: overrides.created_at || now,
+    updated_at: overrides.updated_at || now,
+    preparing_at: overrides.preparing_at ?? null,
+    ready_at: overrides.ready_at ?? null,
+    delivered_at: overrides.delivered_at ?? null,
+    cancelled_at: isCancelled ? (overrides.cancelled_at ?? now) : null,
+  };
+}
+
+export function buildOrderItem(overrides: Partial<OrderItem> = {}): OrderItem {
+  const id = overrides.id || uniqueId("order-item");
+  const unitPrice = overrides.unit_price_cents ?? 1250;
+  const qty = overrides.quantity ?? 2;
+  return {
+    id,
+    order_id: overrides.order_id || "order-1",
+    product_id: overrides.product_id || "prod-1",
+    name_snapshot: overrides.name_snapshot || "Arroz 1kg",
     unit_price_cents: unitPrice,
     quantity: qty,
     line_total_cents: overrides.line_total_cents ?? unitPrice * qty,

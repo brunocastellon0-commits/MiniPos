@@ -19,6 +19,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const user = await requireUser("/login");
 
   let businessName = "LILA MARKET";
+  let operatingMode: "micromarket" | "restaurant" = "micromarket";
   let cashSession: OpenCashSessionPublic | null = null;
   let lowStockCount = 0;
   let notifications: DashboardNotification[] | null = null;
@@ -36,6 +37,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
     if (publicSettingsResult.ok) {
       businessName = publicSettingsResult.data.name;
+      operatingMode = publicSettingsResult.data.operating_mode;
     }
     if (openSessionResult.ok) {
       cashSession = openSessionResult.data;
@@ -66,6 +68,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       cashSession={cashSession}
       lowStockCount={lowStockCount}
       notifications={notifications}
+      operatingMode={operatingMode}
     >
       {children}
     </AppLayoutClient>
