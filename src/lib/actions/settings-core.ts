@@ -66,6 +66,9 @@ const EDITABLE_KEYS = [
   "cashier_can_discount",
   "low_stock_default",
   "cashier_max_discount_cents",
+  "operating_mode",
+  "enable_held_sales",
+  "order_charge_timing",
 ] as const;
 
 export function createGetBusinessSettingsAction(deps: SettingsActionDeps = {}) {

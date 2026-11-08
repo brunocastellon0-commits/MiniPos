@@ -89,6 +89,9 @@ describe("OnboardingWizard (E10-03)", () => {
         cashier_can_discount: true,
         cashier_max_discount_cents: 0,
         low_stock_default: 4,
+        operating_mode: "micromarket",
+        enable_held_sales: true,
+        order_charge_timing: "on_order",
       }),
     );
     expect(await screen.findByRole("heading", { name: "Categorías" })).toBeInTheDocument();

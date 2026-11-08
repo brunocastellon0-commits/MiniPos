@@ -49,6 +49,9 @@ describe("BusinessSettingsView (E10-01)", () => {
         cashier_can_discount: false,
         cashier_max_discount_cents: 0,
         low_stock_default: 5,
+        operating_mode: "micromarket",
+        enable_held_sales: true,
+        order_charge_timing: "on_order",
       }),
     );
     expect(await screen.findByText("Configuración guardada.")).toBeInTheDocument();
@@ -110,6 +113,61 @@ describe("BusinessSettingsView (E10-01)", () => {
     fireEvent.change(codeInput, { target: { value: "bob" } });
 
     expect(codeInput).toHaveValue("BOB");
+  });
+
+  it("muestra la modalidad y el interruptor de ventas pausadas", () => {
+    renderView();
+
+    expect(screen.getByLabelText("Modalidad")).toHaveValue("micromarket");
+    expect(
+      screen.getByRole("checkbox", { name: /Permitir ventas pausadas/ }),
+    ).toBeChecked();
+  });
+
+  it("oculta el momento de cobro en micromarket y lo muestra en restaurante", () => {
+    renderView();
+
+    expect(screen.queryByLabelText("Momento de cobro")).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Modalidad"), {
+      target: { value: "restaurant" },
+    });
+
+    expect(screen.getByLabelText("Momento de cobro")).toHaveValue("on_order");
+  });
+
+  it("envía la modalidad, ventas pausadas y el momento de cobro al guardar", async () => {
+    vi.mocked(updateBusinessSettingsAction).mockResolvedValue({
+      ok: true,
+      data: buildBusinessSettings({
+        operating_mode: "restaurant",
+        enable_held_sales: false,
+        order_charge_timing: "on_consumption",
+      }),
+    });
+    renderView();
+
+    fireEvent.change(screen.getByLabelText("Modalidad"), {
+      target: { value: "restaurant" },
+    });
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: /Permitir ventas pausadas/ }),
+    );
+    fireEvent.change(screen.getByLabelText("Momento de cobro"), {
+      target: { value: "on_consumption" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Guardar" }));
+
+    await waitFor(() =>
+      expect(updateBusinessSettingsAction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          operating_mode: "restaurant",
+          enable_held_sales: false,
+          order_charge_timing: "on_consumption",
+        }),
+      ),
+    );
+    expect(await screen.findByTestId("saved-toast")).toBeInTheDocument();
   });
 
   it("muestra el error del servidor en role=alert", async () => {

@@ -34,9 +34,16 @@ export const updateBusinessSettingsSchema = z
       .max(10_000_000, { message: "El máximo de descuento del cajero es demasiado alto." }),
     low_stock_default: z
       .number()
-      .int({ message: "El umbral de stock bajo debe ser un número entero." })
+      .int({ message: "El umbral de stock bajo debe ser un nǧmero entero." })
       .min(0, { message: "El umbral de stock bajo no puede ser negativo." })
       .max(9999, { message: "El umbral de stock bajo es demasiado alto." }),
+    operating_mode: z.enum(["micromarket", "restaurant"], {
+      message: "La modalidad debe ser micromarket o restaurante.",
+    }),
+    enable_held_sales: z.boolean(),
+    order_charge_timing: z.enum(["on_order", "on_consumption"], {
+      message: "El momento de cobro debe ser al crear o al finalizar el consumo.",
+    }),
   })
   .strict();
 

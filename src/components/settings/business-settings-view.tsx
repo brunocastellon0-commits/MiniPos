@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { Toast } from "@/components/ui/toast";
 
 export interface BusinessSettingsViewProps {
@@ -35,6 +36,9 @@ export function BusinessSettingsView({
   const [maxCashierDiscount, setMaxCashierDiscount] = useState(
     (initialSettings.cashier_max_discount_cents / 100).toFixed(2),
   );
+  const [operatingMode, setOperatingMode] = useState(initialSettings.operating_mode);
+  const [enableHeldSales, setEnableHeldSales] = useState(initialSettings.enable_held_sales);
+  const [orderChargeTiming, setOrderChargeTiming] = useState(initialSettings.order_charge_timing);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(initialError);
@@ -70,6 +74,9 @@ export function BusinessSettingsView({
         cashier_can_discount: cashierCanDiscount,
         low_stock_default: Number(lowStockDefault),
         cashier_max_discount_cents: maxCashierDiscountCents,
+        operating_mode: operatingMode,
+        enable_held_sales: enableHeldSales,
+        order_charge_timing: orderChargeTiming,
       });
       if (result.ok) {
         setName(result.data.name);
@@ -80,6 +87,9 @@ export function BusinessSettingsView({
         setCashierCanDiscount(result.data.cashier_can_discount);
         setLowStockDefault(String(result.data.low_stock_default));
         setMaxCashierDiscount((result.data.cashier_max_discount_cents / 100).toFixed(2));
+        setOperatingMode(result.data.operating_mode);
+        setEnableHeldSales(result.data.enable_held_sales);
+        setOrderChargeTiming(result.data.order_charge_timing);
         setSaved(true);
       } else {
         setError(result.message);
@@ -189,6 +199,71 @@ export function BusinessSettingsView({
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="space-y-1.5 sm:max-w-64">
+              <label
+                htmlFor="business-operating-mode"
+                className="block text-sm font-medium text-foreground"
+              >
+                Modalidad
+              </label>
+              <Select
+                id="business-operating-mode"
+                className={inputClass}
+                value={operatingMode}
+                onChange={(event) => {
+                  setOperatingMode(event.target.value as "micromarket" | "restaurant");
+                  handleChange();
+                }}
+              >
+                <option value="micromarket">Micromarket</option>
+                <option value="restaurant">Restaurante</option>
+              </Select>
+              <p className="text-xs text-muted">
+                Micromarket cobra directo en caja. Restaurante gestiona pedidos con estados.
+              </p>
+            </div>
+            <label className="flex items-start gap-2 text-sm text-foreground">
+              <input
+                type="checkbox"
+                checked={enableHeldSales}
+                onChange={(event) => {
+                  setEnableHeldSales(event.target.checked);
+                  handleChange();
+                }}
+                className="mt-0.5 size-4 rounded border-border accent-primary"
+              />
+              <span>
+                Permitir ventas pausadas
+                <span className="mt-1 block text-xs text-muted">
+                  Si se desactiva, el botón «Pausar venta» desaparece del POS.
+                </span>
+              </span>
+            </label>
+            {operatingMode === "restaurant" ? (
+              <div className="space-y-1.5 sm:max-w-64">
+                <label
+                  htmlFor="business-order-charge-timing"
+                  className="block text-sm font-medium text-foreground"
+                >
+                  Momento de cobro
+                </label>
+                <Select
+                  id="business-order-charge-timing"
+                  className={inputClass}
+                  value={orderChargeTiming}
+                  onChange={(event) => {
+                    setOrderChargeTiming(event.target.value as "on_order" | "on_consumption");
+                    handleChange();
+                  }}
+                >
+                  <option value="on_order">Al crear el pedido</option>
+                  <option value="on_consumption">Al finalizar el consumo</option>
+                </Select>
+                <p className="text-xs text-muted">
+                  Define cuándo se descuenta stock y se registra la venta.
+                </p>
+              </div>
+            ) : null}
             <label className="flex items-start gap-2 text-sm text-foreground">
               <input
                 type="checkbox"

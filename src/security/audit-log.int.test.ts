@@ -93,6 +93,9 @@ describe("Bitácora de auditoría (E11-08)", () => {
       cashier_can_discount: initial.cashier_can_discount,
       cashier_max_discount_cents: initial.cashier_max_discount_cents,
       low_stock_default: initial.low_stock_default,
+      operating_mode: initial.operating_mode,
+      enable_held_sales: initial.enable_held_sales,
+      order_charge_timing: initial.order_charge_timing,
     });
     expect(result.ok).toBe(true);
 

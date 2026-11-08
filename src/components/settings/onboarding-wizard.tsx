@@ -65,6 +65,9 @@ export function OnboardingWizard({ initialSettings }: OnboardingWizardProps) {
         cashier_can_discount: initialSettings.cashier_can_discount,
         cashier_max_discount_cents: initialSettings.cashier_max_discount_cents,
         low_stock_default: initialSettings.low_stock_default,
+        operating_mode: initialSettings.operating_mode,
+        enable_held_sales: initialSettings.enable_held_sales,
+        order_charge_timing: initialSettings.order_charge_timing,
       });
       if (result.ok) {
         goNext();

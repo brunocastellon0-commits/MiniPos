@@ -6,6 +6,7 @@ import {
   createUpdateBusinessSettingsAction,
 } from "./settings-core";
 import type { SettingsActionDeps } from "./settings-core";
+import type { UpdateBusinessSettingsInput } from "./settings-schema";
 import type { AuthenticatedUser } from "./secure-action";
 
 const cashier: AuthenticatedUser = {
@@ -85,16 +86,19 @@ describe("Configuración del negocio (E10-01/E10-02)", () => {
     };
   }
 
-  const validUpdate = {
-    name: "Minimarket Sol",
-    legal_name: "Sol SRL",
-    currency_code: "bob",
-    currency_symbol: "Bs",
-    allow_negative_stock: false,
-    cashier_can_discount: true,
-    cashier_max_discount_cents: 500,
-    low_stock_default: 3,
-  };
+    const validUpdate: UpdateBusinessSettingsInput = {
+        name: "Minimarket Sol",
+        legal_name: "Sol SRL",
+        currency_code: "bob",
+        currency_symbol: "Bs",
+        allow_negative_stock: false,
+        cashier_can_discount: true,
+        cashier_max_discount_cents: 500,
+        low_stock_default: 3,
+        operating_mode: "restaurant",
+        enable_held_sales: false,
+        order_charge_timing: "on_consumption",
+      };
 
   it("el dueño lee la configuración completa; cajero y anónimo no", async () => {
     const ok = await createGetBusinessSettingsAction(makeDeps(owner))();
