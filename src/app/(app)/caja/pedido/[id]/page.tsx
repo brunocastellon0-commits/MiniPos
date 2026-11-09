@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ClipboardList } from "lucide-react";
 import { OrderDetail } from "@/components/orders/order-detail";
-import { buttonClasses } from "@/components/ui/button";
+import { buttonClasses } from "@/components/ui/button-classes";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getOrderAction } from "@/lib/actions/orders";
 import { requireUser } from "@/lib/auth";

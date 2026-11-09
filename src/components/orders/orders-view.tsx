@@ -1,6 +1,6 @@
 import { ClipboardList, Plus } from "lucide-react";
 import Link from "next/link";
-import { buttonClasses } from "@/components/ui/button";
+import { buttonClasses } from "@/components/ui/button-classes";
 import { EmptyState } from "@/components/ui/empty-state";
 import { formatDateTime } from "@/lib/dates";
 import { formatBs } from "@/lib/money";

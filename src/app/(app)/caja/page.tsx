@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, ShoppingCart, Wallet } from "lucide-react";
 import { PosClient } from "@/components/pos/pos-client";
 import { OrdersView } from "@/components/orders/orders-view";
-import { buttonClasses } from "@/components/ui/button";
+import { buttonClasses } from "@/components/ui/button-classes";
 import { getCashOverviewAction } from "@/lib/actions/cash";
 import { listCategoriesAction } from "@/lib/actions/categories";
 import { listOrdersAction } from "@/lib/actions/orders";

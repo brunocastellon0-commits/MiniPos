@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Plus, ShoppingCart, Wallet } from "lucide-react";
 import { NewOrderView } from "@/components/orders/new-order-view";
-import { buttonClasses } from "@/components/ui/button";
+import { buttonClasses } from "@/components/ui/button-classes";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getCashOverviewAction } from "@/lib/actions/cash";
 import { listCategoriesAction } from "@/lib/actions/categories";
