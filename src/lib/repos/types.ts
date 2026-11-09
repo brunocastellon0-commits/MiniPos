@@ -144,6 +144,8 @@ export interface CashRepo {
     reason: string;
   }): Promise<CashMovement>;
   listMovements(sessionId: string): Promise<CashMovement[]>;
+  // Movimientos de todas las sesiones en un rango ISO (reportes de flujo de caja).
+  listMovementsRange(dateFrom: string, dateTo: string): Promise<CashMovement[]>;
 }
 
 export interface SalesListFilter {
@@ -171,8 +173,16 @@ export interface SalesRepo {
   deleteHeldSale(id: string): Promise<void>;
 }
 
+export interface InventoryMovementFilter {
+  productId?: string;
+  limit?: number;
+  // Rango ISO por created_at (reportes de mermas y quiebres de stock).
+  dateFrom?: string;
+  dateTo?: string;
+}
+
 export interface InventoryRepo {
-  listMovements(filter?: { productId?: string; limit?: number }): Promise<StockMovement[]>;
+  listMovements(filter?: InventoryMovementFilter): Promise<StockMovement[]>;
   addMovement(movement: StockMovementInsert): Promise<StockMovement>;
   adjustStock(input: {
     productId: string;

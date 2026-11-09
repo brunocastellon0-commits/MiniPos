@@ -1,31 +1,47 @@
 import {
-  lastDayKeys,
   summarizeSalesByDay,
   summarizeSalesDay,
   type DailySalesStats,
 } from "@/lib/domain/dashboard";
 import {
+  buildBcgMatrix,
+  buildCashFlowDaily,
+  buildCashFlowMonthly,
   dayKeysBetween,
+  inventoryTurnover,
   inventoryValuation,
   leastSellingProducts,
   previousPeriodRange,
+  salesByHour,
+  salesByWeekday,
   salesDailyReportCsv,
+  stockZeroDays,
   summarizeClosedCashSessions,
   summarizePurchases,
+  summarizeWaste,
   topSellingProducts,
+  type BcgMatrix,
+  type CashFlowRow,
   type CashSessionsSummary,
   type DailyReportRow,
+  type HourlySaleRow,
   type InventoryValuation,
   type ProductSalesAggregate,
   type PurchasesSummary,
+  type StockZeroDayRow,
+  type TurnoverRow,
+  type WasteRow,
+  type WeekdaySaleRow,
 } from "@/lib/domain/reports";
 import { laPazDayBoundsIso } from "@/lib/dates";
 import { SupabaseCashRepo } from "@/lib/repos/supabase/cash";
+import { SupabaseInventoryRepo } from "@/lib/repos/supabase/inventory";
 import { SupabaseProductsRepo } from "@/lib/repos/supabase/products";
 import { SupabasePurchasesRepo } from "@/lib/repos/supabase/purchases";
 import { SupabaseSalesRepo } from "@/lib/repos/supabase/sales";
 import type {
   CashRepo,
+  InventoryRepo,
   ProductsRepo,
   PurchasesRepo,
   SalesRepo,
@@ -52,6 +68,14 @@ export interface ReportsData {
   purchasesSummary: PurchasesSummary;
   cashSummary: CashSessionsSummary;
   inventoryValuation: InventoryValuation;
+  hourlyRows: HourlySaleRow[];
+  weekdayRows: WeekdaySaleRow[];
+  cashFlowDaily: CashFlowRow[];
+  cashFlowMonthly: CashFlowRow[];
+  wasteRows: WasteRow[];
+  turnoverRows: TurnoverRow[];
+  zeroStockRows: StockZeroDayRow[];
+  bcg: BcgMatrix;
 }
 
 export interface SalesReportExport {
@@ -65,6 +89,7 @@ export interface ReportsActionDeps {
   purchasesRepoFactory?: (user: UserContext) => Promise<PurchasesRepo>;
   cashRepoFactory?: (user: UserContext) => Promise<CashRepo>;
   productsRepoFactory?: (user: UserContext) => Promise<ProductsRepo>;
+  inventoryRepoFactory?: (user: UserContext) => Promise<InventoryRepo>;
 }
 
 async function defaultSalesRepoFactory(user: UserContext): Promise<SalesRepo> {
@@ -87,6 +112,11 @@ async function defaultProductsRepoFactory(user: UserContext): Promise<ProductsRe
   return new SupabaseProductsRepo(supabase, user);
 }
 
+async function defaultInventoryRepoFactory(user: UserContext): Promise<InventoryRepo> {
+  const supabase = await createClient();
+  return new SupabaseInventoryRepo(supabase, user);
+}
+
 function toUserContext(user: AuthenticatedUser): UserContext {
   return { id: user.id, role: user.role, active: user.isActive };
 }
@@ -97,6 +127,7 @@ function resolveRangeFactories(deps: ReportsActionDeps) {
     purchasesRepoFactory: deps.purchasesRepoFactory ?? defaultPurchasesRepoFactory,
     cashRepoFactory: deps.cashRepoFactory ?? defaultCashRepoFactory,
     productsRepoFactory: deps.productsRepoFactory ?? defaultProductsRepoFactory,
+    inventoryRepoFactory: deps.inventoryRepoFactory ?? defaultInventoryRepoFactory,
   };
 }
 
@@ -137,11 +168,12 @@ async function buildReportsData(
 ): Promise<ReportsData> {
   const factories = resolveRangeFactories(deps);
   const context = toUserContext(user);
-  const [salesRepo, purchasesRepo, cashRepo, productsRepo] = await Promise.all([
+  const [salesRepo, purchasesRepo, cashRepo, productsRepo, inventoryRepo] = await Promise.all([
     factories.salesRepoFactory(context),
     factories.purchasesRepoFactory(context),
     factories.cashRepoFactory(context),
     factories.productsRepoFactory(context),
+    factories.inventoryRepoFactory(context),
   ]);
 
   const bounds = laPazDayBoundsIso(range.dateFrom);
@@ -150,17 +182,22 @@ async function buildReportsData(
   const previousStart = laPazDayBoundsIso(previousRange.dateFrom);
   const previousEnd = laPazDayBoundsIso(previousRange.dateTo);
 
-  const [sales, previousSales, purchases, sessions, products] = await Promise.all([
-    salesRepo.list({ dateFrom: bounds.start, dateTo: endBounds.end, limit: 1000 }),
-    salesRepo.list({
-      dateFrom: previousStart.start,
-      dateTo: previousEnd.end,
-      limit: 1000,
-    }),
-    purchasesRepo.list(),
-    cashRepo.listSessions(200),
-    productsRepo.list(),
-  ]);
+  const [sales, previousSales, purchases, sessions, products, cashMovements, stockMovements] =
+    await Promise.all([
+      salesRepo.list({ dateFrom: bounds.start, dateTo: endBounds.end, limit: 1000 }),
+      salesRepo.list({
+        dateFrom: previousStart.start,
+        dateTo: previousEnd.end,
+        limit: 1000,
+      }),
+      purchasesRepo.list(),
+      cashRepo.listSessions(200),
+      productsRepo.list(),
+      cashRepo.listMovementsRange(bounds.start, endBounds.end),
+      // Hasta ahora (no hasta el fin del periodo): los quiebres de stock
+      // reconstruyen el stock de cada día restando los movimientos posteriores.
+      inventoryRepo.listMovements({ dateFrom: bounds.start, dateTo: new Date().toISOString() }),
+    ]);
 
   const items =
     sales.length > 0 ? await salesRepo.listItemsForSales(sales.map((sale) => sale.id)) : [];
@@ -178,6 +215,11 @@ async function buildReportsData(
   );
 
   const { dailyRows } = await buildDailyRows(salesRepo, range);
+  const dayKeys = dayKeysBetween(range.dateFrom, range.dateTo);
+  const wasteInRange = stockMovements.filter(
+    (movement) => movement.kind === "waste" && inRange(movement.created_at),
+  );
+  const cashFlowDaily = buildCashFlowDaily(sales, cashMovements, dayKeys);
 
   return {
     dateFrom: range.dateFrom,
@@ -201,6 +243,14 @@ async function buildReportsData(
     ),
     cashSummary: summarizeClosedCashSessions(sessionsInRange),
     inventoryValuation: inventoryValuation(products),
+    hourlyRows: salesByHour(sales),
+    weekdayRows: salesByWeekday(sales),
+    cashFlowDaily,
+    cashFlowMonthly: buildCashFlowMonthly(cashFlowDaily),
+    wasteRows: summarizeWaste(wasteInRange, products),
+    turnoverRows: inventoryTurnover(items, products),
+    zeroStockRows: stockZeroDays(products, stockMovements, dayKeys),
+    bcg: buildBcgMatrix(items, products),
   };
 }
 

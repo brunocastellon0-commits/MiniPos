@@ -8,7 +8,12 @@ export class SupabaseInventoryRepo implements InventoryRepo {
     private user: UserContext,
   ) {}
 
-  async listMovements(filter?: { productId?: string; limit?: number }): Promise<StockMovement[]> {
+  async listMovements(filter?: {
+    productId?: string;
+    limit?: number;
+    dateFrom?: string;
+    dateTo?: string;
+  }): Promise<StockMovement[]> {
     let query = this.supabase
       .from("stock_movements")
       .select("*")
@@ -16,6 +21,12 @@ export class SupabaseInventoryRepo implements InventoryRepo {
 
     if (filter?.productId) {
       query = query.eq("product_id", filter.productId);
+    }
+    if (filter?.dateFrom) {
+      query = query.gte("created_at", filter.dateFrom);
+    }
+    if (filter?.dateTo) {
+      query = query.lte("created_at", filter.dateTo);
     }
     if (filter?.limit) {
       query = query.limit(filter.limit);

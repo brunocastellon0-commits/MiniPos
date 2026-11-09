@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { ReportsView } from "@/components/reports/reports-view";
+import { ReportsView, type OperatingMode } from "@/components/reports/reports-view";
 import { getReportsDataAction } from "@/lib/actions/reports";
 import type { ReportsRangeInput } from "@/lib/actions/reports-schema";
+import { getBusinessPublicAction } from "@/lib/actions/settings";
 import { requireRole } from "@/lib/auth";
 import { laPazDayKey } from "@/lib/dates";
 import { lastDayKeys } from "@/lib/domain/dashboard";
@@ -35,7 +36,24 @@ export default async function ReportesPage() {
     initialError = "No se pudieron cargar los reportes.";
   }
 
+  let settings = null;
+  try {
+    const settingsResult = await getBusinessPublicAction();
+    if (settingsResult.ok) {
+      settings = settingsResult.data;
+    }
+  } catch {
+    settings = null;
+  }
+  const operatingMode: OperatingMode =
+    settings?.operating_mode === "restaurant" ? "restaurant" : "micromarket";
+
   return (
-    <ReportsView initialRange={range} initialData={initialData} initialError={initialError} />
+    <ReportsView
+      initialRange={range}
+      initialData={initialData}
+      initialError={initialError}
+      operatingMode={operatingMode}
+    />
   );
 }

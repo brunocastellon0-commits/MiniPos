@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildCashMovement,
   buildCashSession,
   buildProduct,
   buildPurchase,
   buildSale,
   buildSaleItem,
+  buildStockMovement,
 } from "@/test/factories";
 import { createMemoryRepositories, MemoryStore } from "@/lib/repos/memory";
 import type { UserContext } from "@/lib/repos/types";
@@ -110,6 +112,50 @@ function seed(store: MemoryStore): void {
     "prod-3",
     buildProduct({ id: "prod-3", name: "Harina 1kg", stock_qty: 8, price_cents: 900, cost_cents: 500 }),
   );
+  store.products.set(
+    "prod-4",
+    buildProduct({ id: "prod-4", name: "Galletas", stock_qty: 0, price_cents: 450, cost_cents: null }),
+  );
+  store.cashMovements.set(
+    "mov-in-1",
+    buildCashMovement({
+      id: "mov-in-1",
+      session_id: "cash-1",
+      kind: "in",
+      amount_cents: 500,
+      created_at: "2026-11-01T14:00:00.000Z",
+    }),
+  );
+  store.cashMovements.set(
+    "mov-out-1",
+    buildCashMovement({
+      id: "mov-out-1",
+      session_id: "cash-1",
+      kind: "out",
+      amount_cents: 200,
+      created_at: "2026-11-02T15:00:00.000Z",
+    }),
+  );
+  store.stockMovements.set(
+    "smov-sale-1",
+    buildStockMovement({
+      id: "smov-sale-1",
+      product_id: "prod-1",
+      kind: "sale",
+      delta: -2,
+      created_at: "2026-11-01T12:00:00.000Z",
+    }),
+  );
+  store.stockMovements.set(
+    "smov-waste-1",
+    buildStockMovement({
+      id: "smov-waste-1",
+      product_id: "prod-1",
+      kind: "waste",
+      delta: -2,
+      created_at: "2026-11-01T16:00:00.000Z",
+    }),
+  );
   store.purchases.set(
     "pur-1",
     buildPurchase({
@@ -140,6 +186,7 @@ function makeDeps(user: AuthenticatedUser | null): ReportsActionDeps {
       createMemoryRepositories(store, ctx).purchases,
     cashRepoFactory: async (ctx: UserContext) => createMemoryRepositories(store, ctx).cash,
     productsRepoFactory: async (ctx: UserContext) => createMemoryRepositories(store, ctx).products,
+    inventoryRepoFactory: async (ctx: UserContext) => createMemoryRepositories(store, ctx).inventory,
   };
 }
 
@@ -237,7 +284,8 @@ describe("getReportsDataAction (E9-01)", () => {
       retailValueCents: 10 * 2500 + 5 * 700 + 8 * 900,
       costValueCents: 10 * 1800 + 8 * 500,
       costedProductCount: 2,
-      uncostedProductCount: 1,
+      uncostedProductCount: 2,
+      totalProductCount: 4,
     });
   });
 
@@ -252,6 +300,87 @@ describe("getReportsDataAction (E9-01)", () => {
 
     expect(result.data.purchasesSummary.totalCount).toBe(0);
     expect(result.data.cashSummary.closedCount).toBe(0);
+  });
+
+  it("construye flujo de caja, patrones por hora y día, mermas, rotación y quiebres", async () => {
+    const result = await createGetReportsDataAction(makeDeps(owner))({
+      dateFrom: "2026-11-01",
+      dateTo: "2026-11-02",
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    // 24 horas La Paz: sale-1 12:00Z -> 08:00, sale-2 18:00Z -> 14:00.
+    expect(result.data.hourlyRows).toHaveLength(24);
+    expect(result.data.hourlyRows[8]).toEqual({ hour: 8, transactionCount: 1, totalCents: 2500 });
+    expect(result.data.hourlyRows[14]).toEqual({
+      hour: 14,
+      transactionCount: 1,
+      totalCents: 600,
+    });
+    expect(
+      result.data.hourlyRows.reduce((sum, row) => sum + row.transactionCount, 0),
+    ).toBe(2);
+
+    // 2026-11-01 domingo (indice 6) y 2026-11-02 lunes (indice 0).
+    expect(result.data.weekdayRows).toHaveLength(7);
+    expect(result.data.weekdayRows[6]).toMatchObject({ transactionCount: 1, totalCents: 2500 });
+    expect(result.data.weekdayRows[0]).toMatchObject({ transactionCount: 1, totalCents: 600 });
+
+    // Flujo: dia 1 = venta 2500 + ingreso 500; dia 2 = venta 600 - egreso 200.
+    expect(result.data.cashFlowDaily).toHaveLength(2);
+    expect(result.data.cashFlowDaily[0]).toMatchObject({
+      key: "2026-11-01",
+      inflowCents: 3000,
+      outflowCents: 0,
+      availabilityCents: 3000,
+    });
+    expect(result.data.cashFlowDaily[1]).toMatchObject({
+      key: "2026-11-02",
+      inflowCents: 600,
+      outflowCents: 200,
+      availabilityCents: 3400,
+    });
+    expect(result.data.cashFlowMonthly).toHaveLength(1);
+    expect(result.data.cashFlowMonthly[0]).toMatchObject({
+      key: "2026-11",
+      inflowCents: 3600,
+      outflowCents: 200,
+      availabilityCents: 3400,
+    });
+
+    // Mermas: 2 unidades de Coca-Cola a costo 1800.
+    expect(result.data.wasteRows).toEqual([
+      { productId: "prod-1", name: "Coca-Cola 2L", units: 2, valueCents: 3600 },
+    ]);
+
+    // Rotacion: solo productos vendidos en el periodo.
+    expect(result.data.turnoverRows).toHaveLength(2);
+    expect(result.data.turnoverRows.find((row) => row.productId === "prod-1")).toMatchObject({
+      unitsSold: 2,
+      stockQty: 10,
+      stockValueCents: 18_000,
+    });
+    expect(result.data.turnoverRows.find((row) => row.productId === "prod-2")).toMatchObject({
+      unitsSold: 1,
+      stockValueCents: null,
+    });
+
+    // Quiebres: prod-4 tiene stock 0 los 2 dias del periodo.
+    expect(result.data.zeroStockRows).toEqual([
+      { productId: "prod-4", name: "Galletas", zeroDays: 2 },
+    ]);
+
+    // BCG: prod-1 con costo (margen 2500 - 3600 = -1100) y prod-2 sin costo.
+    expect(result.data.bcg.uncostedCount).toBe(1);
+    expect(result.data.bcg.rows).toHaveLength(1);
+    expect(result.data.bcg.rows[0]).toMatchObject({
+      productId: "prod-1",
+      units: 2,
+      marginCents: -1100,
+      quadrant: "estrella",
+    });
   });
 });
 

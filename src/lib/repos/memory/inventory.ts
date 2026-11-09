@@ -7,7 +7,12 @@ export class MemoryInventoryRepo implements InventoryRepo {
     private user: UserContext,
   ) {}
 
-  async listMovements(filter?: { productId?: string; limit?: number }): Promise<StockMovement[]> {
+  async listMovements(filter?: {
+    productId?: string;
+    limit?: number;
+    dateFrom?: string;
+    dateTo?: string;
+  }): Promise<StockMovement[]> {
     if (this.user.role !== "owner") {
       throw new Error(
         "Acceso denegado: solo el propietario puede consultar el historial de movimientos de inventario.",
@@ -19,10 +24,23 @@ export class MemoryInventoryRepo implements InventoryRepo {
     if (filter?.productId) {
       movements = movements.filter((m) => m.product_id === filter.productId);
     }
+    if (filter?.dateFrom) {
+      const start = Date.parse(filter.dateFrom);
+      movements = movements.filter((m) => Date.parse(m.created_at) >= start);
+    }
+    if (filter?.dateTo) {
+      const end = Date.parse(filter.dateTo);
+      movements = movements.filter((m) => Date.parse(m.created_at) <= end);
+    }
 
-    return movements
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(0, filter?.limit ?? 100);
+    const sorted = movements.sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    );
+    // Sin límite por defecto cuando hay rango de fechas: los reportes de
+    // mermas/quiebres necesitan todos los movimientos del periodo.
+    const hasDateFilter = Boolean(filter?.dateFrom || filter?.dateTo);
+    const limit = filter?.limit ?? (hasDateFilter ? sorted.length : 100);
+    return sorted.slice(0, limit);
   }
 
   async addMovement(movementData: StockMovementInsert): Promise<StockMovement> {

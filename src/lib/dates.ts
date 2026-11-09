@@ -86,3 +86,16 @@ export function laPazDayBoundsIso(day: string): { start: string; end: string } {
     end: endOfLaPazDay(reference).toISOString(),
   };
 }
+
+/** Hora local de La Paz (0-23) de una fecha ISO. */
+export function laPazHour(date: Date): number {
+  assertValidDate(date);
+  return new Date(date.getTime() + LA_PAZ_OFFSET_MS).getUTCHours();
+}
+
+/** Día de la semana en La Paz: 0 = lunes … 6 = domingo. */
+export function laPazWeekday(date: Date): number {
+  assertValidDate(date);
+  const utcDay = new Date(date.getTime() + LA_PAZ_OFFSET_MS).getUTCDay();
+  return (utcDay + 6) % 7;
+}

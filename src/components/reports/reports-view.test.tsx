@@ -79,6 +79,71 @@ function buildData(overrides: Partial<ReportsData> = {}): ReportsData {
       uncostedProductCount: 1,
       totalProductCount: 4,
     },
+    hourlyRows: Array.from({ length: 24 }, (_, hour) => ({
+      hour,
+      transactionCount: hour === 10 ? 2 : 0,
+      totalCents: hour === 10 ? 2800 : 0,
+    })),
+    weekdayRows: Array.from({ length: 7 }, (_, weekday) => ({
+      weekday,
+      label: ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"][
+        weekday
+      ] as string,
+      transactionCount: weekday === 0 ? 2 : 0,
+      totalCents: weekday === 0 ? 2800 : 0,
+    })),
+    cashFlowDaily: [
+      {
+        key: "2026-11-01",
+        cashSalesCents: 1800,
+        manualInCents: 500,
+        manualOutCents: 300,
+        inflowCents: 2300,
+        outflowCents: 300,
+        netCents: 2000,
+        availabilityCents: 2000,
+      },
+    ],
+    cashFlowMonthly: [
+      {
+        key: "2026-11",
+        cashSalesCents: 1800,
+        manualInCents: 500,
+        manualOutCents: 300,
+        inflowCents: 2300,
+        outflowCents: 300,
+        netCents: 2000,
+        availabilityCents: 2000,
+      },
+    ],
+    wasteRows: [
+      { productId: "p1", name: "Coca-Cola 2L", units: 2, valueCents: 1600 },
+      { productId: "p2", name: "Pan sin costo", units: 3, valueCents: null },
+    ],
+    turnoverRows: [
+      {
+        productId: "p1",
+        name: "Coca-Cola 2L",
+        unitsSold: 4,
+        stockQty: 10,
+        stockValueCents: 8000,
+      },
+      { productId: "p2", name: "Pan sin costo", unitsSold: 1, stockQty: 5, stockValueCents: null },
+    ],
+    zeroStockRows: [{ productId: "p1", name: "Coca-Cola 2L", zeroDays: 3 }],
+    bcg: {
+      rows: [
+        {
+          productId: "p1",
+          name: "Coca-Cola 2L",
+          units: 4,
+          revenueCents: 5000,
+          marginCents: 2000,
+          quadrant: "estrella",
+        },
+      ],
+      uncostedCount: 1,
+    },
     ...overrides,
   };
 }
@@ -254,5 +319,73 @@ describe("ReportsView (E9-01/E9-05)", () => {
     );
 
     expect(screen.getByRole("alert")).toHaveTextContent("No se pudieron cargar los reportes.");
+  });
+
+  it("muestra flujo de caja, ventas por hora/día y mermas en la pestaña de patrones", () => {
+    render(<ReportsView initialRange={initialRange} initialData={buildData()} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Flujo y patrones" }));
+
+    expect(screen.getAllByTestId("cashflow-day-row")).toHaveLength(1);
+    expect(screen.getAllByTestId("cashflow-month-row")).toHaveLength(1);
+    expect(screen.getAllByTestId("hour-row")).toHaveLength(24);
+    expect(screen.getAllByTestId("hour-row")[10]).toHaveTextContent("10:00");
+    expect(screen.getAllByTestId("weekday-row")).toHaveLength(7);
+    const wasteRows = screen.getAllByTestId("waste-row");
+    expect(wasteRows).toHaveLength(2);
+    expect(wasteRows[0]).toHaveTextContent("Coca-Cola 2L");
+    expect(wasteRows[0]).toHaveTextContent("Bs 16,00");
+    expect(wasteRows[1]).toHaveTextContent("—");
+  });
+
+  it("ofrece rotación y quiebres en micromarket y oculta la matriz BCG", () => {
+    render(
+      <ReportsView initialRange={initialRange} initialData={buildData()} operatingMode="micromarket" />,
+    );
+
+    expect(screen.getByRole("button", { name: "Rotación y quiebres" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Matriz BCG" })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Rotación y quiebres" }));
+
+    const turnoverRows = screen.getAllByTestId("turnover-row");
+    expect(turnoverRows).toHaveLength(2);
+    expect(turnoverRows[1]).toHaveTextContent("Pan sin costo");
+    expect(screen.getByTestId("zero-stock-row")).toHaveTextContent("Coca-Cola 2L");
+    expect(screen.getByTestId("zero-stock-row")).toHaveTextContent("3");
+  });
+
+  it("ofrece la matriz BCG en modo restaurante y oculta rotación y quiebres", () => {
+    render(
+      <ReportsView initialRange={initialRange} initialData={buildData()} operatingMode="restaurant" />,
+    );
+
+    expect(screen.getByRole("button", { name: "Matriz BCG" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Rotación y quiebres" })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Matriz BCG" }));
+
+    expect(screen.getByTestId("bcg-row")).toHaveTextContent("Coca-Cola 2L");
+    expect(screen.getByTestId("bcg-row")).toHaveTextContent("Estrella");
+    expect(screen.getByText(/Se omiten 1 productos sin costo registrado/)).toBeInTheDocument();
+  });
+
+  it("muestra estados vacíos de mermas, quiebres y BCG cuando no hay datos", () => {
+    const empty = buildData({
+      wasteRows: [],
+      turnoverRows: [],
+      zeroStockRows: [],
+      bcg: { rows: [], uncostedCount: 0 },
+    });
+
+    render(
+      <ReportsView initialRange={initialRange} initialData={empty} operatingMode="restaurant" />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Flujo y patrones" }));
+    expect(screen.getByText("Sin mermas en el periodo")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Matriz BCG" }));
+    expect(screen.getByText("Sin ventas con costo registrado")).toBeInTheDocument();
   });
 });

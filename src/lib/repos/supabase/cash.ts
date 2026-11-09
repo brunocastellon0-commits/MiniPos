@@ -125,4 +125,16 @@ export class SupabaseCashRepo implements CashRepo {
     if (error) throw new Error(error.message);
     return data || [];
   }
+
+  async listMovementsRange(dateFrom: string, dateTo: string): Promise<CashMovement[]> {
+    const { data, error } = await this.supabase
+      .from("cash_movements")
+      .select("*")
+      .gte("created_at", dateFrom)
+      .lte("created_at", dateTo)
+      .order("created_at", { ascending: true });
+
+    if (error) throw new Error(error.message);
+    return data || [];
+  }
 }

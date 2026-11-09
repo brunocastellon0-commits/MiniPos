@@ -7,23 +7,38 @@ import { exportSalesReportCsvAction, getReportsDataAction } from "@/lib/actions/
 import { ProgressBar } from "@/components/ui/progress-bar";
 import type { ReportsData } from "@/lib/actions/reports-core";
 import type { ReportsRangeInput } from "@/lib/actions/reports-schema";
+import { DateRangeFilter } from "@/components/ui/date-range-filter";
 import { formatDateShort } from "@/lib/dates";
 import { percentChange } from "@/lib/domain/dashboard";
 import { formatBs } from "@/lib/money";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 
-type Tab = "ventas" | "productos" | "inventario" | "caja";
+export type OperatingMode = "micromarket" | "restaurant";
 
-const TABS: { id: Tab; label: string }[] = [
+type Tab = "ventas" | "productos" | "inventario" | "caja" | "flujo" | "stock" | "bcg";
+
+const BASE_TABS: { id: Tab; label: string }[] = [
   { id: "ventas", label: "Ventas" },
   { id: "productos", label: "Productos" },
   { id: "inventario", label: "Inventario" },
   { id: "caja", label: "Caja y compras" },
+  { id: "flujo", label: "Flujo y patrones" },
 ];
+
+const MODE_TABS: Record<OperatingMode, { id: Tab; label: string }[]> = {
+  micromarket: [{ id: "stock", label: "Rotación y quiebres" }],
+  restaurant: [{ id: "bcg", label: "Matriz BCG" }],
+};
+
+const BCG_QUADRANT_LABELS: Record<string, string> = {
+  estrella: "Estrella",
+  vaca: "Vaca",
+  enigma: "Enigma",
+  perro: "Perro",
+};
 
 const PURCHASE_STATUS_LABELS: Record<string, string> = {
   draft: "Borrador",
@@ -62,9 +77,15 @@ export interface ReportsViewProps {
   initialRange: ReportsRangeInput;
   initialData: ReportsData | null;
   initialError?: string | null;
+  operatingMode?: OperatingMode;
 }
 
-export function ReportsView({ initialRange, initialData, initialError = null }: ReportsViewProps) {
+export function ReportsView({
+  initialRange,
+  initialData,
+  initialError = null,
+  operatingMode = "micromarket",
+}: ReportsViewProps) {
   const [tab, setTab] = useState<Tab>("ventas");
   const [dateFrom, setDateFrom] = useState(initialRange.dateFrom);
   const [dateTo, setDateTo] = useState(initialRange.dateTo);
@@ -73,6 +94,7 @@ export function ReportsView({ initialRange, initialData, initialError = null }: 
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const topMaxUnits = data ? Math.max(...data.topProducts.map((row) => row.units), 1) : 1;
+  const tabs = [...BASE_TABS, ...MODE_TABS[operatingMode]];
 
   async function handleLoad(event: React.FormEvent) {
     event.preventDefault();
@@ -124,19 +146,11 @@ export function ReportsView({ initialRange, initialData, initialError = null }: 
         onSubmit={handleLoad}
         className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center"
       >
-        <Input
-          type="date"
-          value={dateFrom}
-          aria-label="Fecha desde"
-          onChange={(event) => setDateFrom(event.target.value)}
-          className="h-10 w-auto"
-        />
-        <Input
-          type="date"
-          value={dateTo}
-          aria-label="Fecha hasta"
-          onChange={(event) => setDateTo(event.target.value)}
-          className="h-10 w-auto"
+        <DateRangeFilter
+          startDate={dateFrom}
+          endDate={dateTo}
+          onStartDateChange={setDateFrom}
+          onEndDateChange={setDateTo}
         />
         <Button type="submit" variant="primary" loading={loading}>
           Actualizar
@@ -153,7 +167,7 @@ export function ReportsView({ initialRange, initialData, initialError = null }: 
       </form>
 
       <div role="group" aria-label="Secciones del reporte" className="flex flex-wrap gap-2">
-        {TABS.map((item) => (
+        {tabs.map((item) => (
           <Button
             key={item.id}
             type="button"
@@ -522,6 +536,318 @@ export function ReportsView({ initialRange, initialData, initialError = null }: 
                 </CardContent>
               </Card>
             </div>
+          ) : null}
+
+          {tab === "flujo" ? (
+            <div className="space-y-4">
+              <div className="grid gap-4 lg:grid-cols-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Flujo de caja por día</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      <Table className="min-w-full text-sm">
+                        <thead className="border-b border-border text-left text-muted">
+                          <tr>
+                            <Th scope="col">Fecha</Th>
+                            <Th scope="col">Ingresos</Th>
+                            <Th scope="col">Egresos</Th>
+                            <Th scope="col">Disponibilidad</Th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {data.cashFlowDaily.map((row) => (
+                            <tr key={row.key} data-testid="cashflow-day-row">
+                              <Td className="border-b border-border">{dayLabel(row.key)}</Td>
+                              <Td className="border-b border-border">{formatBs(row.inflowCents)}</Td>
+                              <Td className="border-b border-border">{formatBs(row.outflowCents)}</Td>
+                              <Td className="border-b border-border">
+                                {formatBs(row.availabilityCents)}
+                              </Td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </Table>
+                    </div>
+                    <p className="mt-2 text-xs text-muted">
+                      Ingresos: ventas en efectivo cobradas más ingresos de caja. Egresos: retiros
+                      y egresos. La disponibilidad es el acumulado del periodo y no incluye los
+                      saldos iniciales de los turnos.
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Flujo de caja por mes</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      <Table className="min-w-full text-sm">
+                        <thead className="border-b border-border text-left text-muted">
+                          <tr>
+                            <Th scope="col">Mes</Th>
+                            <Th scope="col">Ingresos</Th>
+                            <Th scope="col">Egresos</Th>
+                            <Th scope="col">Disponibilidad</Th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {data.cashFlowMonthly.map((row) => (
+                            <tr key={row.key} data-testid="cashflow-month-row">
+                              <Td className="border-b border-border">{row.key}</Td>
+                              <Td className="border-b border-border">{formatBs(row.inflowCents)}</Td>
+                              <Td className="border-b border-border">{formatBs(row.outflowCents)}</Td>
+                              <Td className="border-b border-border">
+                                {formatBs(row.availabilityCents)}
+                              </Td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+              <div className="grid gap-4 lg:grid-cols-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Ventas por hora</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      <Table className="min-w-full text-sm">
+                        <thead className="border-b border-border text-left text-muted">
+                          <tr>
+                            <Th scope="col">Hora</Th>
+                            <Th scope="col">Transacciones</Th>
+                            <Th scope="col">Cobrado</Th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {data.hourlyRows.map((row) => (
+                            <tr key={row.hour} data-testid="hour-row">
+                              <Td className="border-b border-border">
+                                {String(row.hour).padStart(2, "0")}:00
+                              </Td>
+                              <Td className="border-b border-border">{row.transactionCount}</Td>
+                              <Td className="border-b border-border">
+                                {formatBs(row.totalCents)}
+                              </Td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </Table>
+                    </div>
+                    <p className="mt-2 text-xs text-muted">
+                      Horas en zona de Bolivia (America/La_Paz).
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Ventas por día de la semana</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      <Table className="min-w-full text-sm">
+                        <thead className="border-b border-border text-left text-muted">
+                          <tr>
+                            <Th scope="col">Día</Th>
+                            <Th scope="col">Transacciones</Th>
+                            <Th scope="col">Cobrado</Th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {data.weekdayRows.map((row) => (
+                            <tr key={row.weekday} data-testid="weekday-row">
+                              <Td className="border-b border-border">{row.label}</Td>
+                              <Td className="border-b border-border">{row.transactionCount}</Td>
+                              <Td className="border-b border-border">
+                                {formatBs(row.totalCents)}
+                              </Td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Mermas y desperdicios</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {data.wasteRows.length === 0 ? (
+                    <EmptyState
+                      title="Sin mermas en el periodo"
+                      description="No se registraron mermas entre las fechas seleccionadas."
+                    />
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table className="min-w-full text-sm">
+                        <thead className="border-b border-border text-left text-muted">
+                          <tr>
+                            <Th scope="col">Producto</Th>
+                            <Th scope="col">Unidades</Th>
+                            <Th scope="col">Valor al costo</Th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {data.wasteRows.map((row) => (
+                            <tr key={row.productId} data-testid="waste-row">
+                              <Td className="border-b border-border">{row.name}</Td>
+                              <Td className="border-b border-border">{row.units}</Td>
+                              <Td className="border-b border-border">
+                                {row.valueCents === null ? "—" : formatBs(row.valueCents)}
+                              </Td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </Table>
+                    </div>
+                  )}
+                  <p className="mt-2 text-xs text-muted">
+                    Valorizados con el costo actual registrado; las unidades sin costo muestran
+                    «—». No incluyen anulaciones de ventas.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          ) : null}
+
+          {tab === "stock" ? (
+            <div className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Rotación de inventario</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {data.turnoverRows.length === 0 ? (
+                    <EmptyState
+                      title="Sin ventas de productos"
+                      description="No hay productos vendidos en el periodo para calcular rotación."
+                    />
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table className="min-w-full text-sm">
+                        <thead className="border-b border-border text-left text-muted">
+                          <tr>
+                            <Th scope="col">Producto</Th>
+                            <Th scope="col">Unidades vendidas</Th>
+                            <Th scope="col">Existencias actuales</Th>
+                            <Th scope="col">Valor a costo</Th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {data.turnoverRows.map((row) => (
+                            <tr key={row.productId} data-testid="turnover-row">
+                              <Td className="border-b border-border">{row.name}</Td>
+                              <Td className="border-b border-border">{row.unitsSold}</Td>
+                              <Td className="border-b border-border">{row.stockQty}</Td>
+                              <Td className="border-b border-border">
+                                {row.stockValueCents === null ? "—" : formatBs(row.stockValueCents)}
+                              </Td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Quiebres de stock (días en cero)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {data.zeroStockRows.length === 0 ? (
+                    <EmptyState
+                      title="Sin quiebres de stock"
+                      description="Ningún producto quedó sin existencias al cierre de un día del periodo."
+                    />
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table className="min-w-full text-sm">
+                        <thead className="border-b border-border text-left text-muted">
+                          <tr>
+                            <Th scope="col">Producto</Th>
+                            <Th scope="col">Días en cero</Th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {data.zeroStockRows.map((row) => (
+                            <tr key={row.productId} data-testid="zero-stock-row">
+                              <Td className="border-b border-border">{row.name}</Td>
+                              <Td className="border-b border-border">{row.zeroDays}</Td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </Table>
+                    </div>
+                  )}
+                  <p className="mt-2 text-xs text-muted">
+                    Días en los que las existencias al cierre del día fueron cero, reconstruidas
+                    con los movimientos del periodo.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          ) : null}
+
+          {tab === "bcg" ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Matriz volumen × margen</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {data.bcg.rows.length === 0 ? (
+                  <EmptyState
+                    title="Sin ventas con costo registrado"
+                    description="Se necesitan ventas de productos con costo para clasificarlos."
+                  />
+                ) : (
+                  <>
+                    <div className="overflow-x-auto">
+                      <Table className="min-w-full text-sm">
+                        <thead className="border-b border-border text-left text-muted">
+                          <tr>
+                            <Th scope="col">Producto</Th>
+                            <Th scope="col">Unidades</Th>
+                            <Th scope="col">Margen bruto</Th>
+                            <Th scope="col">Clasificación</Th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {data.bcg.rows.map((row) => (
+                            <tr key={row.productId} data-testid="bcg-row">
+                              <Td className="border-b border-border">{row.name}</Td>
+                              <Td className="border-b border-border">{row.units}</Td>
+                              <Td className="border-b border-border">
+                                {formatBs(row.marginCents)}
+                              </Td>
+                              <Td className="border-b border-border">
+                                {BCG_QUADRANT_LABELS[row.quadrant] ?? row.quadrant}
+                              </Td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </Table>
+                    </div>
+                    <p className="mt-2 text-xs text-muted">
+                      Clasificación por unidades vendidas y margen bruto del periodo, con corte en
+                      la mediana: Estrella (alto volumen y alto margen), Vaca (bajo volumen y alto
+                      margen), Enigma (alto volumen y bajo margen), Perro (bajo volumen y bajo
+                      margen).{" "}
+                      {data.bcg.uncostedCount > 0
+                        ? `Se omiten ${data.bcg.uncostedCount} productos sin costo registrado.`
+                        : ""}
+                    </p>
+                  </>
+                )}
+              </CardContent>
+            </Card>
           ) : null}
         </>
       )}

@@ -206,4 +206,24 @@ export class MemoryCashRepo implements CashRepo {
       .filter((m) => m.session_id === sessionId)
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   }
+
+  async listMovementsRange(dateFrom: string, dateTo: string): Promise<CashMovement[]> {
+    const start = Date.parse(dateFrom);
+    const end = Date.parse(dateTo);
+
+    return Array.from(this.store.cashMovements.values())
+      .filter((movement) => {
+        const time = Date.parse(movement.created_at);
+        if (Number.isNaN(time) || time < start || time > end) return false;
+        if (this.user.role !== "cashier") return true;
+        const session = this.store.cashSessions.get(movement.session_id);
+        if (!session) return false;
+        return (
+          session.opened_by === this.user.id ||
+          session.closed_by === this.user.id ||
+          session.status === "open"
+        );
+      })
+      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+  }
 }

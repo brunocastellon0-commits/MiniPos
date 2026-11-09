@@ -175,6 +175,93 @@ describe("Repositories Contract Suite (Memory)", () => {
       expect(closed.counted_cash_cents).toBe(14500);
       expect(closed.difference_cents).toBe(500);
     });
+
+    it("listMovementsRange devuelve solo movimientos dentro del rango en orden ascendente", async () => {
+      const session = await cashierRepos.cash.openSession(10000);
+
+      await cashierRepos.cash.addMovement({
+        sessionId: session.id,
+        kind: "in",
+        amountCents: 2000,
+        reason: "Ingreso para cambio",
+      });
+      await cashierRepos.cash.addMovement({
+        sessionId: session.id,
+        kind: "out",
+        amountCents: 1000,
+        reason: "Pago delivery",
+      });
+
+      const now = Date.now();
+      const inRange = await ownerRepos.cash.listMovementsRange(
+        new Date(now - 60_000).toISOString(),
+        new Date(now + 60_000).toISOString(),
+      );
+      expect(inRange).toHaveLength(2);
+      expect(inRange.map((movement) => movement.amount_cents)).toEqual([2000, 1000]);
+      expect(inRange.every((movement) => movement.session_id === session.id)).toBe(true);
+
+      const outOfRange = await ownerRepos.cash.listMovementsRange(
+        new Date(now - 3_600_000).toISOString(),
+        new Date(now - 3_500_000).toISOString(),
+      );
+      expect(outOfRange).toEqual([]);
+    });
+  });
+
+  describe("Inventario: listMovements con rango de fechas", () => {
+    it("filtra movimientos por fecha y respeta el límite explícito", async () => {
+      const session = await cashierRepos.cash.openSession(5000);
+      const prod = await ownerRepos.products.create({
+        name: "Sal 1kg",
+        price_cents: 300,
+        stock_qty: 10,
+      });
+
+      for (const requestId of ["req-smov-1", "req-smov-2"]) {
+        await cashierRepos.sales.createSale(
+          {
+            session_id: session.id,
+            subtotal_cents: 300,
+            discount_cents: 0,
+            total_cents: 300,
+            payment_method: "cash",
+            cash_received_cents: 500,
+            client_request_id: requestId,
+          },
+          [
+            {
+              product_id: prod.id,
+              name_snapshot: prod.name,
+              unit_price_cents: 300,
+              quantity: 1,
+              line_total_cents: 300,
+            },
+          ],
+        );
+      }
+
+      const now = Date.now();
+      const inRange = await ownerRepos.inventory.listMovements({
+        dateFrom: new Date(now - 60_000).toISOString(),
+        dateTo: new Date(now + 60_000).toISOString(),
+      });
+      expect(inRange).toHaveLength(2);
+      expect(inRange.every((movement) => movement.product_id === prod.id)).toBe(true);
+
+      const limited = await ownerRepos.inventory.listMovements({
+        dateFrom: new Date(now - 60_000).toISOString(),
+        dateTo: new Date(now + 60_000).toISOString(),
+        limit: 1,
+      });
+      expect(limited).toHaveLength(1);
+
+      const outOfRange = await ownerRepos.inventory.listMovements({
+        dateFrom: new Date(now - 3_600_000).toISOString(),
+        dateTo: new Date(now - 3_500_000).toISOString(),
+      });
+      expect(outOfRange).toEqual([]);
+    });
   });
 
   describe("Ventas, Congelamiento de Precios e Idempotencia", () => {

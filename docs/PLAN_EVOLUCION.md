@@ -42,8 +42,9 @@
   - [x] **E5 (Nuevo pedido)**: rutas `/caja/nuevo` y `/caja/pedido/[id]`, `new-order-view.tsx` (carrito con dominio `cart.ts`, búsqueda con Enter por código, notas) y `payment-method-dialog.tsx` reutilizable.
   - [x] **E6 (Detalle)**: `order-detail.tsx` con flujo paso a paso, cobro (diálogo), avance y cancelación con motivo; muestra "Pedido cobrado" con enlace a la venta.
   - [x] **E7 (Integración)**: `/caja` bifurcado por `operating_mode` (+`?vista=pos` para venta directa), nav "Caja"→"Pedidos" en restaurante (`getNavGroupsForRole`), `enableHeldSales` oculta solo "Pausar venta" en el POS.
-- [ ] **Fase F — Reportes reestructurados**: PENDIENTE
-  - Pestañas compartidas, micromarket y restaurante en `reports-view.tsx`.
+- [x] **Fase F — Reportes reestructurados**: COMPLETADA
+  - `DateRangeFilter` en `reports-view.tsx`; pestaña "Flujo y patrones" (compartida) con flujo de caja diario/mensual, ventas por hora y día de la semana y mermas valorizadas; "Rotación y quiebres" (micromarket) y "Matriz BCG" (restaurante); `operating_mode` desde `getBusinessPublicAction` en `/reportes`.
+  - Datos nuevos en `ReportsData` (`hourlyRows`, `weekdayRows`, `cashFlowDaily/Monthly`, `wasteRows`, `turnoverRows`, `zeroStockRows`, `bcg`) con repos `listMovementsRange` (caja) y filtros de fecha en `listMovements` (inventario).
 - [ ] **Fase G — Verificación y Tests**: PENDIENTE (el agente ejecuta `pnpm check` y los tests al cierre).
 
 ---
