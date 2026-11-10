@@ -15,6 +15,11 @@ export interface AppSidebarProps {
   operatingMode?: "micromarket" | "restaurant";
 }
 
+// Rutas principales: prefetch completo (datos ya cargados al navegar).
+// El resto usa el prefetch parcial por defecto (solo shell de carga) para
+// no disparar consultas innecesarias en cada arranque de la app.
+const PREFETCH_FULL_HREFS = new Set(["/caja", "/panel"]);
+
 export function AppSidebar({
   user,
   onNavigate,
@@ -42,6 +47,7 @@ export function AppSidebar({
                   <Link
                     key={item.href}
                     href={item.href}
+                    prefetch={PREFETCH_FULL_HREFS.has(item.href) ? true : undefined}
                     onClick={onNavigate}
                     aria-current={isActive ? "page" : undefined}
                     className={cn(
