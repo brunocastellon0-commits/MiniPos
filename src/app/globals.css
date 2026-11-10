@@ -43,7 +43,7 @@
 /* Escala base LILA MARKET: 18px para que en caja/panel las tipografías
    (14px, 12px, etc. en rem) se lean cómodos en laptops 1366×768. */
 html {
-  font-size: 18px;
+  font-size: 15px;
 }
 
 body {
