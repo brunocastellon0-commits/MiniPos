@@ -28,14 +28,23 @@ export default async function CajaPage({ searchParams }: CajaPageProps) {
   let overviewResult: Awaited<ReturnType<typeof getCashOverviewAction>>;
   let initialProducts: Awaited<ReturnType<typeof listPosProductsAction>>;
   let categories: Awaited<ReturnType<typeof listCategoriesAction>>;
-  let publicSettings: Awaited<ReturnType<typeof getBusinessPublicAction>> | null;
+  let ordersResult: Awaited<ReturnType<typeof listOrdersAction>> | null;
+
+  // La settings ya la trae el layout en este mismo render (React cache):
+  // resolverla primero no cuesta un round-trip y define si /caja pide pedidos.
+  const publicSettings = await getBusinessPublicAction().catch(() => null);
+  const settings = publicSettings?.ok ? publicSettings.data : null;
+  const isRestaurant = settings?.operating_mode === "restaurant";
+  const enableHeldSales = settings?.enable_held_sales ?? true;
+  const showPos = !isRestaurant || params.vista === "pos";
 
   try {
-    [overviewResult, initialProducts, categories, publicSettings] = await Promise.all([
+    [overviewResult, initialProducts, categories, ordersResult] = await Promise.all([
       getCashOverviewAction(),
       listPosProductsAction(),
       listCategoriesAction(),
-      getBusinessPublicAction(),
+      // Solo la vista de pedidos los necesita (misma condición que el render).
+      isRestaurant && params.vista !== "pos" ? listOrdersAction({}) : Promise.resolve(null),
     ]);
   } catch {
     overviewResult = {
@@ -45,14 +54,10 @@ export default async function CajaPage({ searchParams }: CajaPageProps) {
     };
     initialProducts = { ok: false, code: "INTERNAL_ERROR", message: "No se pudo cargar el catálogo." };
     categories = { ok: false, code: "INTERNAL_ERROR", message: "No se pudieron cargar las categorías." };
-    publicSettings = null;
+    ordersResult = null;
   }
 
   const overview = overviewResult.ok ? overviewResult.data : null;
-  const settings = publicSettings?.ok ? publicSettings.data : null;
-  const isRestaurant = settings?.operating_mode === "restaurant";
-  const enableHeldSales = settings?.enable_held_sales ?? true;
-  const showPos = !isRestaurant || params.vista === "pos";
 
   if (!overview) {
     return (
@@ -76,23 +81,12 @@ export default async function CajaPage({ searchParams }: CajaPageProps) {
   }
 
   if (isRestaurant && !showPos) {
-    let ordersResult: Awaited<ReturnType<typeof listOrdersAction>>;
-    try {
-      ordersResult = await listOrdersAction({});
-    } catch {
-      ordersResult = {
-        ok: false,
-        code: "INTERNAL_ERROR",
-        message: "No se pudieron cargar los pedidos.",
-      };
-    }
-
     return (
       <OrdersView
-        orders={ordersResult.ok ? ordersResult.data.orders : []}
-        items={ordersResult.ok ? ordersResult.data.items : []}
-        cashierNames={ordersResult.ok ? ordersResult.data.cashierNames : {}}
-        error={ordersResult.ok ? null : ordersResult.message}
+        orders={ordersResult?.ok ? ordersResult.data.orders : []}
+        items={ordersResult?.ok ? ordersResult.data.items : []}
+        cashierNames={ordersResult?.ok ? ordersResult.data.cashierNames : {}}
+        error={ordersResult?.ok ? null : (ordersResult?.message ?? "No se pudieron cargar los pedidos.")}
       />
     );
   }
