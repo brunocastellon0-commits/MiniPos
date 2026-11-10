@@ -19,6 +19,22 @@ describe("LoginForm (Componente UI de Login)", () => {
     expect(screen.getByRole("button", { name: /ingresar a caja/i })).toBeInTheDocument();
   });
 
+  it("muestra el logo_form a todo el ancho y los textos de marca", () => {
+    render(<LoginForm businessName="Minimarket Doña María" />);
+
+    const logo = screen.getByRole("img", { name: "Minimarket Doña María" });
+    expect(logo).toHaveAttribute("src", expect.stringContaining("logo_form.png"));
+    expect(logo.className).toContain("w-full");
+
+    expect(screen.getByText(/Tu aliado en la/i)).toHaveTextContent(
+      "Tu aliado en la gestión de tu negocio",
+    );
+    expect(screen.getByText(/Controla tus ventas, inventario y mucho más/i)).toBeInTheDocument();
+    expect(screen.getByText(/Haz crecer tu negocio con/i)).toHaveTextContent(
+      "Haz crecer tu negocio con LilaMarket",
+    );
+  });
+
   it("muestra errores de validación si los campos están vacíos o el correo es inválido", async () => {
     const mockLoginFn = vi.fn();
     render(<LoginForm loginFn={mockLoginFn} />);

@@ -7,7 +7,7 @@ import { AlertCircle, ArrowRight, Lock, Mail } from "lucide-react";
 import { loginAction } from "@/lib/actions/auth";
 import { type LoginInput, loginSchema } from "@/lib/actions/auth-schema";
 import type { ActionResult } from "@/lib/actions/secure-action";
-import { LOGO_SRC } from "@/lib/branding";
+import { LOGO_FORM_SRC } from "@/lib/branding";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -84,21 +84,23 @@ export function LoginForm({
     <div className="flex min-h-screen flex-col items-center justify-center bg-surface-muted/50 p-4">
       <Card className="w-full max-w-md border-border bg-surface shadow-card">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <Image
-              src={LOGO_SRC}
-              alt={businessName}
-              width={36}
-              height={36}
-              className="size-9 rounded-lg object-contain"
-            />
-          </div>
+          <Image
+            src={LOGO_FORM_SRC}
+            alt={businessName}
+            width={1299}
+            height={1211}
+            priority
+            className="mx-auto mb-3 h-auto w-full object-contain"
+          />
           <CardTitle className="text-xl font-bold tracking-tight text-foreground">
             {businessName}
           </CardTitle>
-          <CardDescription className="text-sm text-muted">
-            Ingresa tus credenciales para acceder al sistema
+          <CardDescription className="text-base text-muted">
+            Tu aliado en la <span className="font-bold text-accent">gestión</span> de tu negocio
           </CardDescription>
+          <p className="text-sm text-muted">
+            Controla tus ventas, inventario y mucho más, de forma fácil y eficiente.
+          </p>
         </CardHeader>
 
         <form onSubmit={handleSubmit} noValidate>
@@ -192,8 +194,10 @@ export function LoginForm({
         </form>
       </Card>
 
-      <footer className="mt-8 text-center text-xs text-muted">
-        <p>LILA MARKET · Bolivia</p>
+      <footer className="mt-8 text-center text-sm text-muted">
+        <p>
+          Haz crecer tu negocio con <span className="font-semibold text-primary">LilaMarket</span>
+        </p>
       </footer>
     </div>
   );
