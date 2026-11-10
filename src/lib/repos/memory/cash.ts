@@ -2,6 +2,7 @@ import { expectedCashCents } from "@/lib/domain/cash";
 import type {
   CashRepo,
   CashSession,
+  CashSessionWithOpener,
   CashMovement,
   OpenCashSessionPublic,
   UserContext,
@@ -116,7 +117,7 @@ export class MemoryCashRepo implements CashRepo {
     return updatedSession;
   }
 
-  async listSessions(limit = 30): Promise<CashSession[]> {
+  async listSessions(limit = 30): Promise<CashSessionWithOpener[]> {
     let list = Array.from(this.store.cashSessions.values());
     if (this.user.role === "cashier") {
       list = list.filter(
@@ -125,7 +126,11 @@ export class MemoryCashRepo implements CashRepo {
     }
     return list
       .sort((a, b) => new Date(b.opened_at).getTime() - new Date(a.opened_at).getTime())
-      .slice(0, limit);
+      .slice(0, limit)
+      .map((session) => ({
+        ...session,
+        opened_by_name: this.store.profiles.get(session.opened_by)?.full_name ?? null,
+      }));
   }
 
   async getSessionById(id: string): Promise<CashSession | null> {

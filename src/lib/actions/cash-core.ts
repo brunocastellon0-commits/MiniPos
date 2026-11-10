@@ -10,6 +10,7 @@ import type {
   CashMovement,
   CashRepo,
   CashSession,
+  CashSessionWithOpener,
   OpenCashSessionPublic,
   Sale,
   SalesRepo,
@@ -274,8 +275,8 @@ export function createListCashSessionsAction(deps: CashActionDeps = {}) {
 
   return async (
     input: ListCashSessionsInput = {},
-  ): Promise<ActionResult<CashSession[]>> => {
-    return secureAction<ListCashSessionsInput, CashSession[]>({
+  ): Promise<ActionResult<CashSessionWithOpener[]>> => {
+    return secureAction<ListCashSessionsInput, CashSessionWithOpener[]>({
       roles: ["owner", "cashier"],
       schema: listCashSessionsSchema,
       currentUserResolver,

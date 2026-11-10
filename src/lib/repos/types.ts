@@ -130,12 +130,16 @@ export interface OpenCashSessionPublic {
   opened_by_name: string;
 }
 
+// Sesión con el nombre de quien la abrió: listSessions lo trae en la misma
+// consulta (join con profiles), de modo que no haga falta una RPC aparte.
+export type CashSessionWithOpener = CashSession & { opened_by_name: string | null };
+
 export interface CashRepo {
   getCurrentSession(): Promise<CashSession | null>;
   getOpenSessionPublic(): Promise<OpenCashSessionPublic | null>;
   openSession(openingCents: number, notes?: string): Promise<CashSession>;
   closeSession(sessionId: string, countedCents: number, notes?: string): Promise<CashSession>;
-  listSessions(limit?: number): Promise<CashSession[]>;
+  listSessions(limit?: number): Promise<CashSessionWithOpener[]>;
   getSessionById(id: string): Promise<CashSession | null>;
   addMovement(data: {
     sessionId: string;

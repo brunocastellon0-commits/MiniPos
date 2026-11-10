@@ -5,6 +5,7 @@ import {
   type Repositories,
   type UserContext,
 } from "@/lib/repos";
+import { buildProfile } from "@/test/factories";
 
 describe("Repositories Contract Suite (Memory)", () => {
   let store: MemoryStore;
@@ -206,6 +207,25 @@ describe("Repositories Contract Suite (Memory)", () => {
         new Date(now - 3_500_000).toISOString(),
       );
       expect(outOfRange).toEqual([]);
+    });
+
+    it("listSessions trae el nombre de quien abrió cada sesión en la misma consulta", async () => {
+      store.profiles.set(
+        "cashier-1",
+        buildProfile({ id: "cashier-1", full_name: "Carlos Mamani" }),
+      );
+      const session = await cashierRepos.cash.openSession(10000);
+
+      const list = await ownerRepos.cash.listSessions();
+      const found = list.find((item) => item.id === session.id);
+      expect(found?.opened_by_name).toBe("Carlos Mamani");
+
+      await cashierRepos.cash.closeSession(session.id, 10000);
+      store.profiles.delete("cashier-1");
+      const afterClose = await ownerRepos.cash.listSessions();
+      expect(afterClose).toHaveLength(1);
+      expect(afterClose[0]?.status).toBe("closed");
+      expect(afterClose[0]?.opened_by_name).toBeNull();
     });
   });
 

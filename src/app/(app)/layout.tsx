@@ -27,10 +27,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const isOwner = user.role === "owner";
 
   try {
+    // Owner: la lista de sesiones (con nombre del abridor) cubre también la
+    // sesión abierta del header → sin RPC adicional. Cajero: solo la RPC.
     const [publicSettingsResult, openSessionResult, lowStockResult, sessionsResult] =
       await Promise.all([
         getBusinessPublicAction(),
-        getOpenCashSessionAction(),
+        isOwner ? Promise.resolve(null) : getOpenCashSessionAction(),
         isOwner ? countLowStockAction() : Promise.resolve(null),
         isOwner ? listCashSessionsAction({ limit: 20 }) : Promise.resolve(null),
       ]);
@@ -38,9 +40,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     if (publicSettingsResult.ok) {
       businessName = publicSettingsResult.data.name;
       operatingMode = publicSettingsResult.data.operating_mode;
-    }
-    if (openSessionResult.ok) {
-      cashSession = openSessionResult.data;
     }
 
     if (isOwner) {
@@ -50,12 +49,22 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       const sessions = sessionsResult?.ok ? sessionsResult.data : [];
       const openFromSessions = sessions.find((session) => session.status === "open");
       const lastClosed = sessions.find((session) => session.status === "closed");
+      if (openFromSessions) {
+        cashSession = {
+          id: openFromSessions.id,
+          opened_at: openFromSessions.opened_at,
+          opened_by: openFromSessions.opened_by,
+          opened_by_name: openFromSessions.opened_by_name ?? "Usuario",
+        };
+      }
       notifications = buildDashboardNotifications({
         lowStockCount,
-        openSessionOpenedAt: cashSession?.opened_at ?? openFromSessions?.opened_at ?? null,
+        openSessionOpenedAt: openFromSessions?.opened_at ?? null,
         lastClosedSession: lastClosed,
         now: new Date(),
       });
+    } else if (openSessionResult?.ok) {
+      cashSession = openSessionResult.data;
     }
   } catch {
     // Si falla o estamos en entorno sin BD activa, usamos valores por defecto seguros

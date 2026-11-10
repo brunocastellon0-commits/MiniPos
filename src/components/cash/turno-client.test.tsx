@@ -36,7 +36,10 @@ describe("TurnoClient (E3-01/E3-02/E3-04)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(getCashOverviewAction).mockResolvedValue({ ok: true, data: overview });
-    vi.mocked(listCashSessionsAction).mockResolvedValue({ ok: true, data: [session] });
+    vi.mocked(listCashSessionsAction).mockResolvedValue({
+      ok: true,
+      data: [{ ...session, opened_by_name: "Carlos Mamani" }],
+    });
   });
 
   it("muestra la cabecera del turno abierto, esperado y movimientos", async () => {

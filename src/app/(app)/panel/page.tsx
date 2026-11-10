@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { PanelView } from "@/components/dashboard/panel-view";
-import { listCashSessionsAction, getOpenCashSessionAction } from "@/lib/actions/cash";
+import { listCashSessionsAction } from "@/lib/actions/cash";
 import { listInventoryProductsAction } from "@/lib/actions/inventory";
 import { getPanelInsightsAction } from "@/lib/actions/panel";
 import { listSalesAction } from "@/lib/actions/sales";
@@ -8,7 +8,7 @@ import { requireRole } from "@/lib/auth";
 import { formatDateLong, laPazDayKey } from "@/lib/dates";
 import { buildPanelComparison, lastDayKeys, summarizeSalesByDay } from "@/lib/domain/dashboard";
 import { isLowStock } from "@/lib/domain/inventory";
-import type { CashSession, Product, Sale } from "@/lib/repos/types";
+import type { CashSessionWithOpener, Product, Sale } from "@/lib/repos/types";
 
 export const metadata: Metadata = {
   title: "Panel del Dueño",
@@ -28,23 +28,20 @@ export default async function PanelPage() {
   const previousWeekKey = dayKeys[dayKeys.length - 1 - PREVIOUS_WEEK_OFFSET];
 
   let sales: Sale[] = [];
-  let sessions: CashSession[] = [];
+  let sessions: CashSessionWithOpener[] = [];
   let products: Product[] = [];
-  let openSessionName: string | null = null;
   let initialError: string | null = null;
   let topProducts: Array<{ productId: string | null; name: string; units: number; totalCents: number }> = [];
   let margin: { marginCents: number; revenueCents: number; costCents: number } | null = null;
   let dayCash: { incomeCents: number; expenseCents: number } | null = null;
 
   try {
-    const [salesResult, sessionsResult, productsResult, openResult, insightsResult] =
-      await Promise.all([
-        listSalesAction({ dateFrom: dayKeys[0], dateTo: todayKey, limit: 1000 }),
-        listCashSessionsAction({ limit: 20 }),
-        listInventoryProductsAction(),
-        getOpenCashSessionAction(),
-        getPanelInsightsAction({ dayKey: todayKey }),
-      ]);
+    const [salesResult, sessionsResult, productsResult, insightsResult] = await Promise.all([
+      listSalesAction({ dateFrom: dayKeys[0], dateTo: todayKey, limit: 1000 }),
+      listCashSessionsAction({ limit: 20 }),
+      listInventoryProductsAction(),
+      getPanelInsightsAction({ dayKey: todayKey }),
+    ]);
 
     if (salesResult.ok) {
       sales = salesResult.data.sales;
@@ -60,9 +57,6 @@ export default async function PanelPage() {
       products = productsResult.data;
     } else {
       initialError = initialError ?? productsResult.message;
-    }
-    if (openResult.ok && openResult.data) {
-      openSessionName = openResult.data.opened_by_name;
     }
     if (insightsResult.ok) {
       topProducts = insightsResult.data.topProducts;
@@ -84,6 +78,7 @@ export default async function PanelPage() {
 
   const openSession = sessions.find((session) => session.status === "open");
   const lastClosed = sessions.find((session) => session.status === "closed");
+  const openSessionName = openSession?.opened_by_name ?? null;
   const cash = openSession
     ? {
         status: "open" as const,

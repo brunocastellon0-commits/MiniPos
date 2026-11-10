@@ -3,6 +3,7 @@ import type { Database } from "@/types/database";
 import type {
   CashRepo,
   CashSession,
+  CashSessionWithOpener,
   CashMovement,
   OpenCashSessionPublic,
   UserContext,
@@ -68,15 +69,18 @@ export class SupabaseCashRepo implements CashRepo {
     return session;
   }
 
-  async listSessions(limit = 30): Promise<CashSession[]> {
+  async listSessions(limit = 30): Promise<CashSessionWithOpener[]> {
     const { data, error } = await this.supabase
       .from("cash_sessions")
-      .select("*")
+      .select("*, opener:profiles!opened_by(full_name)")
       .order("opened_at", { ascending: false })
       .limit(limit);
 
     if (error) throw new Error(error.message);
-    return data || [];
+    return (data ?? []).map(({ opener, ...session }) => ({
+      ...session,
+      opened_by_name: opener?.full_name ?? null,
+    }));
   }
 
   async getSessionById(id: string): Promise<CashSession | null> {
