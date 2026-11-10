@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Ban, CheckCircle2, Wallet } from "lucide-react";
+import { ArrowLeft, ArrowRight, Ban, CheckCircle2, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { chargeOrderAction, updateOrderStatusAction } from "@/lib/actions/orders";
@@ -125,6 +125,7 @@ export function OrderDetail({ order, items, createdByName }: OrderDetailProps) {
   return (
     <div className="space-y-4">
       <Link href="/caja" className={buttonClasses({ variant: "secondary" })}>
+        <ArrowLeft className="size-4" aria-hidden="true" />
         Volver a pedidos
       </Link>
 

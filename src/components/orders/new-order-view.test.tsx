@@ -82,6 +82,14 @@ describe("NewOrderView (creación de pedidos)", () => {
     expect(screen.getByText("Bs 0,00")).toBeInTheDocument();
   });
 
+  it("ofrece el enlace de vuelta a pedidos", () => {
+    renderNewOrder("on_consumption");
+
+    const backLink = screen.getByTestId("new-order-back-link");
+    expect(backLink).toHaveAttribute("href", "/caja");
+    expect(backLink).toHaveTextContent("Volver a pedidos");
+  });
+
   it("agrega productos, muestra el total y crea el pedido en on_consumption", async () => {
     renderNewOrder("on_consumption");
 

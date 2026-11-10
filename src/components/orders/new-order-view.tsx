@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Minus, Plus, Search, ShoppingCart, Trash2 } from "lucide-react";
+import { ArrowLeft, Minus, Plus, Search, ShoppingCart, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createOrderAction } from "@/lib/actions/orders";
 import { searchPosProductsAction } from "@/lib/actions/products-search";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { buttonClasses } from "@/components/ui/button-classes";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
@@ -170,6 +172,14 @@ export function NewOrderView({ initialProducts, categories, chargeTiming }: NewO
 
   return (
     <div className="space-y-4">
+      <Link
+        href="/caja"
+        className={buttonClasses({ variant: "secondary" })}
+        data-testid="new-order-back-link"
+      >
+        <ArrowLeft className="size-4" aria-hidden="true" />
+        Volver a pedidos
+      </Link>
       <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
         <section aria-label="Catálogo de productos" className="space-y-4">
           <div className="relative">

@@ -1,4 +1,4 @@
-import { ClipboardList, Plus } from "lucide-react";
+import { ArrowLeft, ClipboardList, Plus } from "lucide-react";
 import Link from "next/link";
 import { buttonClasses } from "@/components/ui/button-classes";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -49,6 +49,7 @@ export function OrdersView({ orders, items, cashierNames, error = null }: Orders
             className={buttonClasses({ variant: "secondary" })}
             data-testid="venta-directa-link"
           >
+            <ArrowLeft className="size-4" aria-hidden="true" />
             Venta directa
           </Link>
           <Link href="/caja/nuevo" className={buttonClasses()} data-testid="nuevo-pedido-link">
