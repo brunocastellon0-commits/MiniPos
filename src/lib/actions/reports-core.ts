@@ -131,17 +131,12 @@ function resolveRangeFactories(deps: ReportsActionDeps) {
   };
 }
 
-async function buildDailyRows(
-  salesRepo: SalesRepo,
+// Filas diarias a partir de ventas ya obtenidas (misma query que el resto
+// del reporte: sin refetch). La ruta de exportación CSV las obtiene aparte.
+function dailyRowsFromSales(
+  sales: Awaited<ReturnType<SalesRepo["list"]>>,
   range: ReportsRangeInput,
-): Promise<{ dailyRows: DailyReportRow[]; sales: Awaited<ReturnType<SalesRepo["list"]>> }> {
-  const bounds = laPazDayBoundsIso(range.dateFrom);
-  const endBounds = laPazDayBoundsIso(range.dateTo);
-  const sales = await salesRepo.list({
-    dateFrom: bounds.start,
-    dateTo: endBounds.end,
-    limit: 1000,
-  });
+): DailyReportRow[] {
   const dayKeys = dayKeysBetween(range.dateFrom, range.dateTo);
   const series = summarizeSalesByDay(sales, dayKeys);
   const dailyRows: DailyReportRow[] = [];
@@ -158,7 +153,21 @@ async function buildDailyRows(
       voidedCents: stats.voidedCents,
     });
   }
-  return { dailyRows, sales };
+  return dailyRows;
+}
+
+async function buildDailyRows(
+  salesRepo: SalesRepo,
+  range: ReportsRangeInput,
+): Promise<{ dailyRows: DailyReportRow[]; sales: Awaited<ReturnType<SalesRepo["list"]>> }> {
+  const bounds = laPazDayBoundsIso(range.dateFrom);
+  const endBounds = laPazDayBoundsIso(range.dateTo);
+  const sales = await salesRepo.list({
+    dateFrom: bounds.start,
+    dateTo: endBounds.end,
+    limit: 1000,
+  });
+  return { dailyRows: dailyRowsFromSales(sales, range), sales };
 }
 
 async function buildReportsData(
@@ -214,7 +223,7 @@ async function buildReportsData(
     (session) => session.closed_at !== null && inRange(session.closed_at),
   );
 
-  const { dailyRows } = await buildDailyRows(salesRepo, range);
+  const dailyRows = dailyRowsFromSales(sales, range);
   const dayKeys = dayKeysBetween(range.dateFrom, range.dateTo);
   const wasteInRange = stockMovements.filter(
     (movement) => movement.kind === "waste" && inRange(movement.created_at),

@@ -25,25 +25,23 @@ export default async function ReportesPage() {
 
   let initialData = null;
   let initialError: string | null = null;
-  try {
-    const result = await getReportsDataAction(range);
-    if (result.ok) {
-      initialData = result.data;
-    } else {
-      initialError = result.message;
-    }
-  } catch {
-    initialError = "No se pudieron cargar los reportes.";
-  }
-
   let settings = null;
   try {
-    const settingsResult = await getBusinessPublicAction();
-    if (settingsResult.ok) {
+    const [reportsResult, settingsResult] = await Promise.all([
+      getReportsDataAction(range),
+      // Settings es best-effort: un fallo acá no debe perder el reporte.
+      getBusinessPublicAction().catch(() => null),
+    ]);
+    if (reportsResult.ok) {
+      initialData = reportsResult.data;
+    } else {
+      initialError = reportsResult.message;
+    }
+    if (settingsResult?.ok) {
       settings = settingsResult.data;
     }
   } catch {
-    settings = null;
+    initialError = "No se pudieron cargar los reportes.";
   }
   const operatingMode: OperatingMode =
     settings?.operating_mode === "restaurant" ? "restaurant" : "micromarket";
