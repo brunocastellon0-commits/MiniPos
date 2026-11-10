@@ -1,12 +1,14 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import Home from "./page";
 
-describe("Home", () => {
-  it("muestra la marca y el estado inicial del proyecto", () => {
-    render(<Home />);
+const mockRedirect = vi.fn();
+vi.mock("next/navigation", () => ({
+  redirect: (url: string) => mockRedirect(url),
+}));
 
-    expect(screen.getByRole("heading", { name: "Base del proyecto lista" })).toBeInTheDocument();
-    expect(screen.getByText("LILA MARKET")).toBeInTheDocument();
+describe("Home", () => {
+  it("redirige a /login", () => {
+    Home();
+    expect(mockRedirect).toHaveBeenCalledWith("/login");
   });
 });
