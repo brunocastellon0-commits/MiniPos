@@ -122,10 +122,10 @@ export function AppHeader({
           <Image
             src={LOGO_SRC}
             alt={businessName}
-            width={120}
-            height={28}
+            width={145}
+            height={48}
             priority
-            className="h-7 w-auto object-contain"
+            className="h-12 w-auto object-contain"
           />
           <span className="sr-only">{businessName}</span>
         </div>
