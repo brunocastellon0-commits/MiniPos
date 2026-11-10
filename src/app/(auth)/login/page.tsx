@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { LoginForm } from "@/components/auth/login-form";
 import { createClient } from "@/lib/supabase/server";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Iniciar sesión | LILA MARKET",
   description: "Ingreso al sistema de gestión comercial LILA MARKET",
@@ -15,9 +17,9 @@ export default async function LoginPage() {
     const { data } = await supabase
       .from("business_settings")
       .select("name")
-      .eq("id", 1)
       .maybeSingle();
 
+    
     if (data?.name) {
       businessName = data.name;
     }

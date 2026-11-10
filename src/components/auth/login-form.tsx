@@ -83,24 +83,23 @@ export function LoginForm({
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-surface-muted/50 p-4">
       <Card className="w-full max-w-md border-border bg-surface shadow-card">
-        <CardHeader className="text-center">
-          <Image
-            src={LOGO_FORM_SRC}
-            alt={businessName}
-            width={1299}
-            height={1211}
-            priority
-            className="mx-auto mb-3 h-auto w-full object-contain"
-          />
+                <CardHeader className="text-center pb-2">
+          <div className="mx-auto mb-2 flex items-center justify-center">
+            <Image
+              src={LOGO_FORM_SRC}
+              alt={businessName}
+              width={1299}
+              height={1211}
+              priority
+              className="h-auto max-h-[140px] w-auto max-w-[220px] object-contain"
+            />
+          </div>
           <CardTitle className="text-xl font-bold tracking-tight text-foreground">
             {businessName}
           </CardTitle>
-          <CardDescription className="text-base text-muted">
-            Tu aliado en la <span className="font-bold text-accent">gestión</span> de tu negocio
+          <CardDescription className="text-sm text-muted">
+            Ingresa tus credenciales para acceder al sistema
           </CardDescription>
-          <p className="text-sm text-muted">
-            Controla tus ventas, inventario y mucho más, de forma fácil y eficiente.
-          </p>
         </CardHeader>
 
         <form onSubmit={handleSubmit} noValidate>
