@@ -266,7 +266,7 @@ export function AdjustStockButton({ productId, productName, currentStock }: Adju
                   >
                     <Icon className={cn("size-5 mb-1", t.color)} aria-hidden="true" />
                     <span className="text-xs font-semibold text-foreground">{t.label}</span>
-                    <span className="text-[10px] text-muted line-clamp-1">{t.description}</span>
+                    <span className="text-[11px] text-muted line-clamp-1">{t.description}</span>
                   </button>
                 );
               })}

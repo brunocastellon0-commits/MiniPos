@@ -185,7 +185,7 @@ export function MfaSetupDialog({
               >
                 <Copy className="size-3.5" />
               </button>
-              {copied && <span className="text-[10px] text-success">¡Copiado!</span>}
+              {copied && <span className="text-[11px] text-success">¡Copiado!</span>}
             </div>
           </div>
 

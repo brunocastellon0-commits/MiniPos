@@ -211,7 +211,7 @@ export function AppHeader({
           <span className="text-xs font-semibold text-foreground sm:text-sm leading-tight">
             {user.name}
           </span>
-          <Badge tone={roleBadgeTone} className="text-[10px] px-1.5 py-0 mt-0.5">
+          <Badge tone={roleBadgeTone} className="text-[11px] px-1.5 py-0 mt-0.5">
             {roleLabel}
           </Badge>
         </div>

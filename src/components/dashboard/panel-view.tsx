@@ -116,7 +116,7 @@ export function PanelView({
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Hola, {userName}</h1>
-          <p className="mt-1 text-sm text-foreground-muted">
+          <p className="mt-1 text-base text-foreground-muted">
             {greetingDate} · Resumen operativo y comercial.
           </p>
         </div>
@@ -131,7 +131,7 @@ export function PanelView({
             <p className="text-3xl font-bold tabular-nums text-foreground" data-testid="today-sales">
               {formatBs(comparison.today.totalCents)}
             </p>
-            <p className="mt-2 text-sm text-foreground-muted">
+            <p className="mt-2 text-base text-foreground-muted">
               vs. ayer:{" "}
               <span className="font-semibold" data-testid="today-change-yesterday">
                 {formatChangePercent(comparison.vsYesterdayPercent)}
@@ -142,13 +142,13 @@ export function PanelView({
                 {comparison.yesterday ? formatBs(comparison.yesterday.totalCents) : "—"}
               </span>
             </p>
-            <p className="mt-1 text-sm text-foreground-muted">
+            <p className="mt-1 text-base text-foreground-muted">
               vs. mismo día de la semana pasada:{" "}
               <span className="font-semibold" data-testid="today-change">
                 {formatChangePercent(comparison.vsWeekAgoPercent)}
               </span>
             </p>
-            <p className="mt-1 text-xs text-foreground-muted">
+            <p className="mt-1 text-sm text-foreground-muted">
               {comparison.weekAgo
                 ? `Ese día: ${formatBs(comparison.weekAgo.totalCents)}`
                 : "Sin datos suficientes del día anterior"}
@@ -164,7 +164,7 @@ export function PanelView({
             <p className="text-3xl font-bold tabular-nums text-foreground" data-testid="today-transactions">
               {comparison.today.transactionCount}
             </p>
-            <p className="mt-2 text-sm text-foreground-muted">
+            <p className="mt-2 text-base text-foreground-muted">
               Ticket promedio:{" "}
               <span className="font-semibold" data-testid="average-ticket">
                 {comparison.today.averageTicketCents === null
@@ -172,7 +172,7 @@ export function PanelView({
                   : formatBs(comparison.today.averageTicketCents)}
               </span>
             </p>
-            <p className="mt-1 text-xs text-foreground-muted">
+            <p className="mt-1 text-sm text-foreground-muted">
               {comparison.today.voidedCount > 0
                 ? `${comparison.today.voidedCount} venta(s) anulada(s) hoy`
                 : "Sin ventas anuladas hoy"}
@@ -188,7 +188,7 @@ export function PanelView({
             {cash.status === "open" ? (
               <>
                 <Badge tone="success">Caja abierta</Badge>
-                <p className="text-sm text-foreground-muted">
+                <p className="text-base text-foreground-muted">
                   {cash.openedAt
                     ? `Desde las ${formatTime(new Date(cash.openedAt))}`
                     : "Turno en curso"}
@@ -198,7 +198,7 @@ export function PanelView({
             ) : cash.status === "closed" ? (
               <>
                 <Badge tone="neutral">Caja cerrada</Badge>
-                <p className="text-sm text-foreground-muted">
+                <p className="text-base text-foreground-muted">
                   Última diferencia:{" "}
                   <span className="font-semibold" data-testid="cash-difference">
                     {cash.differenceCents === null || cash.differenceCents === undefined
@@ -207,7 +207,7 @@ export function PanelView({
                   </span>
                 </p>
                 {cash.closedAt ? (
-                  <p className="text-xs text-foreground-muted">
+                  <p className="text-sm text-foreground-muted">
                     Cerrada el {formatTime(new Date(cash.closedAt))}
                   </p>
                 ) : null}
@@ -215,7 +215,7 @@ export function PanelView({
             ) : (
               <>
                 <Badge tone="neutral">Sin caja</Badge>
-                <p className="text-sm text-foreground-muted">Aún no hay turnos registrados.</p>
+                <p className="text-base text-foreground-muted">Aún no hay turnos registrados.</p>
               </>
             )}
           </CardContent>
@@ -230,7 +230,7 @@ export function PanelView({
               {lowStock.length}
             </p>
             {lowStock.length > 0 ? (
-              <ul className="space-y-2 text-sm text-foreground-muted">
+              <ul className="space-y-2 text-base text-foreground-muted">
                 {lowStock.slice(0, 4).map((product) => (
                   <li key={product.id} className="space-y-1">
                     <div className="flex items-center justify-between gap-2">
@@ -248,7 +248,7 @@ export function PanelView({
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-foreground-muted">Sin productos en stock bajo.</p>
+              <p className="text-base text-foreground-muted">Sin productos en stock bajo.</p>
             )}
             <Link
               href="/inventario"
@@ -278,7 +278,7 @@ export function PanelView({
           </div>
         </CardHeader>
         <CardContent>
-          <p className="mb-3 text-sm text-foreground-muted">
+          <p className="mb-3 text-base text-foreground-muted">
             Total últimos {range} días:{" "}
             <span className="font-semibold" data-testid="window-total">
               {formatBs(windowTotalCents)}
@@ -325,7 +325,7 @@ export function PanelView({
                 {recentSales.map((sale) => (
                   <li
                     key={sale.id}
-                    className="flex items-center justify-between gap-3 py-2 text-sm"
+                    className="flex items-center justify-between gap-3 py-2 text-base"
                   >
                     <span className="text-foreground-muted">
                       {formatTime(new Date(sale.created_at))}
@@ -358,7 +358,7 @@ export function PanelView({
                     key={`${product.productId ?? "sin-id"}-${index}`}
                     className="space-y-1"
                   >
-                    <div className="flex items-center justify-between gap-3 text-sm">
+                    <div className="flex items-center justify-between gap-3 text-base">
                       <span className="truncate font-medium text-foreground">
                         {product.name}
                       </span>
@@ -394,7 +394,7 @@ export function PanelView({
               <>
                 <dl className="grid grid-cols-2 gap-4">
                   <div>
-                    <dt className="text-sm text-foreground-muted">Ingresos</dt>
+                    <dt className="text-base text-foreground-muted">Ingresos</dt>
                     <dd
                       className="mt-1 text-2xl font-bold tabular-nums text-foreground"
                       data-testid="day-income"
@@ -403,7 +403,7 @@ export function PanelView({
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-sm text-foreground-muted">Egresos</dt>
+                    <dt className="text-base text-foreground-muted">Egresos</dt>
                     <dd
                       className="mt-1 text-2xl font-bold tabular-nums text-foreground"
                       data-testid="day-expense"
@@ -412,7 +412,7 @@ export function PanelView({
                     </dd>
                   </div>
                 </dl>
-                <p className="mt-3 text-xs text-foreground-muted">
+                <p className="mt-3 text-sm text-foreground-muted">
                   Movimientos manuales en efectivo de los turnos de hoy; las ventas no
                   aparecen aquí.
                 </p>
@@ -438,10 +438,10 @@ export function PanelView({
               >
                 {formatBs(margin.marginCents)}
               </p>
-              <p className="mt-2 text-sm text-foreground-muted">
+              <p className="mt-2 text-base text-foreground-muted">
                 Ventas: {formatBs(margin.revenueCents)} · Costo: {formatBs(margin.costCents)}
               </p>
-              <p className="mt-2 text-xs text-foreground-muted">
+              <p className="mt-2 text-sm text-foreground-muted">
                 Estimado con el costo registrado actualmente para los productos vendidos
                 hoy, sobre el precio de línea antes de descuentos de venta. No incluye
                 mermas ni gastos operativos.
