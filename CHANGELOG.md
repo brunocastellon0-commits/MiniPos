@@ -7,6 +7,9 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ## [Unreleased]
 
+### Changed
+- **E1-07**: Login por **nombre de usuario** (sin correo visible): la pantalla pide "Usuario" y el servidor lo convierte a `<usuario>@lila.market` (`src/lib/auth/login-identity.ts`) para `signInWithPassword`; mensaje genérico "Usuario o contraseña incorrectos."; rate limit por usuario; guía de alta de cuentas actualizada (Auto Confirm, restablecer contraseña desde el Dashboard).
+
 ### Added
 - **E0-01**: Inicialización de proyecto Next.js 16 con App Router, TypeScript estricto y Tailwind CSS.
 - **E0-02**: Tooling de calidad de código con ESLint, Prettier, Vitest + Testing Library y scripts `pnpm check`.

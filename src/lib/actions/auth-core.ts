@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { toLoginEmail } from "@/lib/auth/login-identity";
 import { type LoginInput, type LoginResult, loginSchema } from "./auth-schema";
 import { RateLimiter } from "./rate-limiter";
 import { secureAction } from "./secure-action";
@@ -74,11 +75,11 @@ export function createLoginAction(options?: {
       keyPrefix: "login",
       maxRequests: 5,
       windowMs: 60_000,
-      getKey: (input) => `login:${input.email.toLowerCase().trim()}`,
+      getKey: (input) => `login:${input.username}`,
     },
     handler: async (input) => {
       const { user, error } = await service.signInWithPassword({
-        email: input.email,
+        email: toLoginEmail(input.username),
         password: input.password,
       });
 
@@ -87,7 +88,7 @@ export function createLoginAction(options?: {
         throw new (class extends Error {
           code = "INVALID_CREDENTIALS";
           constructor() {
-            super("Correo electrónico o contraseña incorrectos.");
+            super("Usuario o contraseña incorrectos.");
           }
         })();
       }

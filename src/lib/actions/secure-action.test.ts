@@ -85,7 +85,7 @@ describe("secureAction - manejo de errores (E11-07)", () => {
 
   it("los códigos controlados de auth/mfa sí devuelven su mensaje", async () => {
     const action = actionWith(async () => {
-      throw Object.assign(new Error("Correo electrónico o contraseña incorrectos."), {
+      throw Object.assign(new Error("Usuario o contraseña incorrectos."), {
         code: "INVALID_CREDENTIALS",
       });
     });
@@ -95,7 +95,7 @@ describe("secureAction - manejo de errores (E11-07)", () => {
     expect(result).toEqual({
       ok: false,
       code: "INVALID_CREDENTIALS",
-      message: "Correo electrónico o contraseña incorrectos.",
+      message: "Usuario o contraseña incorrectos.",
     });
   });
 

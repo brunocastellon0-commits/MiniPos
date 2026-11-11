@@ -27,8 +27,8 @@ Referencias base: OWASP Top 10 (edición vigente) y OWASP ASVS como lista de ver
 2. Contraseña mínima de 12 caracteres (política en Supabase y también validada en la UI). *(Humano: configurarlo; activar protección contra contraseñas filtradas si el plan de Supabase la ofrece.)*
 3. **MFA (TOTP) disponible y recomendado para el dueño** (Supabase Auth lo soporta). Tarea E1-06.
 4. Cierre de sesión automático por inactividad configurable (por defecto 15 min en la caja; el carrito en curso se conserva solo si hay venta pausada guardada) — E1-05.
-5. Mensajes de login genéricos ("Correo o contraseña incorrectos"); no revelar si el correo existe.
-6. Límite de intentos: Supabase aplica límites propios; **además** limitar a nivel de app los intentos de login por IP+correo (rate limit) — E1-05. Considerar CAPTCHA si hay abuso.
+5. Mensajes de login genéricos ("Usuario o contraseña incorrectos"); no revelar si el usuario existe. El acceso es por **usuario** (E1-07); el correo sintético `<usuario>@lila.market` es interno.
+6. Límite de intentos: Supabase aplica límites propios; **además** limitar a nivel de app los intentos de login por IP+usuario (rate limit) — E1-05. Considerar CAPTCHA si hay abuso.
 7. Usuario desactivado ⇒ sesión inválida en la siguiente petición (`profiles.active` se comprueba en cada acción de escritura).
 8. Cookies de sesión gestionadas por `@supabase/ssr`; `SameSite=Lax` o más estricto; solo HTTPS en producción.
 9. Cambio de rol, desactivación y restablecimiento de contraseña quedan en auditoría.

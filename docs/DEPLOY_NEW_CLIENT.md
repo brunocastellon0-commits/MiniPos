@@ -6,7 +6,7 @@
 
 1. **Crear proyecto Supabase** del cliente (región más cercana disponible). Anotar URL y publishable key.
 2. **Aplicar el esquema:** SQL Editor → pegar `db/schema.sql` (consolidado) → ejecutar. Verificar que RLS esté activa en todas las tablas.
-3. **Crear usuarios** en Auth (dueño, y cajero si aplica) y asignar rol en `profiles` (script `db/create_first_owner.sql` con placeholders).
+3. **Crear usuarios** en Auth (dueño, y cajero si aplica) y asignar rol en `profiles` (script `db/create_first_owner.sql` con placeholders). Cada cuenta se crea con correo **`<usuario>@lila.market`** y **Auto Confirm User** activado (el correo es interno: no se envían mensajes y el empleado entra solo con su **usuario**). Restablecer contraseñas desde el Dashboard.
 4. **Configurar negocio:** nombre y moneda en `business_settings`; el logo es la imagen pública `public/logo.png` (reemplazarla por la del cliente).
 5. **Variables de entorno** en el hosting (ej. Vercel u otro): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
 6. **Desplegar** la misma versión etiquetada del código (`git tag vX.Y.Z`). No hacer forks por cliente.
@@ -17,7 +17,7 @@
 
 ## Seguridad (obligatorio antes de entregar; detalle en `docs/SECURITY.md`)
 
-- [ ] Auth: **registro público desactivado**; contraseña mínima 12; protección contra contraseñas filtradas si el plan lo permite; confirmación de correo; URLs de redirección solo al dominio real.
+- [ ] Auth: **registro público desactivado**; contraseña mínima 12; protección contra contraseñas filtradas si el plan lo permite; Auto Confirm por usuario (los correos son sintéticos `@lila.market`, no hay bandeja); URLs de redirección solo al dominio real.
 - [ ] MFA activado para la cuenta del dueño.
 - [ ] Migraciones aplicadas en orden; ejecutado `docs/RLS_VERIFICATION.sql` (consultas 1-4 sin filas) y **Security Advisor** sin hallazgos críticos.
 - [ ] `service_role` NO configurada en el hosting de la app. Variables de entorno propias del cliente.

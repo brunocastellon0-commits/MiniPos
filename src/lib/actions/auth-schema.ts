@@ -1,12 +1,17 @@
 import { z } from "zod";
+import { USERNAME_PATTERN } from "@/lib/auth/login-identity";
 
 export const loginSchema = z
   .object({
-    email: z
+    username: z
       .string()
       .trim()
-      .min(1, { message: "Ingresa tu correo electrónico." })
-      .email({ message: "Ingresa un correo electrónico válido." }),
+      .toLowerCase()
+      .min(1, { message: "Ingresa tu usuario." })
+      .regex(USERNAME_PATTERN, {
+        message:
+          "Usuario no válido: de 3 a 20 caracteres (letras minúsculas, números, punto, guion o guion bajo).",
+      }),
     password: z.string().min(1, { message: "Ingresa tu contraseña." }),
   })
   .strict();

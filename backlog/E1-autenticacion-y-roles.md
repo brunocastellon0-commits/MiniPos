@@ -18,3 +18,6 @@
 - **E1-04 · Gestión de usuarios (dueño)** · Deps: E1-03 · DB: **posible**
   Aceptación: listar usuarios, activar/desactivar, cambiar rol, nombre. Alta: según D-009 el humano crea el usuario en Auth; la pantalla guía el paso y permite asignar rol al aparecer en `profiles`. No usar service_role. Si se necesita una función SQL (ej. `set_user_role` con chequeo de dueño), proponerla con 🚨.
   Tests: no se puede quitar el último dueño; cajero no accede.
+- **E1-07 · Login por nombre de usuario** · Deps: E1-01 · DB: no
+  Aceptación: la pantalla de login pide **Usuario** (no correo); el servidor lo convierte a `<usuario>@lila.market` para `signInWithPassword` (dominio sintético, nunca visible en la UI); formato 3–20 caracteres minúsculas/números/`._-`, sin `@`; mensaje genérico "Usuario o contraseña incorrectos."; rate limit por usuario; alta de cuentas en el Dashboard con correo `<usuario>@lila.market` y Auto Confirm (guía en el diálogo de usuarios); restablecer contraseña desde el Dashboard.
+  Tests: acción valida formato y envía `usuario@lila.market`; formulario con campo usuario.

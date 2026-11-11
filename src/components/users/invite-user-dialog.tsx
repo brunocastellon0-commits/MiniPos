@@ -45,7 +45,13 @@ export function InviteUserDialog({ open, onClose }: InviteUserDialogProps) {
             <div>
               <p className="font-medium">Crear usuario en Supabase Auth</p>
               <p className="text-foreground-muted text-xs">
-                Ingresa al panel de Supabase en <strong>Authentication &gt; Users &gt; Add user</strong> con el correo y contraseña temporal del colaborador (o invítalo por email).
+                En <strong>Authentication &gt; Users &gt; Add user</strong> usa el correo{" "}
+                <strong>
+                  &lt;usuario&gt;@lila.market
+                </strong>{" "}
+                (ej. <strong>ana.lopez@lila.market</strong>), activa <strong>Auto Confirm User</strong>{" "}
+                y completa <strong>User Metadata → full_name</strong> con el nombre real. El correo es
+                solo interno: el colaborador nunca lo ve ni lo usa.
               </p>
             </div>
           </li>
@@ -57,7 +63,9 @@ export function InviteUserDialog({ open, onClose }: InviteUserDialogProps) {
             <div>
               <p className="font-medium">Primer inicio de sesión</p>
               <p className="text-foreground-muted text-xs">
-                El nuevo colaborador ingresa en la pantalla de inicio de sesión con sus credenciales.
+                El colaborador ingresa con su <strong>usuario</strong> (la parte antes de{" "}
+                <strong>@lila.market</strong>) y su contraseña. Si la olvida, restablécela desde el
+                Dashboard de Supabase: no se envían correos.
               </p>
             </div>
           </li>

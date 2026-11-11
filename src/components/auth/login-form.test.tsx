@@ -14,45 +14,43 @@ describe("LoginForm (Componente UI de Login)", () => {
     render(<LoginForm businessName="Minimarket Doña María" />);
 
     expect(screen.getByRole("heading", { name: "Minimarket Doña María" })).toBeInTheDocument();
-    expect(screen.getByLabelText(/correo electrónico/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/usuario/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/contraseña/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /ingresar a caja/i })).toBeInTheDocument();
   });
 
-  it("muestra el logo_form a todo el ancho y los textos de marca", () => {
+  it("muestra el logo_form y los textos de marca", () => {
     render(<LoginForm businessName="Minimarket Doña María" />);
 
     const logo = screen.getByRole("img", { name: "Minimarket Doña María" });
     expect(logo).toHaveAttribute("src", expect.stringContaining("logo_form.png"));
-    expect(logo.className).toContain("w-full");
 
-    expect(screen.getByText(/Tu aliado en la/i)).toHaveTextContent(
-      "Tu aliado en la gestión de tu negocio",
+    expect(screen.getByText(/Ingresa tus credenciales/i)).toHaveTextContent(
+      "Ingresa tus credenciales para acceder al sistema",
     );
-    expect(screen.getByText(/Controla tus ventas, inventario y mucho más/i)).toBeInTheDocument();
     expect(screen.getByText(/Haz crecer tu negocio con/i)).toHaveTextContent(
       "Haz crecer tu negocio con LilaMarket",
     );
   });
 
-  it("muestra errores de validación si los campos están vacíos o el correo es inválido", async () => {
+  it("muestra errores de validación si los campos están vacíos o el usuario es inválido", async () => {
     const mockLoginFn = vi.fn();
     render(<LoginForm loginFn={mockLoginFn} />);
 
     // Envío con campos vacíos
     fireEvent.click(screen.getByRole("button", { name: /ingresar a caja/i }));
 
-    expect(await screen.findByText("Ingresa tu correo electrónico.")).toBeInTheDocument();
+    expect(await screen.findByText("Ingresa tu usuario.")).toBeInTheDocument();
     expect(await screen.findByText("Ingresa tu contraseña.")).toBeInTheDocument();
     expect(mockLoginFn).not.toHaveBeenCalled();
 
-    // Correo inválido
-    fireEvent.change(screen.getByLabelText(/correo electrónico/i), {
-      target: { value: "correo-invalido" },
+    // Usuario inválido (muy corto)
+    fireEvent.change(screen.getByLabelText(/usuario/i), {
+      target: { value: "ab" },
     });
     fireEvent.click(screen.getByRole("button", { name: /ingresar a caja/i }));
 
-    expect(await screen.findByText("Ingresa un correo electrónico válido.")).toBeInTheDocument();
+    expect(await screen.findByText(/Usuario no válido/i)).toBeInTheDocument();
     expect(mockLoginFn).not.toHaveBeenCalled();
   });
 
@@ -65,8 +63,8 @@ describe("LoginForm (Componente UI de Login)", () => {
 
     render(<LoginForm loginFn={mockLoginFn} />);
 
-    fireEvent.change(screen.getByLabelText(/correo electrónico/i), {
-      target: { value: "cajero@lilamarket.bo" },
+    fireEvent.change(screen.getByLabelText(/usuario/i), {
+      target: { value: "cajero" },
     });
     fireEvent.change(screen.getByLabelText(/contraseña/i), {
       target: { value: "Password123!" },
@@ -98,13 +96,13 @@ describe("LoginForm (Componente UI de Login)", () => {
     const mockLoginFn = vi.fn().mockResolvedValue({
       ok: false,
       code: "INVALID_CREDENTIALS",
-      message: "Correo electrónico o contraseña incorrectos.",
+      message: "Usuario o contraseña incorrectos.",
     });
 
     render(<LoginForm loginFn={mockLoginFn} />);
 
-    fireEvent.change(screen.getByLabelText(/correo electrónico/i), {
-      target: { value: "inexistente@lilamarket.bo" },
+    fireEvent.change(screen.getByLabelText(/usuario/i), {
+      target: { value: "inexistente" },
     });
     fireEvent.change(screen.getByLabelText(/contraseña/i), {
       target: { value: "erronea" },
@@ -114,7 +112,7 @@ describe("LoginForm (Componente UI de Login)", () => {
 
     const errorAlert = await screen.findByRole("alert");
     expect(errorAlert).toBeInTheDocument();
-    expect(errorAlert).toHaveTextContent("Correo electrónico o contraseña incorrectos.");
+    expect(errorAlert).toHaveTextContent("Usuario o contraseña incorrectos.");
   });
 
   it("muestra error cuando el usuario está desactivado", async () => {
@@ -126,8 +124,8 @@ describe("LoginForm (Componente UI de Login)", () => {
 
     render(<LoginForm loginFn={mockLoginFn} />);
 
-    fireEvent.change(screen.getByLabelText(/correo electrónico/i), {
-      target: { value: "inactivo@lilamarket.bo" },
+    fireEvent.change(screen.getByLabelText(/usuario/i), {
+      target: { value: "inactivo" },
     });
     fireEvent.change(screen.getByLabelText(/contraseña/i), {
       target: { value: "Password123!" },
@@ -150,8 +148,8 @@ describe("LoginForm (Componente UI de Login)", () => {
 
     render(<LoginForm loginFn={mockLoginFn} onSuccess={mockSuccess} />);
 
-    fireEvent.change(screen.getByLabelText(/correo electrónico/i), {
-      target: { value: "dueno@lilamarket.bo" },
+    fireEvent.change(screen.getByLabelText(/usuario/i), {
+      target: { value: "dueno" },
     });
     fireEvent.change(screen.getByLabelText(/contraseña/i), {
       target: { value: "Password123!" },

@@ -85,7 +85,7 @@ Componente (UI) → Server Action (Zod + requireRole) → Repositorio (interfaz)
 
 ## 5. Autenticación
 
-- Email + contraseña. Usuarios creados por el dueño; no hay registro público.
+- Usuario + contraseña. El servidor convierte el usuario a un correo sintético interno `<usuario>@lila.market` (nunca visible en la UI; ver `src/lib/auth/login-identity.ts`) porque Supabase Auth solo autentica por correo. Usuarios creados por el dueño; no hay registro público.
 - `proxy.ts` refresca el token con `supabase.auth.getClaims()`; los Server Components solo leen la sesión.
 - En acciones que escriben: validar usuario con `supabase.auth.getUser()` y rol desde `profiles`.
 - Redirecciones: sin sesión → `/login`; cajero → `/caja`; dueño → `/panel`; rutas de dueño inaccesibles al cajero (proxy + layout + RLS).

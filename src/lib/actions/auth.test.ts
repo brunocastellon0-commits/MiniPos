@@ -5,7 +5,7 @@ import { RateLimiter } from "./rate-limiter";
 describe("loginAction (Acción segura de inicio de sesión)", () => {
   const createMockAuthService = (overrides?: Partial<AuthService>): AuthService => ({
     signInWithPassword: vi.fn().mockResolvedValue({
-      user: { id: "user-1", email: "dueno@lilamarket.bo" },
+      user: { id: "user-1", email: "dueno@lila.market" },
       error: null,
     }),
     getUserProfile: vi.fn().mockResolvedValue({
@@ -21,7 +21,7 @@ describe("loginAction (Acción segura de inicio de sesión)", () => {
     const action = createLoginAction({ authService });
 
     const result = await action({
-      email: "dueno@lilamarket.bo",
+      username: "dueno",
       password: "Password123!",
     });
 
@@ -29,8 +29,25 @@ describe("loginAction (Acción segura de inicio de sesión)", () => {
     if (result.ok) {
       expect(result.data.redirectUrl).toBe("/caja");
     }
+    // E1-07: el usuario escribe solo su usuario; el servidor arma el correo sintético
     expect(authService.signInWithPassword).toHaveBeenCalledWith({
-      email: "dueno@lilamarket.bo",
+      email: "dueno@lila.market",
+      password: "Password123!",
+    });
+  });
+
+  it("normaliza el usuario a minúsculas antes de autenticar", async () => {
+    const authService = createMockAuthService();
+    const action = createLoginAction({ authService });
+
+    const result = await action({
+      username: "  DUENO.Numeros  ",
+      password: "Password123!",
+    });
+
+    expect(result.ok).toBe(true);
+    expect(authService.signInWithPassword).toHaveBeenCalledWith({
+      email: "dueno.numeros@lila.market",
       password: "Password123!",
     });
   });
@@ -45,16 +62,16 @@ describe("loginAction (Acción segura de inicio de sesión)", () => {
     const action = createLoginAction({ authService });
 
     const result = await action({
-      email: "desconocido@lilamarket.bo",
+      username: "desconocido",
       password: "wrong-password",
     });
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.code).toBe("INVALID_CREDENTIALS");
-      expect(result.message).toBe("Correo electrónico o contraseña incorrectos.");
+      expect(result.message).toBe("Usuario o contraseña incorrectos.");
       // Comprobar que no revela si el usuario existía o no
-      expect(result.message).not.toContain("usuario no existe");
+      expect(result.message).not.toContain("no existe");
       expect(result.message).not.toContain("contraseña incorrecta");
     }
   });
@@ -71,7 +88,7 @@ describe("loginAction (Acción segura de inicio de sesión)", () => {
     const action = createLoginAction({ authService });
 
     const result = await action({
-      email: "inactivo@lilamarket.bo",
+      username: "inactivo",
       password: "Password123!",
     });
 
@@ -89,7 +106,7 @@ describe("loginAction (Acción segura de inicio de sesión)", () => {
     const action = createLoginAction({ authService, rateLimiter: limiter });
 
     const payload = {
-      email: "cajero@lilamarket.bo",
+      username: "cajero",
       password: "Password123!",
     };
 
@@ -109,19 +126,19 @@ describe("loginAction (Acción segura de inicio de sesión)", () => {
     }
   });
 
-  it("rechaza entradas que no cumplan con el formato de correo", async () => {
+  it("rechaza entradas que no cumplan con el formato de usuario", async () => {
     const authService = createMockAuthService();
     const action = createLoginAction({ authService });
 
     const result = await action({
-      email: "formato-invalido",
+      username: "a@b",
       password: "Password123!",
     });
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.code).toBe("VALIDATION_ERROR");
-      expect(result.errors?.email).toBeDefined();
+      expect(result.errors?.username).toBeDefined();
     }
   });
 });

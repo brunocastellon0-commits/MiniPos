@@ -88,7 +88,7 @@ describe("Endurecimiento de Sesión y Login (E1-05)", () => {
       });
 
       const credentials = {
-        email: "cajero@lilamarket.bo",
+        username: "cajero",
         password: "wrong",
       };
 
@@ -138,7 +138,7 @@ describe("Endurecimiento de Sesión y Login (E1-05)", () => {
 
       const action = createLoginAction({ authService: mockAuthService });
       const result = await action({
-        email: "desactivado@lilamarket.bo",
+        username: "desactivado",
         password: "validPassword123",
       });
 
@@ -188,7 +188,7 @@ describe("Endurecimiento de Sesión y Login (E1-05)", () => {
       });
 
       const result = await action({
-        email: "propietario@lilamarket.bo",
+        username: "propietario",
         password: "Password123!",
       });
 

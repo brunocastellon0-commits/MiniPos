@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { AlertCircle, ArrowRight, Lock, Mail } from "lucide-react";
+import { AlertCircle, ArrowRight, Lock, User } from "lucide-react";
 import { loginAction } from "@/lib/actions/auth";
 import { type LoginInput, loginSchema } from "@/lib/actions/auth-schema";
 import type { ActionResult } from "@/lib/actions/secure-action";
@@ -31,7 +31,7 @@ export function LoginForm({
   loginFn = loginAction,
 }: LoginFormProps) {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [generalError, setGeneralError] = useState<string | null>(null);
@@ -43,7 +43,7 @@ export function LoginForm({
     setFieldErrors({});
 
     // Validación cliente inicial
-    const clientValidation = loginSchema.safeParse({ email, password });
+    const clientValidation = loginSchema.safeParse({ username, password });
     if (!clientValidation.success) {
       const errors: Record<string, string[]> = {};
       for (const [key, msgs] of Object.entries(clientValidation.error.flatten().fieldErrors)) {
@@ -58,7 +58,7 @@ export function LoginForm({
     setLoading(true);
 
     try {
-      const result = await loginFn({ email, password });
+      const result = await loginFn({ username, password });
 
       if (!result.ok) {
         setLoading(false);
@@ -117,31 +117,32 @@ export function LoginForm({
 
             <div className="space-y-1.5">
               <label
-                htmlFor="login-email"
+                htmlFor="login-username"
                 className="block text-xs font-semibold uppercase tracking-wider text-muted"
               >
-                Correo electrónico
+                Usuario
               </label>
               <div className="relative">
                 <Input
-                  id="login-email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
+                  id="login-username"
+                  name="username"
+                  type="text"
+                  autoComplete="username"
                   autoCapitalize="none"
-                  placeholder="ejemplo@lilamarket.bo"
-                  value={email}
+                  spellCheck={false}
+                  placeholder="ej. ana.lopez"
+                  value={username}
                   disabled={loading}
-                  invalid={Boolean(fieldErrors.email)}
-                  aria-describedby={fieldErrors.email ? "login-email-error" : undefined}
-                  onChange={(e) => setEmail(e.target.value)}
+                  invalid={Boolean(fieldErrors.username)}
+                  aria-describedby={fieldErrors.username ? "login-username-error" : undefined}
+                  onChange={(e) => setUsername(e.target.value)}
                   className="pl-9"
                 />
-                <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
+                <User className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
               </div>
-              {fieldErrors.email && (
-                <p id="login-email-error" role="alert" className="text-xs text-danger">
-                  {fieldErrors.email[0]}
+              {fieldErrors.username && (
+                <p id="login-username-error" role="alert" className="text-xs text-danger">
+                  {fieldErrors.username[0]}
                 </p>
               )}
             </div>
